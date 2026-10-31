@@ -1,0 +1,1329 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Detektywi barier</title>
+<meta name="description" content="Detektywi barier — znajdź na ilustracjach przeszkody w przejściu, komunikacji i zasadach oraz wybierz zmiany, które ułatwiają wspólny udział. Część zestawu „Każdy ma miejsce”.">
+<meta name="author" content="Michał Siwkowski">
+<style>
+:root{
+  --bg:#f5f3ee; --surface:#ffffff; --surface-2:#eef3f2; --ink:#1c2430; --ink-soft:#3f4a58;
+  --line:#6b7685; --line-soft:#c9cfd6; --accent:#1d6670; --accent-ink:#ffffff; --accent-soft:#dcefef;
+  --ok:#24603a; --ok-bg:#e5f3e8; --info:#6b4a00; --info-bg:#fff3d6; --focus:#1747c9;
+  --wall:#f1e9db; --floor:#d9cdb8; --floor-line:#bfae92; --wood:#9a6b43; --wood-dark:#6f4a2c;
+  --board:#ffffff; --skin:#e7b48f; --skin-2:#b07a55; --pants:#3d4a5c;
+  --radius:14px; --shadow:0 2px 0 rgba(28,36,48,.08);
+  --t-base:1.125rem;
+}
+html{font-size:100%; -webkit-text-size-adjust:100%}
+html.large-text{font-size:125%}
+*{box-sizing:border-box}
+body{margin:0; background:var(--bg); color:var(--ink); font-family:system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,"Noto Sans",Arial,sans-serif; font-size:var(--t-base); line-height:1.55; overflow-x:hidden}
+html.high-contrast{
+  --bg:#ffffff; --surface:#ffffff; --surface-2:#ffffff; --ink:#000000; --ink-soft:#000000;
+  --line:#000000; --line-soft:#000000; --accent:#00306b; --accent-soft:#ffffff;
+  --ok:#00451c; --ok-bg:#ffffff; --info:#000000; --info-bg:#ffffff; --focus:#b00000;
+  --wall:#ffffff; --floor:#f2f2f2; --floor-line:#000000;
+}
+html.high-contrast .card, html.high-contrast .btn, html.high-contrast .char, html.high-contrast .barrier-item,
+html.high-contrast .feedback, html.high-contrast .note, html.high-contrast dialog, html.high-contrast .ill-box{border-width:3px}
+html.high-contrast svg .ol{stroke:#000; stroke-width:3}
+h1,h2,h3{line-height:1.25; margin:0 0 .5rem}
+h1{font-size:1.9rem} h2{font-size:1.35rem} h3{font-size:1.15rem}
+p{margin:0 0 .75rem}
+a{color:var(--accent)}
+.visually-hidden{position:absolute!important; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0}
+:focus{outline:none}
+:focus-visible{outline:4px solid var(--focus); outline-offset:3px; box-shadow:0 0 0 7px #fff}
+[tabindex="-1"]:focus-visible{outline:3px dashed var(--focus); box-shadow:none}
+
+/* layout */
+.topbar{background:var(--surface); border-bottom:2px solid var(--line-soft)}
+.topbar-inner{max-width:1180px; margin:0 auto; padding:.6rem 1rem; display:flex; flex-wrap:wrap; gap:.5rem 1rem; align-items:center; justify-content:space-between}
+.brand{display:flex; align-items:center; gap:.6rem; font-weight:800; font-size:1.15rem}
+.brand svg{width:36px; height:36px; flex:none}
+.tools{display:flex; flex-wrap:wrap; gap:.5rem}
+main{max-width:1180px; margin:0 auto; padding:1.25rem 1rem 3rem}
+.screen[hidden]{display:none!important}
+
+/* buttons */
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:.5rem; min-height:48px; min-width:48px; padding:.6rem 1.1rem; border-radius:12px; border:2px solid var(--line); background:var(--surface); color:var(--ink); font:inherit; font-weight:650; cursor:pointer; text-align:left; line-height:1.3; touch-action:manipulation}
+.btn:hover{background:var(--surface-2)}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+.btn-primary:hover{background:#174f57; color:#fff}
+html.high-contrast .btn-primary{background:#00306b; color:#fff; border-color:#000}
+.btn svg{width:22px; height:22px; flex:none}
+.btn-big{font-size:1.2rem; padding:.8rem 1.6rem; min-height:56px}
+.btn-row{display:flex; flex-wrap:wrap; gap:.75rem; margin-top:1rem}
+
+/* cards */
+.card{background:var(--surface); border:2px solid var(--line-soft); border-radius:var(--radius); padding:1.1rem 1.2rem; box-shadow:var(--shadow)}
+.note{border:2px dashed var(--line); border-radius:12px; padding:.75rem 1rem; background:var(--surface); display:flex; gap:.6rem; align-items:flex-start}
+.note svg{width:26px; height:26px; flex:none; margin-top:.1rem}
+.eyebrow{font-size:1rem; font-weight:700; color:var(--ink-soft); margin:0 0 .25rem; text-transform:uppercase; letter-spacing:.04em}
+.lead{font-size:1.3rem; font-weight:650}
+
+/* start */
+.start{display:grid; gap:1.25rem; grid-template-columns:minmax(0,1fr)}
+@media (min-width:880px){.start{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr); align-items:start}}
+.steps{list-style:none; padding:0; margin:0 0 1rem; display:grid; gap:.6rem; counter-reset:st}
+.steps li{display:flex; gap:.75rem; align-items:flex-start}
+.steps li::before{counter-increment:st; content:counter(st); flex:none; width:2.1rem; height:2.1rem; border-radius:50%; background:var(--accent-soft); border:2px solid var(--accent); color:var(--ink); font-weight:800; display:flex; align-items:center; justify-content:center}
+.rules{padding-left:1.2rem; margin:0 0 1rem}
+.rules li{margin-bottom:.3rem}
+
+/* scene */
+.scene-head{margin-bottom:1rem}
+.characters{list-style:none; margin:0; padding:0; display:grid; gap:.6rem; grid-template-columns:minmax(0,1fr)}
+@media (min-width:700px){.characters{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.char{display:flex; gap:.7rem; align-items:flex-start; background:var(--surface); border:2px solid var(--line-soft); border-radius:12px; padding:.6rem .75rem}
+.avatar{flex:none; width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1.2rem; border:2px solid var(--ink); color:#1c2430}
+.char-name{font-weight:800; display:block}
+.char q{quotes:"„" "”"}
+.progress{display:flex; flex-wrap:wrap; align-items:center; gap:.5rem 1rem; margin:1rem 0}
+.progress-text{font-weight:800; margin:0}
+.dots{display:flex; gap:.4rem; list-style:none; padding:0; margin:0}
+.dots li{width:34px; height:34px; border-radius:50%; border:2px solid var(--line); display:flex; align-items:center; justify-content:center; background:var(--surface)}
+.dots li.done{background:var(--ok-bg); border-color:var(--ok); color:var(--ok)}
+.dots svg{width:20px; height:20px}
+.scene-grid{display:grid; gap:1.25rem; grid-template-columns:minmax(0,1fr)}
+@media (min-width:960px){.scene-grid{grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); align-items:start}}
+figure{margin:0}
+.ill-box{position:relative; border:2px solid var(--line-soft); border-radius:var(--radius); overflow:hidden; background:var(--wall)}
+.ill-box svg.scene-svg{display:block; width:100%; height:auto}
+figcaption{font-size:1rem; color:var(--ink-soft); margin-top:.4rem}
+.hotspot{position:absolute; transform:translate(-50%,-50%); min-height:52px; min-width:52px; padding:.25rem .55rem; border-radius:999px; border:3px solid var(--ink); background:#fffef8; color:var(--ink); font:inherit; font-size:1.1rem; font-weight:900; display:inline-flex; align-items:center; justify-content:center; gap:.25rem; cursor:pointer; box-shadow:0 3px 0 rgba(0,0,0,.25); white-space:nowrap; touch-action:manipulation; z-index:1}
+.hotspot svg{width:22px; height:22px; flex:none}
+.hotspot:hover{background:#fff6d8}
+.hotspot.is-open{background:var(--accent-soft); outline:4px solid var(--accent); outline-offset:2px}
+.hotspot.is-solved{border-color:var(--ok); background:var(--ok-bg); color:var(--ok)}
+.hotspot:focus-visible{outline:4px solid var(--focus); outline-offset:3px; box-shadow:0 0 0 7px #fff}
+html.high-contrast .hotspot{background:#fff; color:#000; border-color:#000}
+@media (max-width:620px){ .hotspot{min-height:48px; min-width:48px; font-size:1rem; padding:.15rem .4rem} .hotspot svg{width:18px; height:18px} }
+.barrier-list{list-style:none; padding:0; margin:0 0 1rem; display:grid; gap:.6rem}
+.barrier-item{width:100%; justify-content:space-between; flex-wrap:wrap; gap:.4rem .6rem; border-radius:12px; padding:.75rem 1rem}
+.barrier-item .bi-main{display:flex; align-items:center; gap:.6rem}
+.badge{display:inline-flex; align-items:center; gap:.3rem; font-size:.95rem; font-weight:800; border-radius:999px; padding:.15rem .6rem; border:2px solid var(--line); background:var(--surface); white-space:nowrap}
+.badge svg{width:18px; height:18px}
+.badge.solved{border-color:var(--ok); color:var(--ok); background:var(--ok-bg)}
+.panel h2{margin-top:0}
+.need{background:var(--surface-2); border-left:6px solid var(--accent); padding:.6rem .8rem; border-radius:8px}
+.options{display:grid; gap:.7rem; margin:.5rem 0 1rem}
+.option{width:100%; justify-content:flex-start; font-weight:600; padding:.8rem 1rem; min-height:56px}
+.option svg{width:24px; height:24px}
+.option[data-tried="true"]{border-style:dashed}
+.feedback{border:2px solid var(--line); border-radius:12px; padding:.8rem 1rem; margin:0 0 1rem}
+.feedback h3{display:flex; align-items:center; gap:.5rem}
+.feedback h3 svg{width:26px; height:26px; flex:none}
+.feedback.ok{border-color:var(--ok); background:var(--ok-bg)}
+.feedback.ok h3{color:var(--ok)}
+.feedback.info{border-color:#a07a1c; background:var(--info-bg)}
+html.high-contrast .feedback.info{border-color:#000}
+.feedback.info h3{color:var(--info)}
+.applied{font-weight:700}
+.completion{border:3px solid var(--ok); background:var(--ok-bg)}
+.completion h2{display:flex; gap:.5rem; align-items:center; color:var(--ok)}
+.completion h2 svg{width:30px; height:30px}
+.change-list{padding-left:0; list-style:none; display:grid; gap:.4rem; margin:.4rem 0 1rem}
+.change-list li{display:flex; gap:.5rem; align-items:flex-start}
+.change-list svg{width:22px; height:22px; flex:none; margin-top:.2rem; color:var(--ok)}
+
+/* end */
+.end-grid{display:grid; gap:1.25rem; grid-template-columns:minmax(0,1fr)}
+@media (min-width:880px){.end-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-items:start}}
+fieldset{border:2px solid var(--line-soft); border-radius:12px; padding:.8rem 1rem 1rem; margin:0}
+legend{font-weight:800; font-size:1.2rem; padding:0 .3rem}
+.check{display:flex; align-items:center; gap:.75rem; min-height:48px; padding:.35rem .5rem; border-radius:10px; cursor:pointer}
+.check:hover{background:var(--surface-2)}
+.check input{width:28px; height:28px; flex:none; accent-color:var(--accent); margin:0}
+.scene-changes h3{margin-top:.8rem}
+
+/* dialogs */
+dialog{border:2px solid var(--line); border-radius:var(--radius); padding:0; max-width:min(640px, calc(100vw - 2rem)); width:100%; color:var(--ink); background:var(--surface); max-height:calc(100vh - 2rem)}
+dialog::backdrop{background:rgba(20,28,38,.55)}
+.dlg{padding:1.2rem 1.3rem; overflow:auto}
+.dlg-head{display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:.5rem}
+.dlg-head h2{margin:0}
+.setting{display:flex; gap:.8rem; align-items:flex-start; padding:.6rem .4rem; border-bottom:1px solid var(--line-soft); cursor:pointer; min-height:48px}
+.setting input{width:28px; height:28px; flex:none; margin:.15rem 0 0; accent-color:var(--accent)}
+.setting small{display:block; color:var(--ink-soft); font-size:1rem}
+.pause-art{display:flex; justify-content:center; margin:.5rem 0 1rem}
+.pause-art svg{width:120px; height:120px}
+.error-box{border:3px solid var(--ink); background:var(--surface); padding:1rem 1.2rem; border-radius:12px}
+
+/* motion (optional, decorative only) */
+.ill-after:not(.is-hidden){animation:appear .5s ease-out}
+@keyframes appear{from{opacity:0}to{opacity:1}}
+.is-hidden{display:none}
+html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after{animation:none!important; transition:none!important; scroll-behavior:auto!important}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important; transition:none!important; scroll-behavior:auto!important}}
+
+/* svg palette */
+svg .wall{fill:var(--wall)} svg .floor{fill:var(--floor)} svg .floorline{stroke:var(--floor-line); stroke-width:2}
+svg .ol{stroke:#26303c; stroke-width:2}
+svg .ink{fill:#1c2430} svg .soft{fill:#5a6573}
+svg text{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+@media print{.topbar,.tools{display:none}}
+</style>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232b5f9e'/%3E%3Ccircle cx='22' cy='26' r='7' fill='%23fff'/%3E%3Ccircle cx='42' cy='26' r='7' fill='%23fff'/%3E%3Cpath d='M10 50c2-8 7-12 12-12s10 4 12 12M30 50c2-8 7-12 12-12s10 4 12 12' fill='none' stroke='%23fff' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+<!-- ===== ZESTAW „KAŻDY MA MIEJSCE”: wspólne ustawienia i powrót do menu =====
+     Ten sam fragment znajduje się w menu (index.html) i w każdej grze.
+     ✏️ Wspólny klucz ustawień: 'kazdyMaMiejsce.ustawienia'
+        { largeText: true/false, highContrast: true/false, reducedMotion: true/false }
+     Gry nadal zapisują też swoje dawne klucze i dodatkowe ustawienia — nic nie ginie.
+     Gdy przeglądarka blokuje localStorage, wszystko działa, tylko bez zapamiętywania. -->
+<style id="kmm-style">
+.kmm-nav{box-sizing:border-box;max-width:1320px;margin:0 auto;padding:8px 16px 0;display:flex;flex-wrap:wrap;gap:8px}
+.kmm-home{box-sizing:border-box;display:inline-flex;align-items:center;gap:8px;min-height:48px;min-width:48px;padding:.4rem 1rem;
+  border:2px solid #1f2a33;border-radius:12px;background:#fff;color:#1f2a33;font-family:inherit;font-weight:700;font-size:max(18px,1rem);
+  line-height:1.2;text-decoration:none}
+.kmm-home:hover{background:#eef3f8;text-decoration:underline}
+.kmm-home:focus{outline:none}
+.kmm-home:focus-visible{outline:4px solid #b4400a;outline-offset:3px;box-shadow:0 0 0 7px #fff}
+.kmm-home svg{width:22px;height:22px;flex:none;display:block}
+html.high-contrast .kmm-home,html.hc .kmm-home{border:3px solid #000;color:#000;background:#fff}
+html.high-contrast .kmm-home:focus-visible,html.hc .kmm-home:focus-visible{outline-color:#c00000}
+@media print{.kmm-nav{display:none}}
+</style>
+<script>
+window.KMM = (function () {
+  'use strict';
+  var KEY = 'kazdyMaMiejsce.ustawienia';
+  var NAMES = ['largeText', 'highContrast', 'reducedMotion'];
+  /** Odczyt wspólnych ustawień. Zwraca obiekt tylko z zapisanymi polami albo null. */
+  function read() {
+    try {
+      var raw = window.localStorage.getItem(KEY);
+      if (!raw) return null;
+      var p = JSON.parse(raw), o = {}, n = 0;
+      if (!p || typeof p !== 'object') return null;
+      NAMES.forEach(function (k) { if (typeof p[k] === 'boolean') { o[k] = p[k]; n++; } });
+      return n ? o : null;
+    } catch (e) { return null; }
+  }
+  /** Zapis wspólnych ustawień (tylko trzy wspólne pola). Zwraca false, gdy pamięć jest niedostępna. */
+  function write(s) {
+    try {
+      var o = read() || {};
+      NAMES.forEach(function (k) { if (s && typeof s[k] === 'boolean') o[k] = s[k]; });
+      window.localStorage.setItem(KEY, JSON.stringify(o));
+      return true;
+    } catch (e) { return false; }
+  }
+  var listeners = [];
+  function onChange(fn) { listeners.push(fn); }
+  function notify() { listeners.forEach(function (fn) { try { fn(read()); } catch (e) {} }); }
+  // Każde wyświetlenie strony (także „Wstecz”, gdy przeglądarka odtwarza stare pola formularzy)
+  // i zmiana w innej karcie: ponownie zastosuj aktualne wspólne ustawienia.
+  window.addEventListener('pageshow', function () { notify(); });
+  window.addEventListener('storage', function (e) { if (e.key === KEY) notify(); });
+  /** Zatrzymuje nagrania i syntezę mowy przy wyjściu z gry. */
+  function stopMedia() {
+    try { Array.prototype.forEach.call(document.querySelectorAll('audio,video'), function (m) { m.pause(); }); } catch (e) {}
+    try { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch (e) {}
+  }
+  window.addEventListener('pagehide', stopMedia);
+  document.addEventListener('click', function (e) {
+    var a = e.target && e.target.closest ? e.target.closest('.kmm-home') : null;
+    if (!a) return;
+    stopMedia();
+    try { window.sessionStorage.setItem('kazdyMaMiejsce.powrot', a.getAttribute('data-game') || ''); } catch (err) {}
+  });
+  return { KEY: KEY, read: read, write: write, onChange: onChange, stopMedia: stopMedia };
+})();
+</script>
+<!-- ===== koniec wspólnego fragmentu ===== -->
+</head>
+<body>
+<!-- ✏️ Zestaw „Każdy ma miejsce”: powrót do menu (ścieżka względna — działa lokalnie i na GitHub Pages) -->
+<nav class="kmm-nav" aria-label="Zestaw gier Każdy ma miejsce"><a class="kmm-home" href="./index.html" data-game="detektywi-barier.html"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg><span>Wszystkie gry</span></a></nav>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="17" cy="17" r="11" fill="#dcefef" stroke="#1c2430" stroke-width="3"/><path d="M25 25 L35 35" stroke="#1c2430" stroke-width="5" stroke-linecap="round"/><path d="M12 17 l4 4 l7-8" fill="none" stroke="#1d6670" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Detektywi barier</span>
+    </div>
+    <nav class="tools" aria-label="Narzędzia gry">
+      <button type="button" class="btn" data-action="open-dialog" data-dialog="dlg-help" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.2 9.3a2.9 2.9 0 1 1 4 2.7c-.8.4-1.2 1-1.2 1.8v.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.3" r="1.3" fill="currentColor"/></svg>
+        Pomoc</button>
+      <button type="button" class="btn" data-action="open-dialog" data-dialog="dlg-settings" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="7" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="10" cy="17" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        Ustawienia</button>
+      <button type="button" class="btn" data-action="open-dialog" data-dialog="dlg-pause" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1.5" fill="currentColor"/><rect x="14" y="5" width="4" height="14" rx="1.5" fill="currentColor"/></svg>
+        Przerwa</button>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <div id="app"></div>
+</main>
+
+<div id="announcer" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
+
+<dialog id="dlg-help" aria-labelledby="dlg-help-title">
+  <div class="dlg">
+    <div class="dlg-head"><h2 id="dlg-help-title">Pomoc</h2></div>
+    <h3>Jak gramy?</h3>
+    <ol>
+      <li>Przeczytaj sytuację i wypowiedzi postaci.</li>
+      <li>Wybierz element na ilustracji albo z listy pod ilustracją.</li>
+      <li>Wybierz jedną z dwóch propozycji zmiany.</li>
+      <li>Przeczytaj, co się stało. Jeśli zmiana jeszcze nie wystarcza, wybierz inną.</li>
+    </ol>
+    <p>Gdy wprowadzisz trzy zmiany, pojawi się przycisk przejścia dalej. Elementy możesz sprawdzać w dowolnej kolejności.</p>
+    <p>Nie ma limitu czasu, punktów ani przegranej. Możesz próbować wiele razy.</p>
+    <p>Możesz grać samodzielnie albo we dwoje przy jednym ekranie. Porozmawiajcie i wybierzcie razem.</p>
+    <h3>Klawiatura</h3>
+    <p><kbd>Tab</kbd> – przejście do kolejnego przycisku. <kbd>Enter</kbd> lub <kbd>Spacja</kbd> – wybór. <kbd>Esc</kbd> – zamknięcie okna.</p>
+    <p class="note"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 10.5v6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="7.3" r="1.4" fill="currentColor"/></svg><span>To uproszczone sytuacje. W prawdziwej grupie pytamy jej uczestników, co im pomaga.</span></p>
+    <div class="btn-row"><button type="button" class="btn btn-primary" data-action="close-dialog">Zamknij pomoc</button></div>
+  </div>
+</dialog>
+
+<dialog id="dlg-settings" aria-labelledby="dlg-settings-title">
+  <div class="dlg">
+    <div class="dlg-head"><h2 id="dlg-settings-title">Ustawienia</h2></div>
+    <label class="setting"><input type="checkbox" id="set-large-text" data-setting="largeText"><span>Większy tekst<small>Powiększa wszystkie napisy w grze.</small></span></label>
+    <label class="setting"><input type="checkbox" id="set-high-contrast" data-setting="highContrast"><span>Wysoki kontrast<small>Białe tło, czarny tekst i grubsze obramowania.</small></span></label>
+    <label class="setting"><input type="checkbox" id="set-reduce-motion" data-setting="reduceMotion"><span>Ograniczenie animacji<small>Zmiany pojawiają się bez płynnego przejścia.</small></span></label>
+    <p id="settings-storage-note" class="note" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 10.5v6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="7.3" r="1.4" fill="currentColor"/></svg><span>Ustawienia działają teraz, ale przeglądarka nie pozwala ich zapamiętać na później.</span></p>
+    <div class="btn-row"><button type="button" class="btn btn-primary" data-action="close-dialog">Zamknij ustawienia</button></div>
+  </div>
+</dialog>
+
+<dialog id="dlg-pause" aria-labelledby="dlg-pause-title">
+  <div class="dlg">
+    <div class="dlg-head"><h2 id="dlg-pause-title">Przerwa</h2></div>
+    <div class="pause-art" aria-hidden="true">
+      <svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="#dcefef" stroke="#1c2430" stroke-width="3"/><path d="M40 55 q5 -6 10 0 M70 55 q5 -6 10 0" fill="none" stroke="#1c2430" stroke-width="3" stroke-linecap="round"/><path d="M45 75 q15 12 30 0" fill="none" stroke="#1c2430" stroke-width="3" stroke-linecap="round"/></svg>
+    </div>
+    <p>Możesz teraz odpocząć. Gra poczeka.</p>
+    <p>Twoje zmiany zostają zapisane w tej grze. Wrócisz do tego samego miejsca.</p>
+    <ul>
+      <li>Weź kilka spokojnych oddechów.</li>
+      <li>Rozciągnij ręce albo napij się wody.</li>
+    </ul>
+    <div class="btn-row"><button type="button" class="btn btn-primary btn-big" data-action="close-dialog">Wracam do gry</button></div>
+  </div>
+</dialog>
+
+<script>
+(function(){
+"use strict";
+
+/* =========================================================
+   1. DANE GRY (oddzielone od renderowania)
+   ========================================================= */
+var GAME_DATA = {
+  title: "Detektywi barier",
+  mainThought: "Sprawdźmy, co możemy zmienić, żeby każdy mógł uczestniczyć.",
+  note: "To uproszczone sytuacje. W prawdziwej grupie pytamy jej uczestników, co im pomaga.",
+  sceneSummaryMessage: "Te zmiany ułatwiają udział osobom z tej sceny.",
+  endMessage: "Przyjrzeliśmy się przejściu, komunikacji i zasadom. Każda z tych rzeczy może ułatwiać wspólne uczestnictwo.",
+  characterColors: { ada:"#f2c14e", olek:"#7fb3d5", lena:"#c3a6e0", maja:"#f4a582", ben:"#9ccc8c" },
+  scenes: [
+    {
+      id: "droga",
+      title: "Droga na spotkanie",
+      situation: "Za chwilę zaczyna się spotkanie w bibliotece. Sprawdźmy, czy łatwo do niej dotrzeć.",
+      characters: [
+        { id:"ada",  name:"Ada",  text:"Poruszam się na wózku. Potrzebuję wolnego przejścia." },
+        { id:"olek", name:"Olek", text:"Nie znam jeszcze szkoły. Pomagają mi duże napisy, symbole i strzałki." },
+        { id:"lena", name:"Lena", text:"Głośne dźwięki utrudniają mi spokojne przejście." }
+      ],
+      barriers: [
+        {
+          id:"droga-plecaki", label:"Plecaki", characterId:"ada",
+          description:"Na środku korytarza leżą plecaki. Zajmują drogę do biblioteki.",
+          hotspot:{ x:55, y:69 },
+          altBefore:"Plecaki leżą na środku przejścia.",
+          altAfter:"Plecaki leżą na półce obok przejścia. Droga jest wolna.",
+          applied:"Plecaki leżą na półce obok przejścia.",
+          options:[
+            { id:"droga-plecaki-polka", text:"Przenieśmy plecaki na półkę obok przejścia.", effective:true,
+              explanation:"Przejście jest wolne. Ada może samodzielnie przejechać." },
+            { id:"droga-plecaki-srodek", text:"Ułóżmy plecaki równo na środku przejścia.", effective:false,
+              explanation:"Plecaki są uporządkowane, ale nadal zajmują przejście." }
+          ]
+        },
+        {
+          id:"droga-drogowskaz", label:"Drogowskaz", characterId:"olek",
+          description:"Na ścianie wisi mały drogowskaz. Napis jest drobny i nie ma strzałki.",
+          hotspot:{ x:41, y:15 },
+          altBefore:"Na ścianie wisi mały drogowskaz z drobnym napisem.",
+          altAfter:"Na ścianie wisi duży drogowskaz: napis BIBLIOTEKA, symbol książki i strzałka w stronę drzwi.",
+          applied:"Drogowskaz ma duży napis, symbol książki i strzałkę.",
+          options:[
+            { id:"droga-drogowskaz-duzy", text:"Dodajmy duży napis, symbol książki i strzałkę.", effective:true,
+              explanation:"Olek może łatwiej rozpoznać drogę do biblioteki." },
+            { id:"droga-drogowskaz-ramka", text:"Zostawmy mały napis i dodajmy ozdobną ramkę.", effective:false,
+              explanation:"Ramka ozdabia znak, ale nie poprawia czytelności ani nie wskazuje kierunku." }
+          ]
+        },
+        {
+          id:"droga-glosnik", label:"Głośnik", characterId:"lena",
+          description:"Przy drzwiach biblioteki stoi głośnik. Gra z niego głośna muzyka.",
+          hotspot:{ x:75, y:60 },
+          altBefore:"Przy drzwiach głośnik gra głośną muzykę.",
+          altAfter:"Głośnik przy drzwiach jest wyłączony. Jest cicho.",
+          applied:"Muzyka przy wejściu jest wyłączona.",
+          options:[
+            { id:"droga-glosnik-wylacz", text:"Wyłączmy muzykę przy wejściu.", effective:true,
+              explanation:"Przy wejściu jest ciszej. Lena może spokojniej przejść." },
+            { id:"droga-glosnik-piosenka", text:"Zmieńmy piosenkę, pozostawiając tę samą głośność.", effective:false,
+              explanation:"Muzyka jest inna, ale nadal jest głośno." }
+          ]
+        }
+      ]
+    },
+    {
+      id: "tworzymy",
+      title: "Tworzymy razem",
+      situation: "Grupa przygotowuje plakat. Każda osoba chce wnieść swój pomysł.",
+      characters: [
+        { id:"olek", name:"Olek", text:"Łatwiej mi działać, gdy widzę kolejne kroki." },
+        { id:"maja", name:"Maja", text:"Chcę przekazać pomysł przez wskazanie obrazka albo zapisanie słowa." },
+        { id:"ben",  name:"Ben",  text:"Potrzebuję chwili, żeby zastanowić się nad odpowiedzią." }
+      ],
+      barriers: [
+        {
+          id:"tworzymy-instrukcja", label:"Instrukcja", characterId:"olek",
+          description:"Prowadzący mówi instrukcję tylko ustnie. Nigdzie nie widać kolejnych kroków.",
+          hotspot:{ x:5.5, y:62 },
+          altBefore:"Prowadzący mówi długą instrukcję. Nigdzie jej nie widać.",
+          altAfter:"Na tablicy są trzy kroki z symbolami: 1. pomysł, 2. rysujemy, 3. pokazujemy.",
+          applied:"Instrukcja ma trzy krótkie kroki z symbolami.",
+          options:[
+            { id:"tworzymy-instrukcja-kroki", text:"Dodajmy trzy krótkie kroki z symbolami.", effective:true,
+              explanation:"Olek może sprawdzić, co zrobić teraz i co będzie później." },
+            { id:"tworzymy-instrukcja-glosniej", text:"Powtórzmy całą instrukcję głośniej.", effective:false,
+              explanation:"Instrukcja nadal jest tylko ustna. Olek potrzebuje także widocznych kroków." }
+          ]
+        },
+        {
+          id:"tworzymy-pomysly", label:"Zgłaszanie pomysłów", characterId:"maja",
+          description:"Pomysły można zgłaszać tylko w jeden sposób: mówiąc na forum grupy.",
+          hotspot:{ x:48, y:45 },
+          altBefore:"Na ścianie wisi kartka: pomysły zgłaszamy tylko mówiąc.",
+          altAfter:"Na ścianie wisi kartka: pomysł można powiedzieć, zapisać albo wskazać. Na stole leżą karty z symbolami i karteczka do pisania.",
+          applied:"Pomysł można powiedzieć, zapisać lub wskazać symbolem.",
+          options:[
+            { id:"tworzymy-pomysly-sposoby", text:"Pozwólmy mówić, pisać lub wskazywać symbole.", effective:true,
+              explanation:"Maja może przekazać pomysł w wybrany sposób." },
+            { id:"tworzymy-pomysly-ciszej", text:"Zaproponujmy Mai, żeby powiedziała pomysł ciszej.", effective:false,
+              explanation:"To nadal wymaga mówienia. Maja chce skorzystać z obrazka albo zapisu." }
+          ]
+        },
+        {
+          id:"tworzymy-czas", label:"Czas na odpowiedź", characterId:"ben",
+          description:"Prowadzący zadaje pytanie i od razu przechodzi do kolejnej osoby.",
+          hotspot:{ x:81, y:45 },
+          altBefore:"Strzałka pokazuje, że prowadzący od razu przechodzi od Bena do kolejnej osoby.",
+          altAfter:"Przy Benie stoi karta: Chwila do namysłu. Można wrócić do pytania.",
+          applied:"Jest chwila do namysłu i można wrócić do pytania.",
+          options:[
+            { id:"tworzymy-czas-chwila", text:"Dajmy chwilę do namysłu i możliwość powrotu do pytania.", effective:true,
+              explanation:"Ben ma czas przygotować odpowiedź i może wrócić do rozmowy." },
+            { id:"tworzymy-czas-inna-osoba", text:"Od razu poprośmy inną osobę, żeby odpowiedziała za Bena.", effective:false,
+              explanation:"Szybciej otrzymamy odpowiedź, ale Ben nie zyska czasu na własny udział." }
+          ]
+        }
+      ]
+    },
+    {
+      id: "zabawa",
+      title: "Zabawa otwarta dla wszystkich",
+      situation: "Klasa przygotowuje zabawę z zagadkami i gestami. Przyjrzyjmy się jej zasadom.",
+      characters: [
+        { id:"ada",  name:"Ada",  text:"Chcę brać udział w zabawie na siedząco." },
+        { id:"ben",  name:"Ben",  text:"Lubię próbować ponownie. Potrzebuję czasu na wykonanie zadania." },
+        { id:"olek", name:"Olek", text:"Chcę wiedzieć wcześniej, kiedy zmieniają się zasady." }
+      ],
+      barriers: [
+        {
+          id:"zabawa-pozycja", label:"Pozycja podczas zabawy", characterId:"ada",
+          description:"Zasada zabawy brzmi: „Wszyscy wykonują gesty na stojąco”.",
+          hotspot:{ x:19.25, y:6.5 },
+          altBefore:"Karta z zasadą: wszyscy wykonują gesty na stojąco. Ada nie wykonuje gestów.",
+          altAfter:"Karta z zasadą: gesty na siedząco lub stojąco. Ada wykonuje gesty na siedząco, inni na stojąco.",
+          applied:"Gesty można wykonywać na siedząco lub stojąco.",
+          options:[
+            { id:"zabawa-pozycja-obie", text:"Pozwólmy wykonywać gesty na siedząco lub stojąco.", effective:true,
+              explanation:"Ada może uczestniczyć w tej samej zabawie na siedząco." },
+            { id:"zabawa-pozycja-ogladanie", text:"Przygotujmy dla Ady miejsce do oglądania zabawy.", effective:false,
+              explanation:"Ada ma miejsce do obserwowania, ale chce sama uczestniczyć." }
+          ]
+        },
+        {
+          id:"zabawa-runda", label:"Zasada rundy", characterId:"ben",
+          description:"Zasada rundy brzmi: „Najwolniejsza osoba odpada”.",
+          hotspot:{ x:50, y:6.5 },
+          altBefore:"Karta z zasadą: najwolniejsza osoba odpada.",
+          altAfter:"Karta z zasadą: gramy bez odpadania, można spróbować ponownie.",
+          applied:"Gramy bez odpadania, z możliwością ponownej próby.",
+          options:[
+            { id:"zabawa-runda-ponownie", text:"Zagrajmy bez odpadania, z możliwością ponownej próby.", effective:true,
+              explanation:"Ben może wykonać zadanie we własnym tempie i nadal uczestniczyć." },
+            { id:"zabawa-runda-nagroda", text:"Zostawmy odpadanie i nagradzajmy najszybszą osobę.", effective:false,
+              explanation:"Nagroda nie usuwa zasady, przez którą Ben może stracić możliwość dalszej zabawy." }
+          ]
+        },
+        {
+          id:"zabawa-zmiana", label:"Zmiana zasad", characterId:"olek",
+          description:"W czasie zabawy zasady zmieniają się nagle, bez zapowiedzi.",
+          hotspot:{ x:80.75, y:6.5 },
+          altBefore:"Karta ze znakiem zapytania: zasady zmieniają się bez zapowiedzi.",
+          altAfter:"Karta z zapowiedzią: w następnej rundzie gesty w parach.",
+          applied:"Zmiana zasad jest zapowiedziana i pokazana na karcie.",
+          options:[
+            { id:"zabawa-zmiana-zapowiedz", text:"Zapowiedzmy zmianę i pokażmy nową zasadę na karcie.", effective:true,
+              explanation:"Olek może przygotować się do zmiany i sprawdzić nową zasadę." },
+            { id:"zabawa-zmiana-po-rundzie", text:"Wyjaśnijmy zmianę dopiero po zakończeniu rundy.", effective:false,
+              explanation:"Wyjaśnienie pojawia się za późno. Olek potrzebuje go przed rozpoczęciem nowej rundy." }
+          ]
+        }
+      ]
+    }
+  ],
+  reflection: {
+    question: "Na co chcesz zwracać uwagę w swojej klasie?",
+    options: [
+      { id:"refl-przejscie", text:"Czy przejście jest wolne" },
+      { id:"refl-instrukcja", text:"Czy instrukcja jest czytelna" },
+      { id:"refl-sposoby", text:"Czy można odpowiedzieć na różne sposoby" },
+      { id:"refl-czas", text:"Czy każdy ma czas na udział" },
+      { id:"refl-zasady", text:"Czy zasady pozwalają uczestniczyć" }
+    ]
+  }
+};
+
+/* =========================================================
+   2. WALIDACJA DANYCH
+   ========================================================= */
+function isNonEmptyString(v){ return typeof v === "string" && v.trim().length > 0; }
+
+function validateData(data, illustrations){
+  var errors = [];
+  function err(m){ errors.push(m); }
+  if (data === null || typeof data !== "object"){ return ["Brak danych gry (otrzymano: " + (data === null ? "null" : typeof data) + ")."]; }
+  ["title","mainThought","note","sceneSummaryMessage","endMessage"].forEach(function(k){
+    if (!isNonEmptyString(data[k])) err("Brakuje tekstu „" + k + "”.");
+  });
+  var ids = {};
+  function claim(id, where){
+    if (!isNonEmptyString(id)){ err(where + ": brak identyfikatora."); return; }
+    if (ids[id]) err(where + ": identyfikator „" + id + "” powtarza się.");
+    ids[id] = true;
+  }
+  if (!Array.isArray(data.scenes)){ err("Pole „scenes” musi być tablicą."); }
+  else {
+    if (data.scenes.length !== 3) err("Gra potrzebuje dokładnie 3 scen (jest " + data.scenes.length + ").");
+    data.scenes.forEach(function(scene, si){
+      var where = "Scena " + (si+1);
+      if (scene === null || typeof scene !== "object"){ err(where + ": element jest pusty (null) lub nie jest obiektem."); return; }
+      claim(scene.id, where);
+      if (!isNonEmptyString(scene.title)) err(where + ": brak tytułu.");
+      if (!isNonEmptyString(scene.situation)) err(where + ": brak opisu sytuacji.");
+      var charIds = new Set();   // unikalne w obrębie sceny; te same postacie mogą wracać w innych scenach
+      if (!Array.isArray(scene.characters)) err(where + ": pole „characters” musi być tablicą.");
+      else {
+        if (scene.characters.length !== 3) err(where + ": potrzebne są 3 postacie (jest " + scene.characters.length + ").");
+        scene.characters.forEach(function(c, ci){
+          var w = where + ", postać " + (ci+1);
+          if (c === null || typeof c !== "object"){ err(w + ": element jest pusty (null)."); return; }
+          if (!isNonEmptyString(c.id)) err(w + ": brak identyfikatora.");
+          else if (charIds.has(c.id)) err(w + ": identyfikator postaci „" + c.id + "” powtarza się w tej scenie.");
+          else charIds.add(c.id);
+          if (!isNonEmptyString(c.name)) err(w + ": brak imienia.");
+          if (!isNonEmptyString(c.text)) err(w + ": brak wypowiedzi.");
+        });
+      }
+      if (!Array.isArray(scene.barriers)) err(where + ": pole „barriers” musi być tablicą.");
+      else {
+        if (scene.barriers.length !== 3) err(where + ": potrzebne są 3 bariery (jest " + scene.barriers.length + ").");
+        scene.barriers.forEach(function(b, bi){
+          var w = where + ", bariera " + (bi+1);
+          if (b === null || typeof b !== "object"){ err(w + ": element jest pusty (null)."); return; }
+          claim(b.id, w);
+          ["label","description","altBefore","altAfter","applied"].forEach(function(k){ if (!isNonEmptyString(b[k])) err(w + ": brak pola „" + k + "”."); });
+          var wb = w + (isNonEmptyString(b.id) ? " („" + b.id + "”)" : "");
+          if (!isNonEmptyString(b.characterId) || !charIds.has(b.characterId)) err(wb + ": „characterId” nie wskazuje postaci z tej sceny.");
+          if (b.hotspot === null || typeof b.hotspot !== "object") err(wb + ": brak pola „hotspot” ze współrzędnymi x i y.");
+          else ["x","y"].forEach(function(axis){
+            var v = b.hotspot[axis];
+            if (typeof v !== "number" || !Number.isFinite(v) || v < 0 || v > 100)
+              err(wb + ": współrzędna hotspot." + axis + " musi być skończoną liczbą od 0 do 100 (jest: " + (typeof v === "number" ? String(v) : (v === null ? "null" : typeof v === "string" ? "tekst „" + v + "”" : typeof v)) + ").");
+          });
+          if (illustrations){
+            var ill = illustrations[scene.id];
+            if (!ill || typeof ill.base !== "function") err(where + ": brak ilustracji dla sceny „" + scene.id + "”.");
+            else if (!ill.barriers || !ill.barriers[b.id] || typeof ill.barriers[b.id].before !== "function" || typeof ill.barriers[b.id].after !== "function")
+              err(w + ": brak ilustracji stanu przed i po zmianie.");
+          }
+          if (!Array.isArray(b.options)) { err(w + ": pole „options” musi być tablicą."); return; }
+          if (b.options.length !== 2) err(w + ": potrzebne są 2 propozycje (jest " + b.options.length + ").");
+          var eff = 0;
+          b.options.forEach(function(o, oi){
+            var wo = w + ", propozycja " + (oi+1);
+            if (o === null || typeof o !== "object"){ err(wo + ": element jest pusty (null)."); return; }
+            claim(o.id, wo);
+            if (!isNonEmptyString(o.text)) err(wo + ": brak treści.");
+            if (!isNonEmptyString(o.explanation)) err(wo + ": brak wyjaśnienia.");
+            if (typeof o.effective !== "boolean") err(wo + ": pole „effective” musi mieć wartość true lub false.");
+            else if (o.effective) eff++;
+          });
+          if (eff !== 1) err(w + ": dokładnie jedna propozycja musi być skuteczna (jest " + eff + ").");
+        });
+      }
+    });
+  }
+  if (!data.reflection || typeof data.reflection !== "object") err("Brak sekcji „reflection”.");
+  else {
+    if (!isNonEmptyString(data.reflection.question)) err("Refleksja: brak pytania.");
+    if (!Array.isArray(data.reflection.options) || data.reflection.options.length === 0) err("Refleksja: pole „options” musi być niepustą tablicą.");
+    else data.reflection.options.forEach(function(o, i){
+      if (o === null || typeof o !== "object"){ err("Refleksja, odpowiedź " + (i+1) + ": element jest pusty (null)."); return; }
+      claim(o.id, "Refleksja, odpowiedź " + (i+1));
+      if (!isNonEmptyString(o.text)) err("Refleksja, odpowiedź " + (i+1) + ": brak treści.");
+    });
+  }
+  return errors;
+}
+
+/* =========================================================
+   3. ILUSTRACJE SVG (renderowanie)
+   ========================================================= */
+function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+function T(x,y,txt,o){ o=o||{}; return '<text x="'+x+'" y="'+y+'" font-size="'+(o.size||20)+'" font-weight="'+(o.weight||700)+'" text-anchor="'+(o.anchor||"middle")+'" fill="'+(o.fill||"#1c2430")+'">'+esc(txt)+'</text>'; }
+function nameTag(x,y,name){ var w = name.length*12+26; return '<rect x="'+(x-w/2)+'" y="'+y+'" width="'+w+'" height="30" rx="9" fill="#ffffff" class="ol"/>'+T(x,y+22,name,{size:19,weight:800}); }
+function face(cx,cy){ return '<circle cx="'+(cx-8)+'" cy="'+(cy-2)+'" r="2.6" fill="#1c2430"/><circle cx="'+(cx+8)+'" cy="'+(cy-2)+'" r="2.6" fill="#1c2430"/><path d="M'+(cx-7)+' '+(cy+8)+' q7 6 14 0" fill="none" stroke="#1c2430" stroke-width="2.4" stroke-linecap="round"/>'; }
+function hair(cx,cy,color){ return '<path d="M'+(cx-24)+' '+(cy-2)+' a24 24 0 0 1 48 0 q-10 -10 -24 -8 q-14 -2 -24 8z" fill="'+color+'"/>'; }
+function standing(x,feet,o){
+  var head = feet-162, shirt=o.shirt, armsUp=!!o.armsUp, s="";
+  s += '<rect x="'+(x-22)+'" y="'+(feet-64)+'" width="19" height="64" rx="6" fill="#3d4a5c"/><rect x="'+(x+3)+'" y="'+(feet-64)+'" width="19" height="64" rx="6" fill="#3d4a5c"/>';
+  if (armsUp) s += '<path d="M'+(x-22)+' '+(feet-122)+' L'+(x-46)+' '+(feet-182)+' M'+(x+22)+' '+(feet-122)+' L'+(x+46)+' '+(feet-182)+'" stroke="'+shirt+'" stroke-width="13" stroke-linecap="round"/>';
+  else s += '<path d="M'+(x-24)+' '+(feet-120)+' L'+(x-34)+' '+(feet-72)+' M'+(x+24)+' '+(feet-120)+' L'+(x+34)+' '+(feet-72)+'" stroke="'+shirt+'" stroke-width="13" stroke-linecap="round"/>';
+  if (o.point) s += '<path d="M'+(x+22)+' '+(feet-120)+' L'+(x+70)+' '+(feet-130)+'" stroke="'+shirt+'" stroke-width="13" stroke-linecap="round"/>';
+  s += '<rect x="'+(x-27)+'" y="'+(feet-134)+'" width="54" height="76" rx="16" fill="'+shirt+'" class="ol"/>';
+  s += '<circle cx="'+x+'" cy="'+head+'" r="25" fill="'+(o.skin||"#e7b48f")+'" class="ol"/>'+hair(x,head,o.hair||"#4a3423")+face(x,head);
+  if (o.name) s += nameTag(x, feet+8, o.name);
+  return s;
+}
+function wheelchair(x,feet,o){
+  var shirt=o.shirt, s="";
+  s += '<path d="M'+(x-34)+' '+(feet-150)+' L'+(x-30)+' '+(feet-72)+' L'+(x+34)+' '+(feet-72)+'" fill="none" stroke="#45505e" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>';
+  s += '<path d="M'+(x-34)+' '+(feet-150)+' l-14 -4" stroke="#45505e" stroke-width="7" stroke-linecap="round"/>';
+  s += '<rect x="'+(x-28)+'" y="'+(feet-150)+'" width="48" height="82" rx="15" fill="'+shirt+'" class="ol"/>';
+  s += '<rect x="'+(x-6)+'" y="'+(feet-86)+'" width="54" height="19" rx="8" fill="#3d4a5c"/><rect x="'+(x+30)+'" y="'+(feet-86)+'" width="17" height="64" rx="7" fill="#3d4a5c"/>';
+  s += '<path d="M'+(x+26)+' '+(feet-18)+' L'+(x+58)+' '+(feet-18)+'" stroke="#45505e" stroke-width="6" stroke-linecap="round"/>';
+  s += '<circle cx="'+(x-8)+'" cy="'+(feet-38)+'" r="38" fill="none" stroke="#2f3946" stroke-width="7"/><circle cx="'+(x-8)+'" cy="'+(feet-38)+'" r="5" fill="#2f3946"/>';
+  s += '<path d="M'+(x-8)+' '+(feet-74)+' V'+(feet-2)+' M'+(x-44)+' '+(feet-38)+' H'+(x+28)+'" stroke="#2f3946" stroke-width="2.5"/>';
+  s += '<circle cx="'+(x+50)+'" cy="'+(feet-9)+'" r="9" fill="#ffffff" stroke="#2f3946" stroke-width="5"/>';
+  if (o.armsUp) s += '<path d="M'+(x-18)+' '+(feet-140)+' L'+(x-40)+' '+(feet-196)+' M'+(x+12)+' '+(feet-140)+' L'+(x+34)+' '+(feet-198)+'" stroke="'+shirt+'" stroke-width="13" stroke-linecap="round"/>';
+  else s += '<path d="M'+(x+10)+' '+(feet-138)+' L'+(x+30)+' '+(feet-96)+'" stroke="'+shirt+'" stroke-width="13" stroke-linecap="round"/>';
+  var head=feet-176;
+  s += '<circle cx="'+(x-4)+'" cy="'+head+'" r="25" fill="'+(o.skin||"#e7b48f")+'" class="ol"/>'+hair(x-4,head,o.hair||"#2b1d14")+face(x-4,head);
+  if (o.name) s += nameTag(x, feet+8, o.name);
+  return s;
+}
+function backpack(x,y,c){ return '<g><rect x="'+(x-21)+'" y="'+(y-28)+'" width="42" height="50" rx="11" fill="'+c+'" class="ol"/><rect x="'+(x-21)+'" y="'+(y-28)+'" width="42" height="17" rx="9" fill="rgba(0,0,0,.18)"/><rect x="'+(x-12)+'" y="'+(y+2)+'" width="24" height="12" rx="4" fill="rgba(255,255,255,.35)"/><path d="M'+(x-9)+' '+(y-28)+' q9 -12 18 0" fill="none" stroke="#26303c" stroke-width="3"/></g>'; }
+function checkBadge(x,y,label){
+  var w = label.length*10.5+56;
+  return '<g><rect x="'+(x-w/2)+'" y="'+(y-18)+'" width="'+w+'" height="36" rx="18" fill="#e5f3e8" stroke="#24603a" stroke-width="3"/><circle cx="'+(x-w/2+20)+'" cy="'+y+'" r="11" fill="#24603a"/><path d="M'+(x-w/2+14)+' '+y+' l4 4 l8 -9" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>'+T(x+12,y+6,label,{size:17,weight:800,fill:"#1d4d2f"})+'</g>';
+}
+function card(x,y,w,h,fill){ return '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="12" fill="'+(fill||"#ffffff")+'" stroke="#26303c" stroke-width="3"/>'; }
+function bookIcon(x,y,s){ s=s||1; return '<g transform="translate('+x+' '+y+') scale('+s+')"><path d="M0 4 q14 -6 26 0 v34 q-12 -6 -26 0z" fill="#7fb3d5" stroke="#1c2430" stroke-width="2.5"/><path d="M26 4 q12 -6 26 0 v34 q-14 -6 -26 0z" fill="#a9cde3" stroke="#1c2430" stroke-width="2.5"/></g>'; }
+function arrowRight(x,y,len,c){ return '<path d="M'+x+' '+y+' H'+(x+len)+'" stroke="'+c+'" stroke-width="10" stroke-linecap="round"/><path d="M'+(x+len-16)+' '+(y-18)+' L'+(x+len+6)+' '+y+' L'+(x+len-16)+' '+(y+18)+'" fill="none" stroke="'+c+'" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>'; }
+
+var C = GAME_DATA.characterColors;
+var ILLUSTRATIONS = {
+  droga: {
+    base: function(){
+      var s = '<rect class="wall" x="0" y="0" width="800" height="300"/><rect class="floor" x="0" y="300" width="800" height="180"/>';
+      s += '<path class="floorline" d="M0 300 H800 M0 360 H800 M0 420 H800"/><rect x="0" y="292" width="800" height="10" fill="#cbbd9f"/>';
+      // windows / lockers on wall
+      s += '<rect x="20" y="50" width="70" height="230" rx="4" fill="#c9d8e0" class="ol"/><rect x="95" y="50" width="70" height="230" rx="4" fill="#c9d8e0" class="ol"/>';
+      // library door
+      s += '<rect x="640" y="90" width="130" height="210" rx="6" fill="#9a6b43" class="ol"/><rect x="652" y="102" width="106" height="80" rx="4" fill="#cfe3ea" class="ol"/><circle cx="752" cy="210" r="7" fill="#f2d16b" class="ol"/>';
+      // route
+      s += '<path d="M150 450 C 320 450, 520 420, 690 318" fill="none" stroke="#6b7685" stroke-width="4" stroke-dasharray="10 12"/>';
+      s += standing(250, 420, {name:"Lena", shirt:C.lena, hair:"#7a4b2a"});
+      s += standing(165, 438, {name:"Olek", shirt:C.olek, hair:"#2a1f17"});
+      s += wheelchair(70, 440, {name:"Ada", shirt:C.ada, hair:"#5b3a21"});
+      return s;
+    },
+    barriers: {
+      "droga-plecaki": {
+        before: function(){ return backpack(390,402,"#e07a5f")+backpack(440,428,"#3d8eb9")+backpack(490,398,"#81b29a")+backpack(535,425,"#c77dbe"); },
+        after: function(){
+          var s = '<rect x="330" y="232" width="230" height="10" rx="3" fill="#6f4a2c"/><rect x="340" y="242" width="10" height="56" fill="#6f4a2c"/><rect x="540" y="242" width="10" height="56" fill="#6f4a2c"/>';
+          s += backpack(365,206,"#e07a5f")+backpack(415,206,"#3d8eb9")+backpack(465,206,"#81b29a")+backpack(515,206,"#c77dbe");
+          s += checkBadge(470,420,"Wolne przejście");
+          return s;
+        }
+      },
+      "droga-drogowskaz": {
+        before: function(){ return '<rect x="400" y="104" width="62" height="28" rx="3" fill="#ffffff" stroke="#9aa3ad" stroke-width="2"/>'+T(431,123,"bibl.",{size:11,weight:400,fill:"#8a929b"}); },
+        after: function(){
+          var s = card(370,30,250,108,"#ffffff");
+          s += bookIcon(384,50,1.1);
+          s += T(538,74,"BIBLIOTEKA",{size:24,weight:900});
+          s += arrowRight(450,110,140,"#1d6670");
+          return s;
+        }
+      },
+      "droga-glosnik": {
+        before: function(){
+          var s = '<rect x="574" y="160" width="52" height="84" rx="8" fill="#3b4552" class="ol"/><circle cx="600" cy="186" r="11" fill="#9aa3ad"/><circle cx="600" cy="222" r="16" fill="#9aa3ad"/>';
+          s += '<path d="M548 190 q-14 18 0 36 M532 178 q-24 30 0 60 M516 166 q-34 42 0 84" fill="none" stroke="#1c2430" stroke-width="5" stroke-linecap="round"/>';
+          s += T(500,168,"♪",{size:34}) + T(520,272,"♫",{size:34});
+          return s;
+        },
+        after: function(){
+          var s = '<rect x="574" y="160" width="52" height="84" rx="8" fill="#3b4552" class="ol"/><circle cx="600" cy="186" r="11" fill="#9aa3ad"/><circle cx="600" cy="222" r="16" fill="#9aa3ad"/>';
+          s += '<circle cx="540" cy="200" r="22" fill="#ffffff" stroke="#1c2430" stroke-width="4"/>'+T(540,211,"♪",{size:28})+'<path d="M524 184 L556 216" stroke="#1c2430" stroke-width="5" stroke-linecap="round"/>';
+          s += checkBadge(705,350,"Cisza");
+          return s;
+        }
+      }
+    }
+  },
+  tworzymy: {
+    base: function(){
+      var s = '<rect class="wall" x="0" y="0" width="800" height="310"/><rect class="floor" x="0" y="310" width="800" height="170"/><path class="floorline" d="M0 310 H800"/>';
+      s += standing(320, 372, {name:"Olek", shirt:C.olek, hair:"#2a1f17"});
+      s += standing(450, 372, {name:"Maja", shirt:C.maja, hair:"#1e1410"});
+      s += standing(580, 372, {name:"Ben",  shirt:C.ben,  hair:"#6b4a2f"});
+      s += standing(712, 372, {shirt:"#d9d0c1", hair:"#3c2b1e"}) + nameTag(712,380,"Inna osoba");
+      // table in front
+      s += '<rect x="240" y="300" width="420" height="26" rx="6" fill="#9a6b43" class="ol"/><rect x="262" y="326" width="16" height="120" fill="#6f4a2c"/><rect x="622" y="326" width="16" height="120" fill="#6f4a2c"/>';
+      s += '<rect x="330" y="286" width="210" height="18" rx="3" fill="#fffdf4" class="ol"/>';
+      s += standing(110, 440, {name:"Prowadzący", shirt:"#8da0b8", hair:"#5a5a5a"});
+      return s;
+    },
+    barriers: {
+      "tworzymy-instrukcja": {
+        before: function(){
+          var s = '<path d="M20 30 h220 a14 14 0 0 1 14 14 v86 a14 14 0 0 1 -14 14 h-96 l-20 26 l-4 -26 h-100 a14 14 0 0 1 -14 -14 v-86 a14 14 0 0 1 14 -14z" fill="#ffffff" stroke="#26303c" stroke-width="3"/>';
+          s += '<path d="M40 62 q12 -10 24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 M40 92 q12 -10 24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 M40 122 q12 -10 24 0 t24 0 t24 0 t24 0" fill="none" stroke="#5a6573" stroke-width="3"/>';
+          return s;
+        },
+        after: function(){
+          var s = card(14,14,250,140,"#f7fbff");
+          var rows = [["1","Pomysł"],["2","Rysujemy"],["3","Pokazujemy"]];
+          rows.forEach(function(r,i){
+            var y = 44 + i*42;
+            s += '<circle cx="42" cy="'+y+'" r="16" fill="#1d6670"/>'+T(42,y+7,r[0],{size:20,weight:900,fill:"#fff"});
+            if (i===0) s += '<circle cx="82" cy="'+(y-2)+'" r="11" fill="#f2d16b" stroke="#1c2430" stroke-width="2.5"/><rect x="77" y="'+(y+8)+'" width="10" height="7" fill="#1c2430"/>';
+            if (i===1) s += '<path d="M72 '+(y+12)+' L92 '+(y-12)+' L98 '+(y-6)+' L78 '+(y+16)+'z" fill="#e07a5f" stroke="#1c2430" stroke-width="2.5"/>';
+            if (i===2) s += '<rect x="70" y="'+(y-13)+'" width="28" height="22" fill="#fffdf4" stroke="#1c2430" stroke-width="2.5"/><path d="M84 '+(y+9)+' v8" stroke="#1c2430" stroke-width="2.5"/>';
+            s += T(110,y+7,r[1],{size:21,weight:800,anchor:"start"});
+          });
+          s += checkBadge(140,178,"Trzy kroki");
+          return s;
+        }
+      },
+      "tworzymy-pomysly": {
+        before: function(){
+          var s = card(318,28,250,92,"#ffffff");
+          s += '<path d="M340 52 h40 a8 8 0 0 1 8 8 v22 a8 8 0 0 1 -8 8 h-24 l-10 10 v-10 h-6 a8 8 0 0 1 -8 -8 v-22 a8 8 0 0 1 8 -8z" fill="#f4a582" stroke="#1c2430" stroke-width="2.5"/>';
+          s += T(402,68,"Pomysły:",{size:19,anchor:"start"})+T(402,94,"tylko mówimy",{size:19,anchor:"start",weight:600});
+          return s;
+        },
+        after: function(){
+          var s = card(296,14,300,124,"#ffffff");
+          s += T(446,40,"Pomysł możesz:",{size:19});
+          s += '<path d="M338 62 h34 a7 7 0 0 1 7 7 v18 a7 7 0 0 1 -7 7 h-20 l-9 9 v-9 h-5 a7 7 0 0 1 -7 -7 v-18 a7 7 0 0 1 7 -7z" fill="#f4a582" stroke="#1c2430" stroke-width="2.5"/>'+T(356,126,"powiedzieć",{size:15});
+          s += '<path d="M430 98 L456 62 L464 68 L438 104 L428 108z" fill="#f2d16b" stroke="#1c2430" stroke-width="2.5"/>'+T(446,126,"zapisać",{size:15});
+          s += '<rect x="532" y="60" width="38" height="38" rx="6" fill="#9ccc8c" stroke="#1c2430" stroke-width="2.5"/><circle cx="551" cy="76" r="8" fill="#fff" stroke="#1c2430" stroke-width="2"/><path d="M540 92 h22" stroke="#1c2430" stroke-width="2.5"/>'+T(551,126,"wskazać",{size:15});
+          // symbol cards and sticky note on table
+          s += '<rect x="400" y="262" width="30" height="30" rx="4" fill="#9ccc8c" class="ol"/><rect x="436" y="262" width="30" height="30" rx="4" fill="#7fb3d5" class="ol"/><rect x="472" y="262" width="30" height="30" rx="4" fill="#f2d16b" class="ol"/>';
+          s += '<rect x="510" y="258" width="40" height="36" fill="#fff6a8" class="ol"/><path d="M516 270 h28 M516 282 h20" stroke="#1c2430" stroke-width="2.5"/>';
+          s += checkBadge(440,162,"Różne sposoby");
+          return s;
+        }
+      },
+      "tworzymy-czas": {
+        before: function(){
+          var s = arrowRight(600,96,100,"#45505e");
+          s += '<path d="M600 72 h40 M612 120 h40" stroke="#45505e" stroke-width="4" stroke-linecap="round"/>';
+          s += card(560,20,210,40,"#ffffff")+T(665,48,"Następna osoba!",{size:19});
+          return s;
+        },
+        after: function(){
+          var s = card(612,14,180,130,"#fffbe9");
+          s += '<path d="M630 34 h28 M630 82 h28 M634 34 q0 18 10 24 q-10 6 -10 24 M654 34 q0 18 -10 24 q10 6 10 24" fill="none" stroke="#1c2430" stroke-width="3" stroke-linecap="round"/><path d="M638 76 h12 l-6 -8z" fill="#c9a14a"/>';
+          s += T(724,48,"Chwila",{size:19,weight:900})+T(724,72,"do namysłu",{size:19,weight:900});
+          s += '<path d="M640 116 a12 12 0 1 1 12 12" fill="none" stroke="#1d6670" stroke-width="4" stroke-linecap="round"/><path d="M636 108 l4 10 l9 -5" fill="none" stroke="#1d6670" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
+          s += T(668,114,"Można wrócić",{size:15,anchor:"start",weight:700})+T(668,134,"do pytania",{size:15,anchor:"start",weight:700});
+          s += checkBadge(700,166,"Czas");
+          return s;
+        }
+      }
+    }
+  },
+  zabawa: {
+    base: function(){
+      var s = '<rect class="wall" x="0" y="0" width="800" height="300"/><rect class="floor" x="0" y="300" width="800" height="180"/><path class="floorline" d="M0 300 H800"/>';
+      s += '<rect x="22" y="10" width="756" height="182" rx="10" fill="#b9c7a5" class="ol"/>';
+      s += '<ellipse cx="400" cy="440" rx="330" ry="26" fill="#cbbd9f"/>';
+      s += standing(330, 432, {name:"Ben", shirt:C.ben, hair:"#6b4a2f", armsUp:true});
+      s += standing(470, 432, {name:"Olek", shirt:C.olek, hair:"#2a1f17", armsUp:true});
+      s += standing(610, 432, {shirt:"#d9d0c1", hair:"#3c2b1e", armsUp:true});
+      return s;
+    },
+    barriers: {
+      "zabawa-pozycja": {
+        before: function(){
+          var s = '<g transform="translate(0 20)">'+card(36,26,236,142,"#ffffff");
+          s += '<circle cx="66" cy="62" r="10" fill="#1c2430"/><rect x="58" y="74" width="16" height="30" rx="5" fill="#1c2430"/><path d="M60 104 v28 M72 104 v28" stroke="#1c2430" stroke-width="6"/>';
+          s += T(96,72,"Gesty:",{size:19,anchor:"start"})+T(96,98,"wszyscy",{size:19,anchor:"start",weight:600})+T(96,124,"na stojąco",{size:19,anchor:"start",weight:600})+'</g>';
+          s += wheelchair(160, 440, {name:"Ada", shirt:C.ada, hair:"#5b3a21"});
+          return s;
+        },
+        after: function(){
+          var s = '<g transform="translate(0 20)">'+card(36,26,236,142,"#ffffff");
+          s += '<circle cx="60" cy="58" r="9" fill="#1c2430"/><rect x="53" y="69" width="14" height="26" rx="4" fill="#1c2430"/><path d="M55 95 v24 M65 95 v24" stroke="#1c2430" stroke-width="5"/>';
+          s += '<circle cx="92" cy="72" r="9" fill="#1c2430"/><rect x="85" y="83" width="14" height="22" rx="4" fill="#1c2430"/><path d="M90 105 h16 v16" fill="none" stroke="#1c2430" stroke-width="5"/><circle cx="92" cy="114" r="10" fill="none" stroke="#1c2430" stroke-width="3"/>';
+          s += T(118,66,"Gesty:",{size:19,anchor:"start"})+T(118,92,"na siedząco",{size:19,anchor:"start",weight:600})+T(118,118,"lub stojąco",{size:19,anchor:"start",weight:600})+'</g>';
+          s += wheelchair(160, 440, {name:"Ada", shirt:C.ada, hair:"#5b3a21", armsUp:true});
+          s += checkBadge(154,218,"Każdy uczestniczy");
+          return s;
+        }
+      },
+      "zabawa-runda": {
+        before: function(){
+          var s = '<g transform="translate(0 20)">'+card(282,26,236,142,"#ffffff");
+          s += '<rect x="298" y="56" width="34" height="56" rx="3" fill="#9a6b43" stroke="#1c2430" stroke-width="2.5"/><path d="M336 84 h22 M350 76 l10 8 l-10 8" fill="none" stroke="#1c2430" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
+          s += T(370,72,"Najwolniejsza",{size:18,anchor:"start"})+T(370,98,"osoba",{size:18,anchor:"start"})+T(370,124,"odpada",{size:18,anchor:"start"})+'</g>';
+          return s;
+        },
+        after: function(){
+          var s = '<g transform="translate(0 20)">'+card(282,26,236,142,"#ffffff");
+          s += '<path d="M302 86 a22 22 0 1 1 22 22" fill="none" stroke="#1d6670" stroke-width="6" stroke-linecap="round"/><path d="M294 74 l8 14 l13 -8" fill="none" stroke="#1d6670" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>';
+          s += T(360,66,"Bez odpadania.",{size:18,anchor:"start"})+T(360,92,"Możesz",{size:18,anchor:"start",weight:600})+T(360,118,"spróbować",{size:18,anchor:"start",weight:600})+T(360,144,"ponownie",{size:18,anchor:"start",weight:600})+'</g>';
+          s += checkBadge(400,218,"Ponowna próba");
+          return s;
+        }
+      },
+      "zabawa-zmiana": {
+        before: function(){
+          var s = '<g transform="translate(0 20)"><g transform="rotate(-6 646 98)">'+card(540,34,212,128,"#ffffff");
+          s += T(600,118,"?",{size:64,weight:900})+T(690,92,"Nowa",{size:19})+T(690,118,"zasada",{size:19})+T(690,144,"teraz!",{size:19});
+          s += '</g></g>';
+          return s;
+        },
+        after: function(){
+          var s = '<g transform="translate(0 20)">'+card(528,26,236,142,"#fffbe9");
+          s += '<path d="M552 92 q0 -26 18 -30 q18 4 18 30 l6 8 h-48z" fill="#f2d16b" stroke="#1c2430" stroke-width="2.5"/><circle cx="570" cy="106" r="5" fill="#1c2430"/>';
+          s += T(604,62,"Zapowiedź:",{size:18,anchor:"start"})+T(604,88,"w następnej",{size:17,anchor:"start",weight:600})+T(604,112,"rundzie gesty",{size:17,anchor:"start",weight:600})+T(604,136,"w parach",{size:17,anchor:"start",weight:600})+'</g>';
+          s += checkBadge(646,218,"Zapowiedź");
+          return s;
+        }
+      }
+    }
+  }
+};
+
+/* =========================================================
+   4. IKONY UI
+   ========================================================= */
+var ICON = {
+  check: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="11" fill="currentColor"/><path d="M6.5 12.5l3.5 3.5 7.5-8" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  search: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10" cy="10" r="6.5" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M15 15l6 6" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>',
+  info: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 10.5v6" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><circle cx="12" cy="7.3" r="1.5" fill="currentColor"/></svg>',
+  back: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14.5 5.5L8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  next: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9.5 5.5L16 12l-6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  idea: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3a6 6 0 0 0-3.5 10.9V16h7v-2.1A6 6 0 0 0 12 3z" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M9.5 19h5M10.5 21.5h3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>',
+  dot: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>'
+};
+
+/* =========================================================
+   5. USTAWIENIA (localStorage z bezpiecznym zapasem)
+   ========================================================= */
+var SETTINGS_KEY = "detektywi-barier-ustawienia";
+var settings = { largeText:false, highContrast:false, reduceMotion:false };
+var storageOk = true;
+function loadSettings(){
+  try {
+    var raw = window.localStorage.getItem(SETTINGS_KEY);
+    if (raw){ var p = JSON.parse(raw); if (p && typeof p === "object") Object.keys(settings).forEach(function(k){ if (typeof p[k] === "boolean") settings[k] = p[k]; }); }
+  } catch(e){ storageOk = false; }
+  // Wspólne ustawienia zestawu mają pierwszeństwo (w tej grze pole nazywa się reduceMotion)
+  var shared = window.KMM && KMM.read();
+  if (shared){
+    if (typeof shared.largeText === "boolean") settings.largeText = shared.largeText;
+    if (typeof shared.highContrast === "boolean") settings.highContrast = shared.highContrast;
+    if (typeof shared.reducedMotion === "boolean") settings.reduceMotion = shared.reducedMotion;
+  }
+}
+function saveSettings(){
+  try { window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }
+  catch(e){ storageOk = false; }
+  if (window.KMM) KMM.write({ largeText: settings.largeText, highContrast: settings.highContrast, reducedMotion: settings.reduceMotion });
+  var note = document.getElementById("settings-storage-note");
+  if (note) note.hidden = storageOk;
+}
+function applySettings(){
+  var h = document.documentElement;
+  h.classList.toggle("large-text", settings.largeText);
+  h.classList.toggle("high-contrast", settings.highContrast);
+  h.classList.toggle("reduce-motion", settings.reduceMotion);
+  document.querySelectorAll("[data-setting]").forEach(function(inp){ inp.checked = !!settings[inp.getAttribute("data-setting")]; });
+}
+
+/* =========================================================
+   6. STAN GRY
+   ========================================================= */
+var DATA = GAME_DATA;
+var state = null;
+var gameCounter = 0;
+var choiceLocked = false;   // blokada szybkiego wielokrotnego wyboru
+var navLocked = false;      // blokada wielokrotnego przejścia dalej
+var lastOpener = null;
+
+function newGameState(){
+  gameCounter++;
+  var solved = {};
+  DATA.scenes.forEach(function(s){ solved[s.id] = {}; });
+  return {
+    gameId: gameCounter,
+    screen: "start",
+    sceneIndex: 0,
+    solved: solved,          // solved[sceneId][barrierId] = optionId
+    order: {},               // order[barrierId] = [optionId, optionId]
+    tried: {},               // tried[barrierId][optionId] = true
+    openBarrierId: null,
+    justSolved: null,
+    reflection: {}
+  };
+}
+function currentScene(){ return DATA.scenes[state.sceneIndex]; }
+function findBarrier(scene, id){ for (var i=0;i<scene.barriers.length;i++) if (scene.barriers[i].id === id) return scene.barriers[i]; return null; }
+function findOption(barrier, id){ for (var i=0;i<barrier.options.length;i++) if (barrier.options[i].id === id) return barrier.options[i]; return null; }
+function solvedCount(scene){ return Object.keys(state.solved[scene.id]).length; }
+function isSolved(scene, bId){ return Object.prototype.hasOwnProperty.call(state.solved[scene.id], bId); }
+function charById(scene, id){ for (var i=0;i<scene.characters.length;i++) if (scene.characters[i].id===id) return scene.characters[i]; return null; }
+function shuffle2(arr){
+  var a = arr.slice(), r = 0.5;
+  try { var u = new Uint32Array(1); window.crypto.getRandomValues(u); r = u[0] / 4294967296; } catch(e){ r = Math.random(); }
+  return r < 0.5 ? a : a.reverse();
+}
+function getOrder(barrier){
+  if (!state.order[barrier.id]) state.order[barrier.id] = shuffle2(barrier.options.map(function(o){ return o.id; }));
+  return state.order[barrier.id];
+}
+
+/* =========================================================
+   7. RENDEROWANIE EKRANÓW
+   ========================================================= */
+var app, announcer;
+function announce(msg){
+  announcer.textContent = "";
+  window.setTimeout(function(){ announcer.textContent = msg; }, 60);
+}
+function focusEl(el){ if (!el) return; if (!el.hasAttribute("tabindex") && !/^(BUTTON|INPUT|A|SELECT|TEXTAREA)$/.test(el.tagName)) el.setAttribute("tabindex","-1"); try { el.focus({preventScroll:false}); } catch(e){ el.focus(); } }
+
+function renderShell(){
+  app.innerHTML =
+    '<section class="screen" id="screen-start" aria-labelledby="start-title" hidden></section>' +
+    '<section class="screen" id="screen-scene" aria-labelledby="scene-title" hidden></section>' +
+    '<section class="screen" id="screen-end" aria-labelledby="end-title" hidden></section>';
+}
+
+function showScreen(name){
+  ["start","scene","end"].forEach(function(n){ document.getElementById("screen-"+n).hidden = (n !== name); });
+  state.screen = name;
+  window.scrollTo(0,0);
+}
+
+function renderStart(){
+  var el = document.getElementById("screen-start");
+  el.innerHTML =
+    '<div class="start">' +
+      '<div class="card">' +
+        '<p class="eyebrow">Część 6 zestawu o włączeniu i dobrostanie</p>' +
+        '<h1 id="start-title" tabindex="-1">' + esc(DATA.title) + '</h1>' +
+        '<p class="lead">' + esc(DATA.mainThought) + '</p>' +
+        '<p>Poznasz trzy szkolne sytuacje. W każdej znajdziesz trzy rzeczy, które utrudniają udział. Wybierzesz zmianę, która pomaga.</p>' +
+        '<div class="btn-row"><button type="button" class="btn btn-primary btn-big" data-action="start">' + 'Rozpocznij' + ICON.next + '</button></div>' +
+      '</div>' +
+      '<div class="card">' +
+        '<h2>Jak gramy?</h2>' +
+        '<ol class="steps"><li>Przeczytaj sytuację i posłuchaj postaci.</li><li>Obejrzyj ilustrację i wybierz element.</li><li>Wybierz zmianę i sprawdź, co się stanie.</li></ol>' +
+        '<ul class="rules"><li>Nie ma limitu czasu ani punktów.</li><li>Możesz próbować wiele razy.</li><li>Możesz grać samodzielnie albo we dwoje przy jednym ekranie. Porozmawiajcie i wybierzcie razem.</li></ul>' +
+        '<p class="note">' + ICON.info + '<span>' + esc(DATA.note) + '</span></p>' +
+      '</div>' +
+    '</div>';
+}
+
+function renderScene(){
+  var scene = currentScene(), el = document.getElementById("screen-scene");
+  var ill = ILLUSTRATIONS[scene.id];
+  var svg = '<svg class="scene-svg" viewBox="0 0 800 480" role="img" aria-labelledby="ill-title ill-desc" xmlns="http://www.w3.org/2000/svg">' +
+    '<title id="ill-title">Ilustracja: ' + esc(scene.title) + '</title><desc id="ill-desc"></desc>' + ill.base();
+  scene.barriers.forEach(function(b){
+    svg += '<g class="ill-before" data-barrier="' + b.id + '">' + ill.barriers[b.id].before() + '</g>';
+    svg += '<g class="ill-after is-hidden" data-barrier="' + b.id + '">' + ill.barriers[b.id].after() + '</g>';
+  });
+  svg += '</svg>';
+
+  var hotspots = scene.barriers.map(function(b, i){
+    return '<button type="button" class="hotspot" data-action="open-barrier" data-game="' + state.gameId + '" data-scene="' + scene.id + '" data-barrier="' + b.id + '" style="left:' + b.hotspot.x + '%;top:' + b.hotspot.y + '%"></button>';
+  }).join("");
+
+  var chars = scene.characters.map(function(c){
+    var color = (DATA.characterColors && DATA.characterColors[c.id]) || "#dddddd";
+    return '<li class="char"><span class="avatar" aria-hidden="true" style="background:' + color + '">' + esc(c.name.charAt(0)) + '</span><span><span class="char-name">' + esc(c.name) + '</span><q>' + esc(c.text) + '</q></span></li>';
+  }).join("");
+
+  var list = scene.barriers.map(function(b, i){
+    return '<li><button type="button" class="btn barrier-item" data-action="open-barrier" data-game="' + state.gameId + '" data-scene="' + scene.id + '" data-barrier="' + b.id + '"></button></li>';
+  }).join("");
+
+  el.innerHTML =
+    '<div class="scene-head">' +
+      '<p class="eyebrow">Scena ' + (state.sceneIndex+1) + ' z ' + DATA.scenes.length + '</p>' +
+      '<h1 id="scene-title" tabindex="-1">' + esc(scene.title) + '</h1>' +
+      '<p class="lead">' + esc(scene.situation) + '</p>' +
+    '</div>' +
+    '<section aria-labelledby="chars-title"><h2 id="chars-title">Co mówią osoby w tej scenie?</h2><ul class="characters">' + chars + '</ul></section>' +
+    '<div class="progress"><p class="progress-text" id="progress-text"></p><ul class="dots" id="progress-dots" aria-hidden="true"></ul></div>' +
+    '<div class="scene-grid">' +
+      '<figure><div class="ill-box">' + svg + hotspots + '</div><figcaption>Wybierz numer na ilustracji albo element z listy. Lupa oznacza element do sprawdzenia, znak ✓ – element zmieniony.</figcaption></figure>' +
+      '<div>' +
+        '<section class="card panel" id="overview-panel" aria-labelledby="list-title">' +
+          '<h2 id="list-title">Elementy do zbadania</h2>' +
+          '<ul class="barrier-list" id="barrier-list">' + list + '</ul>' +
+          '<div class="card completion" id="completion" hidden></div>' +
+        '</section>' +
+        '<section class="card panel" id="detail-panel" aria-labelledby="detail-title" hidden></section>' +
+      '</div>' +
+    '</div>';
+  updateSceneStatus();
+}
+
+function updateSceneStatus(){
+  var scene = currentScene();
+  var n = solvedCount(scene), total = scene.barriers.length;
+  document.getElementById("progress-text").textContent = "Wprowadzone zmiany: " + n + " z " + total;
+  var dots = "";
+  for (var i=0;i<total;i++) dots += '<li class="' + (i<n?"done":"") + '">' + (i<n?ICON.check:ICON.dot) + '</li>';
+  document.getElementById("progress-dots").innerHTML = dots;
+
+  var descParts = [];
+  scene.barriers.forEach(function(b, i){
+    var solved = isSolved(scene, b.id);
+    document.querySelectorAll('#screen-scene .ill-before[data-barrier="' + b.id + '"]').forEach(function(g){ g.classList.toggle("is-hidden", solved); });
+    document.querySelectorAll('#screen-scene .ill-after[data-barrier="' + b.id + '"]').forEach(function(g){ g.classList.toggle("is-hidden", !solved); });
+    descParts.push(solved ? b.altAfter : b.altBefore);
+    var open = state.openBarrierId === b.id;
+    document.querySelectorAll('#screen-scene .hotspot[data-barrier="' + b.id + '"]').forEach(function(h){
+      h.innerHTML = (solved ? ICON.check : ICON.search) + '<span class="hs-num" aria-hidden="true">' + (i+1) + '</span>';
+      h.setAttribute("aria-label", (i+1) + ". " + b.label + " – na ilustracji" + (solved ? ", zmienione" : ", do sprawdzenia"));
+      h.classList.toggle("is-solved", solved);
+      h.classList.toggle("is-open", open);
+      if (open) h.setAttribute("aria-current","true"); else h.removeAttribute("aria-current");
+    });
+    document.querySelectorAll('#barrier-list .barrier-item[data-barrier="' + b.id + '"]').forEach(function(btn){
+      btn.innerHTML = '<span class="bi-main">' + (solved ? ICON.check : ICON.search) + '<span>' + (i+1) + '. ' + esc(b.label) + '</span></span>' +
+        (solved ? '<span class="badge solved">' + ICON.check + 'Zmienione</span>' : '<span class="badge">Do sprawdzenia</span>');
+    });
+  });
+  var desc = document.getElementById("ill-desc");
+  if (desc) desc.textContent = descParts.join(" ");
+
+  var completion = document.getElementById("completion");
+  var list = document.getElementById("barrier-list");
+  if (n === total){
+    var isLast = state.sceneIndex === DATA.scenes.length - 1;
+    completion.innerHTML =
+      '<h2 id="completion-title" tabindex="-1">' + ICON.check + 'Scena ukończona</h2>' +
+      '<p><strong>Wprowadzone zmiany:</strong></p>' +
+      '<ul class="change-list">' + scene.barriers.map(function(b){ return '<li>' + ICON.check + '<span>' + esc(b.applied) + '</span></li>'; }).join("") + '</ul>' +
+      '<p class="lead">' + esc(DATA.sceneSummaryMessage) + '</p>' +
+      '<div class="btn-row"><button type="button" class="btn btn-primary btn-big" data-action="next-scene" data-game="' + state.gameId + '" data-scene="' + scene.id + '">' +
+        (isLast ? "Przejdź do zakończenia" : "Następna scena") + ICON.next + '</button></div>';
+    completion.hidden = false;
+  } else {
+    completion.innerHTML = "";
+    completion.hidden = true;
+  }
+  list.hidden = false;
+}
+
+function renderDetail(opts){
+  opts = opts || {};
+  var scene = currentScene(), b = findBarrier(scene, state.openBarrierId);
+  var panel = document.getElementById("detail-panel");
+  if (!b){ panel.hidden = true; panel.innerHTML = ""; return; }
+  var ch = charById(scene, b.characterId);
+  var solvedOptId = state.solved[scene.id][b.id];
+  var html = '<p class="eyebrow">Element ' + (scene.barriers.indexOf(b)+1) + ' z ' + scene.barriers.length + '</p>' +
+    '<h2 id="detail-title" tabindex="-1">' + esc(b.label) + '</h2>' +
+    '<p>' + esc(b.description) + '</p>' +
+    '<p class="need"><strong>' + esc(ch.name) + ' mówi:</strong> „' + esc(ch.text.replace(/\.$/,"")) + '”.</p>';
+  if (solvedOptId){
+    var o = findOption(b, solvedOptId);
+    html += '<div class="feedback ok" id="feedback"><h3>' + ICON.check + (state.justSolved === b.id ? "Zmiana wprowadzona" : "Zmienione") + '</h3>' +
+      '<p class="applied">Zastosowana zmiana: ' + esc(o.text) + '</p><p>' + esc(o.explanation) + '</p></div>';
+  } else {
+    var order = getOrder(b);
+    html += '<h3 id="choose-title">Co możemy zmienić?</h3><div class="options" role="group" aria-labelledby="choose-title">' +
+      order.map(function(oid){
+        var o = findOption(b, oid);
+        var tried = state.tried[b.id] && state.tried[b.id][oid];
+        return '<button type="button" class="btn option" data-action="choose" data-game="' + state.gameId + '" data-scene="' + scene.id + '" data-barrier="' + b.id + '" data-option="' + o.id + '"' + (tried ? ' data-tried="true"' : '') + '>' + ICON.idea + '<span>' + esc(o.text) + '</span></button>';
+      }).join("") + '</div>' +
+      '<div id="feedback" hidden></div>';
+  }
+  html += '<div class="btn-row"><button type="button" class="btn" data-action="back-to-scene" id="back-btn">' + ICON.back + 'Wróć do sceny</button></div>';
+  panel.innerHTML = html;
+  panel.hidden = false;
+  document.getElementById("overview-panel").hidden = true;
+}
+
+function renderEnd(){
+  var el = document.getElementById("screen-end");
+  var opts = DATA.reflection.options.map(function(o){
+    return '<label class="check"><input type="checkbox" data-action="reflect" data-reflection="' + o.id + '"' + (state.reflection[o.id] ? " checked" : "") + '><span>' + esc(o.text) + '</span></label>';
+  }).join("");
+  var changes = DATA.scenes.map(function(s){
+    return '<h3>' + esc(s.title) + '</h3><ul class="change-list">' + s.barriers.map(function(b){ return '<li>' + ICON.check + '<span>' + esc(b.applied) + '</span></li>'; }).join("") + '</ul>';
+  }).join("");
+  el.innerHTML =
+    '<div class="card" style="margin-bottom:1.25rem">' +
+      '<p class="eyebrow">Zakończenie</p>' +
+      '<h1 id="end-title" tabindex="-1">Śledztwo zakończone</h1>' +
+      '<p class="lead">' + esc(DATA.endMessage) + '</p>' +
+      '<p class="note">' + ICON.info + '<span>' + esc(DATA.note) + '</span></p>' +
+    '</div>' +
+    '<div class="end-grid">' +
+      '<section class="card scene-changes" aria-labelledby="changes-title"><h2 id="changes-title">Wprowadzone zmiany</h2>' + changes + '</section>' +
+      '<section class="card" aria-labelledby="refl-title"><h2 id="refl-title">Refleksja (dobrowolna)</h2>' +
+        '<p>Możesz zaznaczyć kilka odpowiedzi albo żadnej. Możecie też porozmawiać o nich w parze.</p>' +
+        '<fieldset><legend>' + esc(DATA.reflection.question) + '</legend>' + opts + '</fieldset>' +
+        '<div class="btn-row"><button type="button" class="btn btn-primary" data-action="restart">Zagraj ponownie</button><button type="button" class="btn" data-action="home">Ekran startowy</button></div>' +
+      '</section>' +
+    '</div>';
+}
+
+/* =========================================================
+   8. AKCJE
+   ========================================================= */
+function startGame(){
+  state = newGameState();
+  state.sceneIndex = 0;
+  showScreen("scene");
+  renderScene();
+  focusEl(document.getElementById("scene-title"));
+}
+function goHome(){
+  state = newGameState();
+  renderStart();
+  showScreen("start");
+  focusEl(document.getElementById("start-title"));
+}
+function isCurrent(btn){
+  if (!state || state.screen !== "scene") return false;
+  var scene = currentScene();
+  return btn.getAttribute("data-game") === String(state.gameId) && btn.getAttribute("data-scene") === scene.id && btn.isConnected;
+}
+function openBarrier(btn){
+  if (!isCurrent(btn)) return;
+  var scene = currentScene(), b = findBarrier(scene, btn.getAttribute("data-barrier"));
+  if (!b) return;
+  lastOpener = btn;
+  state.openBarrierId = b.id;
+  state.justSolved = null;
+  renderDetail();
+  updateSceneStatus();
+  focusEl(document.getElementById("detail-title"));
+}
+function backToScene(){
+  if (state.screen !== "scene") return;
+  var scene = currentScene();
+  var openedId = state.openBarrierId;
+  state.openBarrierId = null;
+  state.justSolved = null;
+  var panel = document.getElementById("detail-panel");
+  panel.hidden = true; panel.innerHTML = "";
+  document.getElementById("overview-panel").hidden = false;
+  updateSceneStatus();
+  if (solvedCount(scene) === scene.barriers.length){ focusEl(document.getElementById("completion-title")); return; }
+  var target = null;
+  if (lastOpener && lastOpener.isConnected && !lastOpener.closest("[hidden]")) target = lastOpener;
+  if (!target && openedId) target = document.querySelector('#barrier-list [data-barrier="' + openedId + '"]');
+  focusEl(target || document.getElementById("list-title"));
+}
+function choose(btn){
+  if (choiceLocked) return;
+  if (!isCurrent(btn)) return;
+  var scene = currentScene();
+  var bId = btn.getAttribute("data-barrier"), oId = btn.getAttribute("data-option");
+  if (bId !== state.openBarrierId) return;                      // nieaktualna bariera
+  var b = findBarrier(scene, bId); if (!b) return;
+  var o = findOption(b, oId); if (!o) return;                   // odpowiedź z innej bariery
+  if (isSolved(scene, b.id)) return;                            // już rozwiązana
+  choiceLocked = true;
+  window.setTimeout(function(){ choiceLocked = false; }, 250);
+  if (!state.tried[b.id]) state.tried[b.id] = {};
+  state.tried[b.id][o.id] = true;
+  if (o.effective){
+    state.solved[scene.id][b.id] = o.id;
+    state.justSolved = b.id;
+    renderDetail();
+    updateSceneStatus();
+    var n = solvedCount(scene), total = scene.barriers.length;
+    announce("Zmiana wprowadzona. " + o.explanation + " Wprowadzone zmiany: " + n + " z " + total + "." + (n === total ? " Wszystkie zmiany w tej scenie są gotowe. Wróć do sceny, aby przejść dalej." : ""));
+    focusEl(document.getElementById("back-btn"));
+  } else {
+    btn.setAttribute("data-tried","true");
+    var fb = document.getElementById("feedback");
+    fb.className = "feedback info";
+    fb.innerHTML = '<h3>' + ICON.info + 'Ta propozycja jeszcze nie wystarcza</h3><p>' + esc(o.explanation) + '</p><p>Możesz wybrać inną propozycję.</p>';
+    fb.hidden = false;
+    announce("Ta propozycja jeszcze nie wystarcza. " + o.explanation + " Możesz wybrać inną propozycję.");
+  }
+}
+function nextScene(btn){
+  if (!isCurrent(btn)) return;
+  var scene = currentScene();
+  if (solvedCount(scene) !== scene.barriers.length) return;   // scena nieukończona
+  if (navLocked) return;
+  navLocked = true; window.setTimeout(function(){ navLocked = false; }, 350);
+  state.openBarrierId = null; lastOpener = null;
+  if (state.sceneIndex < DATA.scenes.length - 1){
+    state.sceneIndex++;
+    showScreen("scene");
+    renderScene();
+    focusEl(document.getElementById("scene-title"));
+  } else {
+    var allDone = DATA.scenes.every(function(s){ return Object.keys(state.solved[s.id]).length === s.barriers.length; });
+    if (!allDone) return;
+    renderEnd();
+    showScreen("end");
+    focusEl(document.getElementById("end-title"));
+  }
+}
+
+/* dialogs */
+var dialogReturn = {};
+function openDialog(id, opener){
+  var d = document.getElementById(id);
+  if (!d || d.open) return;
+  dialogReturn[id] = opener || document.activeElement;
+  if (typeof d.showModal === "function") d.showModal(); else d.setAttribute("open","");
+  var first = d.querySelector("h2");
+  focusEl(first);
+}
+function closeDialog(d){
+  if (!d) return;
+  if (typeof d.close === "function" && d.open) d.close(); else { d.removeAttribute("open"); onDialogClosed(d); }
+}
+function onDialogClosed(d){
+  var ret = dialogReturn[d.id];
+  dialogReturn[d.id] = null;
+  var ae = document.activeElement;
+  if (ae && ae !== document.body && !d.contains(ae)) return;   // fokus jest już w innym miejscu gry
+  if (ret && ret.isConnected && !ret.closest("[hidden]")) focusEl(ret);
+  else {
+    var h = document.querySelector(".screen:not([hidden]) h1");
+    focusEl(h);
+  }
+}
+
+/* =========================================================
+   9. INICJALIZACJA
+   ========================================================= */
+function showFatal(errors){
+  app.innerHTML = '<div class="error-box" role="alert"><h1 tabindex="-1" id="fatal-title">Nie można uruchomić gry</h1><p>Dane gry zawierają błędy. Popraw je i otwórz plik ponownie.</p><ul>' +
+    errors.map(function(e){ return '<li>' + esc(e) + '</li>'; }).join("") + '</ul></div>';
+  focusEl(document.getElementById("fatal-title"));
+}
+
+function init(){
+  app = document.getElementById("app");
+  announcer = document.getElementById("announcer");
+  loadSettings();
+  applySettings();
+  if (window.KMM) KMM.onChange(function(){ loadSettings(); applySettings(); });
+  var note = document.getElementById("settings-storage-note");
+  if (note) note.hidden = storageOk;
+
+  // Dialog listeners (działają także, gdy dane są błędne)
+  document.querySelectorAll("dialog").forEach(function(d){
+    d.addEventListener("close", function(){ onDialogClosed(d); });
+    d.addEventListener("click", function(e){ if (e.target === d) closeDialog(d); });
+  });
+  document.querySelectorAll("[data-setting]").forEach(function(inp){
+    inp.addEventListener("change", function(){
+      var k = inp.getAttribute("data-setting");
+      settings[k] = inp.checked;
+      applySettings();
+      saveSettings();
+      var names = { largeText:"Większy tekst", highContrast:"Wysoki kontrast", reduceMotion:"Ograniczenie animacji" };
+      announce(names[k] + ": " + (inp.checked ? "włączone" : "wyłączone") + ".");
+    });
+  });
+
+  var errors;
+  try { errors = validateData(DATA, ILLUSTRATIONS); }
+  catch(e){ errors = ["Nieoczekiwany błąd podczas sprawdzania danych: " + (e && e.message ? e.message : e)]; }
+  if (errors.length){ showFatal(errors); return; }
+
+  state = newGameState();
+  renderShell();
+  renderStart();
+  showScreen("start");
+
+  document.addEventListener("click", function(e){
+    var btn = e.target.closest ? e.target.closest("[data-action]") : null;
+    if (!btn) return;
+    var a = btn.getAttribute("data-action");
+    switch(a){
+      case "start": startGame(); break;
+      case "open-barrier": openBarrier(btn); break;
+      case "choose": choose(btn); break;
+      case "back-to-scene": backToScene(); break;
+      case "next-scene": nextScene(btn); break;
+      case "restart": startGame(); break;
+      case "home": goHome(); break;
+      case "open-dialog": openDialog(btn.getAttribute("data-dialog"), btn); break;
+      case "close-dialog": closeDialog(btn.closest("dialog")); break;
+    }
+  });
+  document.addEventListener("change", function(e){
+    var t = e.target;
+    if (t && t.getAttribute && t.getAttribute("data-action") === "reflect" && state.screen === "end"){
+      var id = t.getAttribute("data-reflection");
+      if (t.checked) state.reflection[id] = true; else delete state.reflection[id];
+    }
+  });
+  document.addEventListener("keydown", function(e){
+    if (e.key === "Escape" && state && state.screen === "scene" && state.openBarrierId && !document.querySelector("dialog[open]")){
+      backToScene();
+    }
+  });
+}
+
+// Interfejs diagnostyczny (tylko do odczytu) – przydatny przy sprawdzaniu danych.
+window.DetektywiBarier = Object.freeze({
+  validateData: function(d){ return validateData(d, ILLUSTRATIONS); },
+  snapshot: function(){
+    if (!state) return null;
+    return JSON.parse(JSON.stringify({ screen:state.screen, sceneIndex:state.sceneIndex, solved:state.solved, order:state.order, openBarrierId:state.openBarrierId, reflection:state.reflection }));
+  }
+});
+
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
+})();
+</script>
+</body>
+</html>

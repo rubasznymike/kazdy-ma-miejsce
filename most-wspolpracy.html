@@ -1,0 +1,1790 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Most współpracy — gra dla dwóch osób: jedna zna kolory, druga kształty. Razem budujecie pięć mostów. Część zestawu „Każdy ma miejsce”.">
+<meta name="author" content="Michał Siwkowski">
+<meta name="color-scheme" content="light">
+<title>Most współpracy</title>
+<style>
+/* =========================================================
+   STYL GRAFICZNY
+   ========================================================= */
+:root{
+  --bg:#f3f6fa;
+  --surface:#ffffff;
+  --surface-2:#eef3f9;
+  --text:#16202e;
+  --muted:#3f4b60;
+  --border:#c3cedc;
+  --border-strong:#7d8ca3;
+  --primary:#1d5aa8;
+  --primary-hover:#164a8c;
+  --primary-text:#ffffff;
+  --selected-bg:#e5efff;
+  --ok:#17663a;
+  --ok-bg:#e2f3e7;
+  --check:#7f4500;
+  --check-bg:#fff0d9;
+  --focus:#0b57d0;
+  --pA:#0d6e66;
+  --pA-bg:#ddf2ef;
+  --pB:#9a2f63;
+  --pB-bg:#f8e2ed;
+  --together:#1d5aa8;
+  --together-bg:#e5efff;
+  --comm-bg:#fff7de;
+  --comm-border:#d9a92e;
+  --shape-stroke:#16202e;
+  --deck-wood-dark:#8a6f4f;
+  --shadow:0 2px 10px rgba(22,40,70,.08);
+  font-size:18px;
+}
+html.large-text{font-size:22px}
+html.high-contrast{
+  --bg:#ffffff;
+  --surface:#ffffff;
+  --surface-2:#ffffff;
+  --text:#000000;
+  --muted:#000000;
+  --border:#000000;
+  --border-strong:#000000;
+  --primary:#002f6c;
+  --primary-hover:#001d45;
+  --selected-bg:#fff3a6;
+  --ok:#00451c;
+  --ok-bg:#ffffff;
+  --check:#4d2400;
+  --check-bg:#ffffff;
+  --focus:#000000;
+  --pA:#00453f;
+  --pA-bg:#ffffff;
+  --pB:#5c0c35;
+  --pB-bg:#ffffff;
+  --together:#002f6c;
+  --together-bg:#fff3a6;
+  --comm-bg:#ffffff;
+  --comm-border:#000000;
+  --shape-stroke:#000000;
+  --deck-wood-dark:#000000;
+  --shadow:none;
+}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+html,body{margin:0}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  font-size:1rem;
+  line-height:1.5;
+  -webkit-text-size-adjust:100%;
+}
+h1,h2,h3{line-height:1.2;margin:0 0 .5rem}
+p{margin:0 0 .6rem}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+:focus{outline:none}
+:focus-visible{outline:4px solid var(--focus);outline-offset:3px;border-radius:10px}
+html.high-contrast :focus-visible{outline:5px solid #000;box-shadow:0 0 0 9px #ffd400}
+[tabindex="-1"]:focus-visible{outline-offset:6px}
+.icon{width:1.3em;height:1.3em;flex:0 0 auto;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- Przyciski ---------- */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
+  min-height:48px;min-width:48px;
+  padding:.55rem 1.1rem;
+  border:2px solid var(--border-strong);
+  border-radius:12px;
+  background:var(--surface);
+  color:var(--text);
+  font:inherit;font-weight:600;line-height:1.25;
+  cursor:pointer;text-align:center;
+  transition:background-color .15s, border-color .15s;
+}
+.btn:hover:not(:disabled){background:var(--surface-2)}
+.btn:disabled{cursor:not-allowed;opacity:.55}
+html.high-contrast .btn:disabled{opacity:1;border-style:dashed;color:#555}
+.btn-primary{background:var(--primary);border-color:var(--primary);color:var(--primary-text)}
+.btn-primary:hover:not(:disabled){background:var(--primary-hover);border-color:var(--primary-hover)}
+html.high-contrast .btn-primary:disabled{background:#fff;color:#555}
+.btn-large{min-height:56px;padding:.7rem 1.4rem;font-size:1.1rem}
+.btn-small{padding:.4rem .85rem}
+.btn-row{display:flex;flex-wrap:wrap;gap:.75rem;justify-content:center}
+
+/* ---------- Ekrany ---------- */
+.screen{padding:1rem}
+.center-card{
+  max-width:820px;margin:1rem auto;
+  background:var(--surface);border:2px solid var(--border);border-radius:24px;
+  box-shadow:var(--shadow);padding:1.5rem;text-align:center;
+}
+html.high-contrast .center-card{border-width:3px}
+.start-title{font-size:2.4rem;margin-top:.75rem}
+.motto{font-size:1.3rem;font-weight:700;color:var(--primary);margin-bottom:.9rem}
+.lead{font-size:1.1rem;max-width:36rem;margin:0 auto 1.25rem}
+.eyebrow{font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-size:.9rem;margin-bottom:.25rem}
+.big-question{font-size:1.5rem;font-weight:700;margin:1rem auto;max-width:32rem}
+.illus{max-width:560px;margin:0 auto 1rem}
+.illus svg{display:block;width:100%;height:auto;border-radius:14px}
+.error-card{max-width:760px;margin:2rem auto;background:#fff0f0;border:3px solid #a40000;color:#4a0000;border-radius:18px;padding:1.4rem}
+.error-card ul{margin:.5rem 0 1rem;padding-left:1.3rem}
+
+/* ---------- Górny pasek ---------- */
+.topbar{background:var(--surface);border-bottom:2px solid var(--border)}
+.topbar-inner{max-width:1240px;margin:0 auto;padding:.6rem 1rem;display:flex;flex-wrap:wrap;align-items:center;gap:.6rem 1rem}
+.brand{display:flex;align-items:center;gap:.45rem;font-weight:800;font-size:1.15rem;margin:0;color:var(--primary)}
+.brand .icon{width:1.6em;height:1.6em}
+.pill{margin:0;padding:.35rem .8rem;border-radius:999px;background:var(--surface-2);border:2px solid var(--border);font-weight:700}
+.topbar-actions{display:flex;flex-wrap:wrap;gap:.5rem;margin-left:auto}
+
+/* ---------- Układ gry ---------- */
+.game-layout{
+  max-width:1240px;margin:0 auto;
+  display:grid;gap:1rem;
+  grid-template-columns:minmax(0,1fr) 14rem;
+  align-items:start;
+}
+.game-main{display:grid;gap:1rem;min-width:0}
+.panel{background:var(--surface);border:2px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:1rem}
+html.high-contrast .panel{border-width:3px}
+.round-title{font-size:1.25rem}
+
+/* ---------- Krajobraz (niski, dekoracyjny) ---------- */
+.landscape{margin-bottom:.6rem;border-radius:14px;overflow:hidden;background:#cfe6f7}
+.landscape svg{display:block;width:100%;height:min(150px,26vw)}
+.chars{transition:transform 4.5s ease-in-out}
+.chars.crossed{transform:translateX(420px)}
+.chars.crossed .figure{animation:step .45s ease-in-out 10 alternate}
+@keyframes step{from{transform:translateY(0)}to{transform:translateY(-3px)}}
+html.reduce-motion .chars,html.reduce-motion .figure{transition:none !important;animation:none !important}
+
+/* ---------- Plansza ---------- */
+.deck{
+  background:repeating-linear-gradient(90deg,rgba(0,0,0,0) 0 22px,rgba(90,60,30,.10) 22px 24px),linear-gradient(#d2b892,#b8976d);
+  border:3px solid var(--deck-wood-dark);border-radius:16px;padding:.55rem;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.35),0 3px 0 #7d6243;
+}
+html.high-contrast .deck{background:#fff;box-shadow:none}
+.slots{list-style:none;margin:0;padding:0;display:grid;gap:.5rem;grid-template-columns:repeat(2,minmax(0,1fr))}
+.slot-item{display:flex}
+.slot{
+  width:100%;min-height:7.4rem;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:.3rem;
+  padding:.45rem .3rem .55rem;
+  background:linear-gradient(#ffffff,#f6f8fb);
+  border:3px solid var(--border-strong);border-radius:12px;
+  box-shadow:0 3px 0 rgba(60,40,20,.25);
+  color:var(--text);font:inherit;cursor:pointer;
+}
+html.high-contrast .slot{background:#fff;box-shadow:none}
+.slot:hover:not(:disabled){background:var(--surface-2)}
+.slot:disabled{cursor:default}
+.slot.selected{border-color:var(--primary);border-width:4px;background:var(--selected-bg);box-shadow:0 3px 0 rgba(29,90,168,.45)}
+html.high-contrast .slot.selected{border-width:6px}
+.slot-top{display:flex;align-items:center;justify-content:center;gap:.35rem;flex-wrap:wrap;min-height:1.7rem}
+.slot-num{display:inline-flex;align-items:center;justify-content:center;width:1.7rem;height:1.7rem;border-radius:50%;background:var(--surface-2);border:2px solid var(--border-strong);font-weight:800}
+.slot.selected .slot-num{background:var(--primary);border-color:var(--primary);color:#fff}
+.slot-tag{font-size:.9rem;font-weight:800;color:var(--primary)}
+.slot-shape svg{width:2.6rem;height:2.6rem;display:block}
+.slot-label{font-size:.9rem;font-weight:700;line-height:1.25;text-align:center}
+.slot-label span{display:block}
+.slot-label.empty{color:var(--muted);font-weight:600}
+/* jedna kolumna (wąski ekran, duży tekst): zwarte poziome płytki */
+.slots.single .slot{flex-direction:row;flex-wrap:wrap;min-height:0;justify-content:flex-start;gap:.3rem .8rem;padding:.5rem .8rem;text-align:left}
+.slots.single .slot-label{text-align:left}
+.slots.single .slot-label span{display:inline}
+.slots.single .slot-shape svg{width:2.2rem;height:2.2rem}
+.badge{display:inline-flex;align-items:center;gap:.25rem;font-size:.9rem;font-weight:800;line-height:1.2;padding:.15rem .4rem;border-radius:8px;border:2px solid;text-align:center}
+.badge .icon{width:1.1em;height:1.1em}
+.badge.ok{color:var(--ok);background:var(--ok-bg);border-color:var(--ok)}
+.badge.check{color:var(--check);background:var(--check-bg);border-color:var(--check)}
+
+/* ---------- Panel ruchu ---------- */
+.move-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.6rem 1rem;margin-bottom:.6rem}
+.move-title{font-size:1.45rem;margin:0}
+.stage-bar{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;align-items:stretch;gap:.35rem}
+.stage{display:flex;flex-direction:column;justify-content:center;overflow-wrap:break-word;padding:.3rem .7rem;border:2px solid var(--border);border-radius:12px;background:var(--surface);min-width:6.5rem}
+.stage-name{font-weight:700}
+.stage-who{font-size:.9rem;color:var(--muted)}
+.stage-now{display:none;font-size:.9rem;font-weight:800}
+.stage[aria-current="step"]{border-width:3px}
+.stage[aria-current="step"] .stage-now{display:block}
+.stage[data-stage="color"][aria-current="step"]{border-color:var(--pA);background:var(--pA-bg);color:var(--pA)}
+.stage[data-stage="shape"][aria-current="step"]{border-color:var(--pB);background:var(--pB-bg);color:var(--pB)}
+.stage[data-stage="confirm"][aria-current="step"]{border-color:var(--together);background:var(--together-bg);color:var(--together)}
+.stage[aria-current="step"] .stage-who{color:inherit}
+.stage.done .stage-name::after{content:" ✓"}
+.stage-arrow{display:flex;align-items:center;font-weight:800;color:var(--muted)}
+.stage-text{font-size:1.25rem;font-weight:800;margin:.2rem 0}
+.stage-subtext{color:var(--muted);margin:0 0 .5rem}
+.edit-bar{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .9rem;margin:.4rem 0 .6rem;padding:.5rem .75rem;background:var(--surface-2);border-radius:12px;border:2px solid var(--border)}
+.edit-note{margin:0;flex:1 1 16rem}
+.note{margin:.4rem 0 .6rem;padding:.5rem .75rem;background:var(--surface-2);border-radius:10px;border:2px solid var(--border)}
+
+.hint-zone{margin:.6rem 0}
+.hint-tools{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:.5rem}
+.hint-toggle{border-width:3px}
+.hint-toggle[data-player="A"]{border-color:var(--pA);color:var(--pA)}
+.hint-toggle[data-player="B"]{border-color:var(--pB);color:var(--pB)}
+.hint-toggle[aria-expanded="true"][data-player="A"]{background:var(--pA-bg)}
+.hint-toggle[aria-expanded="true"][data-player="B"]{background:var(--pB-bg)}
+.hint-cards{display:grid;gap:.6rem;grid-template-columns:repeat(auto-fit,minmax(min(15rem,100%),1fr))}
+.hint-card{padding:.7rem .8rem;border-radius:14px;border:3px solid;border-left-width:10px}
+.hint-card[data-player="A"]{border-color:var(--pA);background:var(--pA-bg)}
+.hint-card[data-player="B"]{border-color:var(--pB);background:var(--pB-bg)}
+.hint-card h3{font-size:1rem;margin-bottom:.4rem}
+.hint-current{display:flex;align-items:center;gap:.7rem;font-size:1.3rem;font-weight:800;margin:0 0 .5rem}
+.hint-current .swatch{width:2rem;height:2rem}
+.hint-current svg{width:2.2rem;height:2.2rem;display:block;flex:0 0 auto}
+.hint-list{list-style:none;margin:0 0 .5rem;padding:0;display:grid;gap:.3rem}
+.hint-list li{display:flex;align-items:center;gap:.55rem;padding:.2rem .45rem;border-radius:10px;border:2px solid transparent;background:rgba(255,255,255,.7)}
+.hint-list li.current{border-color:var(--text);font-weight:800;background:#fff}
+.hint-list .swatch{width:1.4rem;height:1.4rem}
+.hint-list svg{width:1.5rem;height:1.5rem;display:block;flex:0 0 auto}
+.hint-list .now{margin-left:auto;font-size:.9rem;font-weight:800}
+
+.swatch{display:inline-block;width:1.7rem;height:1.7rem;border-radius:50%;border:2.5px solid var(--shape-stroke);flex:0 0 auto}
+.choice-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(8rem,100%),1fr));gap:.6rem;margin:.6rem 0}
+.choice{position:relative;flex-direction:column;gap:.35rem;padding:.6rem .4rem;min-height:5.2rem;border-width:3px;min-width:0;font-size:1.05rem}
+.choice:hover:not(:disabled){border-color:var(--primary)}
+.choice .swatch{width:2.2rem;height:2.2rem}
+.choice-shape svg{width:2.4rem;height:2.4rem;display:block}
+.choice[aria-pressed="true"]{border-color:var(--primary);background:var(--selected-bg);box-shadow:inset 0 0 0 2px var(--primary)}
+.draft-summary{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem;padding:.5rem .7rem;border-radius:12px;background:var(--surface-2);border:2px solid var(--border);margin:.4rem 0}
+.draft-summary .chip{display:inline-flex;align-items:center;gap:.45rem;font-weight:700}
+.draft-summary svg{width:1.8rem;height:1.8rem;display:block}
+.confirm-zone{display:flex;flex-direction:column;align-items:stretch;gap:.8rem;margin:.6rem 0;padding:.8rem;border:3px solid var(--together);background:var(--together-bg);border-radius:16px}
+.preview{display:flex;align-items:center;gap:.8rem;background:var(--surface);border:3px solid var(--border-strong);border-radius:14px;padding:.6rem .9rem}
+.preview svg{width:3.6rem;height:3.6rem;display:block}
+.preview-label{font-size:1.2rem;font-weight:800;line-height:1.25}
+.preview-slot{color:var(--muted);font-weight:600}
+.confirm-top{display:flex;flex-wrap:wrap;align-items:stretch;gap:.8rem}
+.confirm-top .preview{flex:0 1 auto}
+.exchange-prompt{flex:1 1 15rem;margin:0;display:flex;align-items:center;padding:.6rem .9rem;border-radius:12px;background:var(--surface);border:2px dashed var(--together);font-size:1.1rem;font-weight:700;line-height:1.35}
+.confirm-actions{display:flex;flex-wrap:wrap;gap:.6rem}
+
+.check-row{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem 1rem;margin-top:.9rem;padding-top:.8rem;border-top:2px dashed var(--border)}
+.check-hint{margin:0;font-weight:600}
+.result:empty{display:none}
+.result{margin-top:.75rem;padding:.8rem 1rem;border-radius:14px;border:3px solid var(--check);background:var(--check-bg);font-size:1.05rem}
+.result.success{border-color:var(--ok);background:var(--ok-bg)}
+.result p{margin:0 0 .3rem}
+.result .main{font-weight:800}
+.result.success .main{font-size:1.3rem;color:var(--ok)}
+.success-box{margin-top:.75rem}
+
+/* ---------- Panel komunikacji (zwarty) ---------- */
+.comm-panel{position:sticky;top:.75rem}
+.comm-toggle{display:none}
+.comm-panel h2{font-size:1.1rem}
+.comm-grid{display:grid;gap:.45rem;grid-template-columns:minmax(0,1fr)}
+.comm-btn{justify-content:flex-start;text-align:left;padding:.45rem .7rem}
+.comm-btn .icon{width:1.5em;height:1.5em}
+.comm-btn.active{border-color:var(--comm-border);background:var(--comm-bg);border-width:3px}
+.comm-message{margin-top:.7rem;padding:.8rem;border-radius:16px;background:var(--comm-bg);border:3px solid var(--comm-border)}
+.comm-message .icon{width:2.2rem;height:2.2rem}
+.comm-text{font-size:1.3rem;font-weight:800;line-height:1.3;margin:.3rem 0 .6rem}
+
+/* ---------- Refleksja i zakończenie ---------- */
+.swap-notice:empty{display:none}
+.swap-notice{margin-top:1rem;font-weight:700;font-size:1.1rem;padding:.8rem 1rem;border-radius:14px;background:var(--surface-2);border:2px solid var(--border)}
+.end-title{font-size:2.2rem}
+.bridges{list-style:none;padding:0;margin:1.2rem 0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.6rem}
+.bridges li{background:var(--surface-2);border:2px solid var(--border);border-radius:14px;padding:.5rem;font-size:.95rem;font-weight:700}
+.bridges svg{width:100%;height:auto;display:block}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(11rem,100%),1fr));gap:.6rem;margin:1rem 0 1.5rem}
+.card-toggle{border-width:3px;min-height:64px;justify-content:flex-start;text-align:left}
+.card-toggle .box{width:1.6rem;height:1.6rem;border:3px solid var(--border-strong);border-radius:6px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+.card-toggle .box .icon{visibility:hidden;width:1.2rem;height:1.2rem;stroke-width:3}
+.card-toggle[aria-pressed="true"]{border-color:var(--ok);background:var(--ok-bg)}
+.card-toggle[aria-pressed="true"] .box{border-color:var(--ok);background:var(--ok);color:#fff}
+.card-toggle[aria-pressed="true"] .box .icon{visibility:visible}
+
+/* ---------- Okna ---------- */
+dialog{width:min(680px,calc(100% - 2rem));max-height:calc(100vh - 2rem);overflow:auto;border:3px solid var(--border-strong);border-radius:22px;padding:1.4rem;background:var(--surface);color:var(--text)}
+dialog::backdrop{background:rgba(16,28,48,.5)}
+dialog h2{font-size:1.5rem}
+dialog h3{font-size:1.1rem;margin-top:1rem}
+.steps{padding-left:1.4rem;margin:.5rem 0 1rem}
+.steps li{margin-bottom:.35rem}
+.small{font-size:.95rem;color:var(--muted)}
+.dialog-actions{display:flex;justify-content:flex-end;gap:.6rem;margin-top:1.2rem;flex-wrap:wrap}
+.legend{display:flex;flex-wrap:wrap;gap:.5rem;margin:.5rem 0}
+.legend span{display:inline-flex;align-items:center;gap:.35rem;padding:.2rem .55rem;border-radius:10px;background:var(--surface-2);border:2px solid var(--border);font-weight:600}
+.legend svg{width:1.4rem;height:1.4rem}
+.legend .swatch{width:1.3rem;height:1.3rem}
+.setting{display:flex;align-items:flex-start;gap:.9rem;padding:.75rem;border:2px solid var(--border);border-radius:14px;margin-bottom:.6rem;cursor:pointer}
+.setting input{appearance:none;-webkit-appearance:none;width:3.4rem;height:2rem;flex:0 0 auto;margin:.1rem 0 0;border-radius:999px;border:3px solid var(--border-strong);background:var(--surface-2);position:relative;cursor:pointer}
+.setting input::after{content:"";position:absolute;top:2px;left:2px;width:1.35rem;height:1.35rem;border-radius:50%;background:var(--border-strong);transition:transform .15s}
+.setting input:checked{background:var(--primary);border-color:var(--primary)}
+.setting input:checked::after{transform:translateX(1.4rem);background:#fff}
+.setting strong{display:block}
+.setting .state{display:block;font-size:.9rem;font-weight:700;color:var(--muted)}
+.pause-body{text-align:center}
+.pause-body p{font-size:1.4rem;font-weight:700}
+html.reduce-motion *{scroll-behavior:auto !important}
+
+/* ---------- Mniejsze ekrany ---------- */
+@media (max-width:1080px){
+  .game-layout{grid-template-columns:minmax(0,1fr)}
+  /* Przyciski komunikacyjne jako zwarty panel u dołu ekranu.
+     Strona rezerwuje pod nim miejsce (--dock-h), więc nic nie zostaje zasłonięte na stałe. */
+  .comm-panel{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:20;margin:0;
+    border-radius:18px 18px 0 0;border-bottom:0;padding:.5rem .75rem calc(.5rem + env(safe-area-inset-bottom));
+    max-height:75vh;overflow:auto;box-shadow:0 -4px 16px rgba(22,40,70,.14)}
+  html.high-contrast .comm-panel{box-shadow:none}
+  .comm-title{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .comm-toggle{display:inline-flex;width:100%;justify-content:center}
+  .comm-toggle[aria-expanded="true"]{border-color:var(--comm-border);background:var(--comm-bg)}
+  .comm-panel:not(.open) #comm-buttons{display:none}
+  .comm-grid{grid-template-columns:repeat(auto-fit,minmax(min(10rem,100%),1fr));margin-top:.5rem}
+  .comm-message{margin-top:.5rem;padding:.5rem .7rem;display:flex;flex-wrap:wrap;align-items:center;gap:.3rem .7rem}
+  .comm-message .icon{width:1.8rem;height:1.8rem}
+  .comm-text{font-size:1.15rem;margin:0;flex:1 1 12rem}
+  #screen-game{padding-bottom:calc(var(--dock-h, 90px) + 1rem)}
+  html.in-game{scroll-padding-bottom:calc(var(--dock-h, 90px) + 12px)}
+}
+@media (max-width:680px){
+  .screen{padding:.6rem}
+  .game-main{gap:.6rem}
+  .landscape svg{height:min(110px,22vw)}
+  .round-title{font-size:1.1rem}
+  .slot{min-height:0;padding:.35rem .25rem .45rem;gap:.2rem}
+  .slot-shape svg{width:2.1rem;height:2.1rem}
+  .move-title{font-size:1.3rem}
+  .stage-text{font-size:1.15rem}
+  .choice{min-height:4.4rem;padding:.45rem .3rem}
+  .choice .swatch{width:1.9rem;height:1.9rem}
+  .choice-shape svg{width:2rem;height:2rem}
+  .confirm-actions .btn{flex:1 1 auto}
+  .panel{padding:.75rem}
+  .start-title{font-size:1.9rem}
+  .bridges{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .topbar-actions{margin-left:0}
+  .stage-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(6rem,100%),1fr));width:100%}
+  .stage-arrow{display:none}
+  .stage{min-width:0;padding:.3rem .45rem}
+}
+@media (max-width:420px){
+  .topbar-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(6.6rem,100%),1fr));width:100%}
+  .topbar-actions .btn{flex-direction:column;gap:.15rem;padding:.35rem .2rem}
+  .confirm-actions .btn{flex:1 1 100%}
+  .brand{font-size:1.05rem}
+}
+</style>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232b5f9e'/%3E%3Ccircle cx='22' cy='26' r='7' fill='%23fff'/%3E%3Ccircle cx='42' cy='26' r='7' fill='%23fff'/%3E%3Cpath d='M10 50c2-8 7-12 12-12s10 4 12 12M30 50c2-8 7-12 12-12s10 4 12 12' fill='none' stroke='%23fff' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+<!-- ===== ZESTAW „KAŻDY MA MIEJSCE”: wspólne ustawienia i powrót do menu =====
+     Ten sam fragment znajduje się w menu (index.html) i w każdej grze.
+     ✏️ Wspólny klucz ustawień: 'kazdyMaMiejsce.ustawienia'
+        { largeText: true/false, highContrast: true/false, reducedMotion: true/false }
+     Gry nadal zapisują też swoje dawne klucze i dodatkowe ustawienia — nic nie ginie.
+     Gdy przeglądarka blokuje localStorage, wszystko działa, tylko bez zapamiętywania. -->
+<style id="kmm-style">
+.kmm-nav{box-sizing:border-box;max-width:1320px;margin:0 auto;padding:8px 16px 0;display:flex;flex-wrap:wrap;gap:8px}
+.kmm-home{box-sizing:border-box;display:inline-flex;align-items:center;gap:8px;min-height:48px;min-width:48px;padding:.4rem 1rem;
+  border:2px solid #1f2a33;border-radius:12px;background:#fff;color:#1f2a33;font-family:inherit;font-weight:700;font-size:max(18px,1rem);
+  line-height:1.2;text-decoration:none}
+.kmm-home:hover{background:#eef3f8;text-decoration:underline}
+.kmm-home:focus{outline:none}
+.kmm-home:focus-visible{outline:4px solid #b4400a;outline-offset:3px;box-shadow:0 0 0 7px #fff}
+.kmm-home svg{width:22px;height:22px;flex:none;display:block}
+html.high-contrast .kmm-home,html.hc .kmm-home{border:3px solid #000;color:#000;background:#fff}
+html.high-contrast .kmm-home:focus-visible,html.hc .kmm-home:focus-visible{outline-color:#c00000}
+@media print{.kmm-nav{display:none}}
+</style>
+<script>
+window.KMM = (function () {
+  'use strict';
+  var KEY = 'kazdyMaMiejsce.ustawienia';
+  var NAMES = ['largeText', 'highContrast', 'reducedMotion'];
+  /** Odczyt wspólnych ustawień. Zwraca obiekt tylko z zapisanymi polami albo null. */
+  function read() {
+    try {
+      var raw = window.localStorage.getItem(KEY);
+      if (!raw) return null;
+      var p = JSON.parse(raw), o = {}, n = 0;
+      if (!p || typeof p !== 'object') return null;
+      NAMES.forEach(function (k) { if (typeof p[k] === 'boolean') { o[k] = p[k]; n++; } });
+      return n ? o : null;
+    } catch (e) { return null; }
+  }
+  /** Zapis wspólnych ustawień (tylko trzy wspólne pola). Zwraca false, gdy pamięć jest niedostępna. */
+  function write(s) {
+    try {
+      var o = read() || {};
+      NAMES.forEach(function (k) { if (s && typeof s[k] === 'boolean') o[k] = s[k]; });
+      window.localStorage.setItem(KEY, JSON.stringify(o));
+      return true;
+    } catch (e) { return false; }
+  }
+  var listeners = [];
+  function onChange(fn) { listeners.push(fn); }
+  function notify() { listeners.forEach(function (fn) { try { fn(read()); } catch (e) {} }); }
+  // Każde wyświetlenie strony (także „Wstecz”, gdy przeglądarka odtwarza stare pola formularzy)
+  // i zmiana w innej karcie: ponownie zastosuj aktualne wspólne ustawienia.
+  window.addEventListener('pageshow', function () { notify(); });
+  window.addEventListener('storage', function (e) { if (e.key === KEY) notify(); });
+  /** Zatrzymuje nagrania i syntezę mowy przy wyjściu z gry. */
+  function stopMedia() {
+    try { Array.prototype.forEach.call(document.querySelectorAll('audio,video'), function (m) { m.pause(); }); } catch (e) {}
+    try { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch (e) {}
+  }
+  window.addEventListener('pagehide', stopMedia);
+  document.addEventListener('click', function (e) {
+    var a = e.target && e.target.closest ? e.target.closest('.kmm-home') : null;
+    if (!a) return;
+    stopMedia();
+    try { window.sessionStorage.setItem('kazdyMaMiejsce.powrot', a.getAttribute('data-game') || ''); } catch (err) {}
+  });
+  return { KEY: KEY, read: read, write: write, onChange: onChange, stopMedia: stopMedia };
+})();
+</script>
+<!-- ===== koniec wspólnego fragmentu ===== -->
+</head>
+<body>
+<!-- ✏️ Zestaw „Każdy ma miejsce”: powrót do menu (ścieżka względna — działa lokalnie i na GitHub Pages) -->
+<nav class="kmm-nav" aria-label="Zestaw gier Każdy ma miejsce"><a class="kmm-home" href="./index.html" data-game="most-wspolpracy.html"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg><span>Wszystkie gry</span></a></nav>
+
+<noscript><p class="error-card">Ta gra potrzebuje włączonego JavaScriptu.</p></noscript>
+
+<!-- ===== GÓRNY PASEK ===== -->
+<header id="topbar" class="topbar" hidden>
+  <div class="topbar-inner">
+    <p class="brand"><span data-icon="bridge"></span>Most współpracy</p>
+    <p id="progress-text" class="pill">Most 1 z 5</p>
+    <div class="topbar-actions" role="group" aria-label="Menu gry">
+      <button type="button" class="btn btn-small" data-open="dlg-help" data-icon="book">Instrukcja</button>
+      <button type="button" class="btn btn-small" data-open="dlg-pause" data-icon="pause">Przerwa</button>
+      <button type="button" class="btn btn-small" data-open="dlg-settings" data-icon="sliders">Ustawienia</button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- ===== BŁĄD DANYCH (pokazywany tylko przy nieprawidłowych układankach) ===== -->
+  <section id="screen-error" class="screen" hidden>
+    <div class="error-card" role="alert">
+      <h1>Nie można uruchomić gry</h1>
+      <p>Dane mostów w pliku są nieprawidłowe:</p>
+      <ul id="error-list"></ul>
+      <p>Popraw tablicę <code>ROUNDS</code> w części „DANE GRY” pliku most-wspolpracy.html i odśwież stronę.</p>
+    </div>
+  </section>
+
+  <!-- ===== EKRAN STARTOWY ===== -->
+  <section id="screen-start" class="screen" aria-labelledby="start-title">
+    <div class="center-card">
+      <div id="start-illus" class="illus"></div>
+      <h1 id="start-title" class="start-title" tabindex="-1">Most współpracy</h1>
+      <p class="motto">Różne wskazówki. Wspólny cel.</p>
+      <p class="lead">Zbudujcie razem pięć mostów. Jedna osoba zna kolory, druga zna kształty. Połączcie wskazówki i znajdźcie wspólne rozwiązanie.</p>
+      <div class="btn-row">
+        <button type="button" id="btn-start" class="btn btn-primary btn-large" data-icon="play">Zaczynamy</button>
+        <button type="button" class="btn btn-large" data-open="dlg-help" data-icon="book">Jak gramy?</button>
+        <button type="button" class="btn btn-large" data-open="dlg-settings" data-icon="sliders">Ustawienia</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== EKRAN GRY ===== -->
+  <section id="screen-game" class="screen" hidden>
+    <div class="game-layout">
+      <div class="game-main">
+
+        <!-- Most -->
+        <section class="panel" aria-labelledby="round-title">
+          <h2 id="round-title" class="round-title" tabindex="-1">Most 1</h2>
+          <div id="landscape" class="landscape"></div>
+          <div class="deck">
+            <ol id="slots" class="slots" aria-label="Miejsca na moście"></ol>
+          </div>
+        </section>
+
+        <!-- Aktualne miejsce, etap, wskazówka i potrzebne przyciski -->
+        <section class="panel" aria-labelledby="move-title">
+          <div class="move-head">
+            <h2 id="move-title" class="move-title" tabindex="-1">Miejsce 1</h2>
+            <ol id="stage-bar" class="stage-bar" aria-label="Etapy układania elementu">
+              <li class="stage" data-stage="color"><span class="stage-name">1. Kolor</span><span class="stage-who">osoba A</span><span class="stage-now">teraz</span></li>
+              <li class="stage-arrow" aria-hidden="true">→</li>
+              <li class="stage" data-stage="shape"><span class="stage-name">2. Kształt</span><span class="stage-who">osoba B</span><span class="stage-now">teraz</span></li>
+              <li class="stage-arrow" aria-hidden="true">→</li>
+              <li class="stage" data-stage="confirm"><span class="stage-name">3. Wspólna decyzja</span><span class="stage-who">razem</span><span class="stage-now">teraz</span></li>
+            </ol>
+          </div>
+          <p id="stage-text" class="stage-text"></p>
+          <p id="stage-subtext" class="stage-subtext"></p>
+          <div id="edit-bar" class="edit-bar" hidden>
+            <p id="occupied-note" class="edit-note"></p>
+            <button type="button" id="btn-cancel-edit" class="btn" data-icon="close">Anuluj zmianę</button>
+          </div>
+
+          <div id="draft-summary" class="draft-summary" hidden></div>
+          <div id="hint-zone" class="hint-zone">
+            <div class="hint-tools">
+              <button type="button" id="btn-hint-A" class="btn hint-toggle" data-player="A" aria-expanded="false" aria-controls="hint-card-A" data-icon="palette">Wskazówka A: kolor</button>
+              <button type="button" id="btn-hint-B" class="btn hint-toggle" data-player="B" aria-expanded="false" aria-controls="hint-card-B" data-icon="shapes">Wskazówka B: kształt</button>
+              <button type="button" id="btn-full-list" class="btn" aria-pressed="false" data-icon="list">Pokaż całą listę</button>
+            </div>
+            <div class="hint-cards">
+              <section id="hint-card-A" class="hint-card" data-player="A" aria-labelledby="hint-title-A" hidden>
+                <h3 id="hint-title-A">Wskazówka A: kolor</h3>
+                <div id="hint-body-A"></div>
+                <button type="button" class="btn btn-small" data-hide-hint="A" data-icon="eyeOff">Schowaj wskazówkę</button>
+              </section>
+              <section id="hint-card-B" class="hint-card" data-player="B" aria-labelledby="hint-title-B" hidden>
+                <h3 id="hint-title-B">Wskazówka B: kształt</h3>
+                <div id="hint-body-B"></div>
+                <button type="button" class="btn btn-small" data-hide-hint="B" data-icon="eyeOff">Schowaj wskazówkę</button>
+              </section>
+            </div>
+          </div>
+
+          <div id="color-buttons" class="choice-grid" role="group" aria-label="Kolory" hidden></div>
+          <div id="shape-buttons" class="choice-grid" role="group" aria-label="Kształty" hidden></div>
+
+          <div id="confirm-zone" class="confirm-zone" hidden>
+            <div class="confirm-top">
+              <div id="preview" class="preview"></div>
+              <p id="exchange-prompt" class="exchange-prompt">Przekażcie sobie, jaki kolor i kształt wybraliście. Możecie powiedzieć lub wskazać.</p>
+            </div>
+            <div class="confirm-actions">
+              <button type="button" id="btn-commit" class="btn btn-primary btn-large" aria-describedby="exchange-prompt" data-icon="together">Układamy razem</button>
+              <button type="button" id="btn-change-color" class="btn" data-icon="palette">Zmień kolor</button>
+              <button type="button" id="btn-change-shape" class="btn" data-icon="shapes">Zmień kształt</button>
+            </div>
+          </div>
+
+          <div id="check-row" class="check-row">
+            <button type="button" id="btn-check" class="btn btn-primary btn-large" aria-describedby="check-hint" data-icon="search">Sprawdź most</button>
+            <p id="check-hint" class="check-hint"></p>
+          </div>
+          <p id="status" class="sr-only" aria-live="polite"></p>
+          <div id="result" class="result" aria-live="polite"></div>
+          <div id="success-box" class="success-box" hidden>
+            <button type="button" id="btn-continue" class="btn btn-primary btn-large" data-icon="arrowRight">Dalej</button>
+          </div>
+        </section>
+      </div>
+
+      <!-- Przyciski komunikacyjne -->
+      <aside id="comm-panel" class="panel comm-panel" aria-labelledby="comm-title">
+        <h2 id="comm-title" class="comm-title">Możemy pokazać</h2>
+        <button type="button" id="btn-comm-toggle" class="btn comm-toggle" aria-expanded="false" aria-controls="comm-buttons" data-icon="together">Możemy pokazać</button>
+        <div id="comm-buttons" class="comm-grid" role="group" aria-labelledby="comm-title"></div>
+        <div id="comm-message" class="comm-message" hidden></div>
+        <p id="comm-live" class="sr-only" aria-live="polite"></p>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ===== REFLEKSJA ===== -->
+  <section id="screen-reflection" class="screen" hidden aria-labelledby="refl-title">
+    <div class="center-card">
+      <div id="refl-illus" class="illus"></div>
+      <p id="refl-eyebrow" class="eyebrow">Most 1 z 5 ukończony</p>
+      <h2 id="refl-title" tabindex="-1">Pierwsze połączenie</h2>
+      <p id="refl-question" class="big-question"></p>
+      <p>Możecie odpowiedzieć słowem, gestem, symbolem albo po prostu chwilę porozmawiać.</p>
+      <div class="btn-row">
+        <button type="button" id="btn-next-round" class="btn btn-primary btn-large" data-icon="arrowRight">Następny most</button>
+        <button type="button" id="btn-swap" class="btn btn-large" data-icon="swap">Zamieniamy się wskazówkami</button>
+      </div>
+      <p id="swap-notice" class="swap-notice" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <!-- ===== ZAKOŃCZENIE ===== -->
+  <section id="screen-end" class="screen" hidden aria-labelledby="end-title">
+    <div class="center-card">
+      <h2 id="end-title" class="end-title" tabindex="-1">Pięć mostów. Jeden zespół.</h2>
+      <p class="lead">Ukończyliście wspólną misję. Łączyliście informacje, podejmowaliście decyzje i szukaliście rozwiązań.</p>
+      <p id="end-count" class="eyebrow"></p>
+      <ul id="end-bridges" class="bridges" aria-label="Wspólnie ukończone mosty"></ul>
+      <h3 id="end-question" class="big-question">Co pomaga nam współpracować?</h3>
+      <p class="small">Zaznaczcie dowolne karty. To refleksja, nie test.</p>
+      <div id="end-cards" class="cards" role="group" aria-labelledby="end-question"></div>
+      <div class="btn-row">
+        <button type="button" id="btn-replay" class="btn btn-primary btn-large" data-icon="refresh">Zagrajmy ponownie</button>
+        <button type="button" id="btn-home" class="btn btn-large" data-icon="home">Wróć do początku</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ===== OKNO: INSTRUKCJA ===== -->
+<dialog id="dlg-help" aria-labelledby="dlg-help-title">
+  <h2 id="dlg-help-title" tabindex="-1" autofocus>Jak gramy?</h2>
+  <p>Budujecie razem pięć mostów. Każdy kolejny most jest trochę dłuższy: od 2 do 6 miejsc.</p>
+  <p>Osoba A zna kolory. Osoba B zna kształty. Każdy element mostu powstaje w trzech krokach:</p>
+  <ol class="steps">
+    <li><strong>Kolor</strong> — osoba A sprawdza swoją wskazówkę i wybiera kolor.</li>
+    <li><strong>Kształt</strong> — osoba B sprawdza swoją wskazówkę i wybiera kształt.</li>
+    <li><strong>Wspólna decyzja</strong> — razem oglądacie element. Jeśli pasuje do obu wskazówek, naciskacie „Układamy razem”. Możecie też zmienić kolor albo kształt.</li>
+  </ol>
+  <p>Gdy wszystkie miejsca są ułożone, sprawdźcie most. Jeśli coś nie pasuje, poprawcie to razem. Elementy, które pasują, zostają na moście.</p>
+  <p><strong>Każda osoba wnosi swoją wskazówkę. Możecie potrzebować różnej ilości czasu i korzystać z różnych sposobów komunikacji.</strong></p>
+  <p>Możecie rozmawiać, wskazywać i korzystać z symboli. Wybierzcie wygodny dla siebie sposób.</p>
+  <h3>Wskazówki</h3>
+  <p>Wskazówka pokazuje aktualne miejsce. Przycisk „Pokaż całą listę” pokazuje cały wzór.</p>
+  <p>Kiedy druga osoba ogląda swoją wskazówkę, możesz odwrócić wzrok. Możecie też oglądać wskazówki wspólnie — w ustawieniach włączycie „Wspólny podgląd wskazówek”.</p>
+  <div class="legend" id="help-legend" aria-label="Kolory i kształty w grze"></div>
+  <h3>Spokojnie</h3>
+  <p>Nie ma limitu czasu. Most można poprawiać wiele razy. Przerwę można zrobić w każdej chwili. Między mostami możecie zamienić się rolami.</p>
+  <p class="small">Własne wzory i symbole można przygotować wspólnie podczas zajęć.</p>
+  <p class="small">Postęp jest pamiętany do odświeżenia strony. Po odświeżeniu gra zaczyna się od początku.</p>
+  <div class="dialog-actions">
+    <button type="button" class="btn btn-primary" data-close data-icon="check">Rozumiemy</button>
+  </div>
+</dialog>
+
+<!-- ===== OKNO: USTAWIENIA ===== -->
+<dialog id="dlg-settings" aria-labelledby="dlg-settings-title">
+  <h2 id="dlg-settings-title">Ustawienia</h2>
+  <p class="small">Zmiany działają od razu.</p>
+  <label class="setting"><input type="checkbox" data-setting="largeText"><span><strong>Większy tekst</strong><span class="state" data-state-for="largeText"></span></span></label>
+  <label class="setting"><input type="checkbox" data-setting="highContrast"><span><strong>Wysoki kontrast</strong><span class="state" data-state-for="highContrast"></span></span></label>
+  <label class="setting"><input type="checkbox" data-setting="reducedMotion"><span><strong>Ograniczone animacje</strong><span class="state" data-state-for="reducedMotion"></span></span></label>
+  <label class="setting"><input type="checkbox" data-setting="sharedHints"><span><strong>Wspólny podgląd wskazówek</strong><span class="small">Obie wskazówki dla aktualnego miejsca są widoczne na każdym etapie. To równie dobry sposób grania.</span><span class="state" data-state-for="sharedHints"></span></span></label>
+  <div class="dialog-actions">
+    <button type="button" class="btn btn-primary" data-close data-icon="check">Gotowe</button>
+  </div>
+</dialog>
+
+<!-- ===== OKNO: PRZERWA ===== -->
+<dialog id="dlg-pause" aria-labelledby="dlg-pause-title">
+  <div class="pause-body">
+    <div id="pause-illus" class="illus"></div>
+    <h2 id="dlg-pause-title">Przerwa</h2>
+    <p>Możecie odpocząć. Wasz most poczeka.</p>
+    <button type="button" class="btn btn-primary btn-large" data-close data-icon="play" autofocus>Wracamy</button>
+  </div>
+</dialog>
+
+<script>
+'use strict';
+
+/* =========================================================================
+   1. DANE GRY — TUTAJ NAUCZYCIEL MOŻE ZMIENIAĆ TREŚCI
+   ========================================================================= */
+
+/* Kolory elementów. Klucz (np. "blue") jest używany w układankach poniżej.
+   "label" to nazwa widoczna na ekranie, "hex" to barwa. */
+const COLORS = {
+  blue:   { label: 'niebieski',    hex: '#1f63c6' },
+  orange: { label: 'pomarańczowy', hex: '#d96a00' },
+  green:  { label: 'zielony',      hex: '#1d8a45' },
+  purple: { label: 'fioletowy',    hex: '#7a3dc0' }
+};
+
+/* Kształty elementów. Rysunek każdego kształtu jest w funkcji shapeMarkup(). */
+const SHAPES = {
+  circle:   { label: 'koło' },
+  triangle: { label: 'trójkąt' },
+  square:   { label: 'kwadrat' }
+};
+
+/* PIĘĆ UKŁADANEK — mosty mają kolejno 2, 3, 4, 5 i 6 miejsc.
+   Kolejność w tablicach colors i shapes = miejsca na moście (od lewej).
+   W każdej rundzie colors i shapes muszą mieć tyle samo pozycji (od 1 do 8).
+   Można zmienić tytuł, wzór i pytanie do refleksji. Gra sprawdza dane przy starcie. */
+const ROUNDS = [
+  {
+    id: 1,
+    title: 'Pierwsze połączenie',
+    colors: ['blue', 'orange'],
+    shapes: ['circle', 'square'],
+    reflection: 'Jak przekazaliście sobie wskazówki?'
+  },
+  {
+    id: 2,
+    title: 'Każdy wnosi coś innego',
+    colors: ['green', 'green', 'purple'],
+    shapes: ['circle', 'triangle', 'square'],
+    reflection: 'Jak informacje obu osób pomogły zbudować most?'
+  },
+  {
+    id: 3,
+    title: 'Słuchamy i sprawdzamy',
+    colors: ['blue', 'green', 'orange', 'purple'],
+    shapes: ['triangle', 'circle', 'square', 'triangle'],
+    reflection: 'Co pomogło wam się upewnić, że dobrze się rozumiecie?'
+  },
+  {
+    id: 4,
+    title: 'Możemy wskazywać',
+    colors: ['purple', 'orange', 'green', 'blue', 'orange'],
+    shapes: ['square', 'triangle', 'circle', 'square', 'circle'],
+    reflection: 'Z jakich sposobów komunikowania się korzystaliście?'
+  },
+  {
+    id: 5,
+    title: 'Wspólny cel',
+    colors: ['green', 'purple', 'blue', 'orange', 'purple', 'green'],
+    shapes: ['triangle', 'square', 'circle', 'triangle', 'circle', 'square'],
+    reflection: 'Co zrobicie podobnie podczas następnego wspólnego zadania?'
+  }
+];
+
+/* POLECENIA ETAPÓW.
+   "tutorial" — pierwszy most (samouczek), "regular" — kolejne mosty. */
+const STAGE_TEXTS = {
+  tutorial: {
+    color:   { main: 'Osoba A sprawdza kolor.',            sub: 'Spójrz na wskazówkę A i kliknij ten kolor.' },
+    shape:   { main: 'Teraz osoba B sprawdza kształt.',     sub: 'Spójrz na wskazówkę B i kliknij ten kształt.' },
+    confirm: { main: 'Obejrzyjcie element. Czy pasuje do obu wskazówek?', sub: 'Jeśli tak, naciśnijcie „Układamy razem”.' }
+  },
+  regular: {
+    color:   { main: 'Osoba A wybiera kolor.',  sub: '' },
+    shape:   { main: 'Osoba B wybiera kształt.', sub: '' },
+    confirm: { main: 'Razem: czy element pasuje do obu wskazówek?', sub: '' }
+  }
+};
+
+/* PRZYCISKI KOMUNIKACYJNE.
+   label = podpis przycisku, message = duży komunikat, icon = nazwa ikony z ICONS. */
+const COMM_MESSAGES = [
+  { id: 'again', label: 'Pokaż jeszcze raz', icon: 'eye',       message: 'Pokaż jeszcze raz. Popatrzmy na to razem.' },
+  { id: 'wait',  label: 'Potrzebuję chwili', icon: 'hourglass', message: 'Potrzebuję chwili. Możemy poczekać.' },
+  { id: 'check', label: 'Sprawdźmy razem',   icon: 'together',  message: 'Sprawdźmy razem. Spójrzmy na obie wskazówki.' },
+  { id: 'idea',  label: 'Mam pomysł',        icon: 'bulb',      message: 'Chcę podzielić się pomysłem. Mogę powiedzieć, wskazać lub pokazać.' },
+  { id: 'agree', label: 'Zgadzam się',       icon: 'thumb',     message: 'Zgadzam się. Możemy to położyć.' }
+];
+
+/* KARTY NA EKRANIE ZAKOŃCZENIA */
+const REFLECTION_CARDS = [
+  'słuchanie',
+  'wskazywanie',
+  'zadawanie pytań',
+  'czas na zastanowienie',
+  'sprawdzanie razem',
+  'proszenie o pomoc'
+];
+
+/* POSTACIE NA ILUSTRACJACH.
+   Można zmienić kolory skóry, włosów i ubrań oraz fryzurę ('short' lub 'puffs').
+   Rysunek postaci jest w funkcji figureSVG(). */
+const CHARACTERS = [
+  { skin: '#e9b48e', hair: '#5a3b26', hairStyle: 'short', top: '#0f8a7e', pants: '#2f4a6b', shoe: '#273142', accent: '#f2b632' },
+  { skin: '#8d5b3e', hair: '#1f1a17', hairStyle: 'puffs', top: '#b23a73', pants: '#3b3f74', shoe: '#273142', accent: '#ffd45e' }
+];
+
+const MAX_SLOTS = 8; // najwięcej miejsc, które mieszczą się na ilustracji mostu
+
+/* =========================================================================
+   2. IKONY I GRAFIKI SVG
+   ========================================================================= */
+const ICONS = {
+  bridge:    '<path d="M2 16h20M4 16v4M20 16v4M4 16c3-6 13-6 16 0M8 13v3M12 12v4M16 13v3"/>',
+  book:      '<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5"/><path d="M8 7h7M8 11h7"/>',
+  pause:     '<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>',
+  sliders:   '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>',
+  check:     '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  search:    '<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>',
+  play:      '<path d="M8 5l11 7-11 7z"/>',
+  arrowRight:'<path d="M5 12h14M13 6l6 6-6 6"/>',
+  arrowLeft: '<path d="M19 12H5M11 6l-6 6 6 6"/>',
+  refresh:   '<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/>',
+  home:      '<path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/>',
+  eye:       '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  eyeOff:    '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/>',
+  hourglass: '<path d="M7 3h10M7 21h10M8 3v2c0 3 4 4.5 4 7s-4 4-4 7v2M16 3v2c0 3-4 4.5-4 7s4 4 4 7v2"/>',
+  together:  '<circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M3 20c0-3 2.2-5 5-5s5 2 5 5M11 20c0-3 2.2-5 5-5s5 2 5 5"/>',
+  bulb:      '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',
+  thumb:     '<path d="M7 11v9H4v-9z"/><path d="M7 11l4-8c1.5 0 2.5 1 2.5 2.5V9h5a2 2 0 0 1 2 2.3l-1.2 7A2 2 0 0 1 17.3 20H7"/>',
+  swap:      '<path d="M4 8h15l-4-4M20 16H5l4 4"/>',
+  close:     '<path d="M6 6l12 12M18 6L6 18"/>',
+  list:      '<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2"/><circle cx="4.5" cy="12" r="1.2"/><circle cx="4.5" cy="18" r="1.2"/>',
+  palette:   '<circle cx="12" cy="12" r="9"/><circle cx="8" cy="10" r="1.4"/><circle cx="12" cy="7.5" r="1.4"/><circle cx="16" cy="10" r="1.4"/><path d="M12 21c-1.5 0-2-1-2-2s1-2 2.5-2"/>',
+  shapes:    '<circle cx="7" cy="7" r="3.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1"/><path d="M12 13l5 8H7z"/>'
+};
+function icon(name) {
+  return '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + (ICONS[name] || '') + '</svg>';
+}
+
+/* Rysunki kształtów (siatka 40 × 40) */
+function shapeMarkup(shape, fill, stroke, sw) {
+  const s = 'fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + sw + '" stroke-linejoin="round"';
+  if (shape === 'circle')   return '<circle cx="20" cy="20" r="15" ' + s + '/>';
+  if (shape === 'triangle') return '<path d="M20 4.5 L36 34 H4 Z" ' + s + '/>';
+  if (shape === 'square')   return '<rect x="6" y="6" width="28" height="28" rx="3" ' + s + '/>';
+  return '';
+}
+function shapeSVG(shape, fill) {
+  return '<svg viewBox="0 0 40 40" aria-hidden="true" focusable="false">' + shapeMarkup(shape, fill, 'var(--shape-stroke)', 2.5) + '</svg>';
+}
+function emptySlotSVG() {
+  return '<svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><rect x="6" y="6" width="28" height="28" rx="7" fill="none" stroke="var(--border-strong)" stroke-width="2.5" stroke-dasharray="5 4"/></svg>';
+}
+function swatch(colorId) {
+  return '<span class="swatch" style="background:' + COLORS[colorId].hex + '" aria-hidden="true"></span>';
+}
+const NEUTRAL_FILL = '#e5eaf1';
+
+/* Postać na ilustracji (stopy na wysokości y = 92). wave = true: postać macha ręką. */
+function figureSVG(c, x, wave) {
+  const f = function (n) { return (+n).toFixed(1); };
+  let hair = '';
+  if (c.hairStyle === 'puffs') {
+    hair = '<circle cx="' + f(x - 10.5) + '" cy="45" r="5.2" fill="' + c.hair + '"/><circle cx="' + f(x + 10.5) + '" cy="45" r="5.2" fill="' + c.hair + '"/>';
+  }
+  hair += '<path d="M' + f(x - 10.8) + ' 53 Q' + f(x - 11.5) + ' 40.5 ' + x + ' 40.5 Q' + f(x + 11.5) + ' 40.5 ' + f(x + 10.8) + ' 53 Q' + f(x + 7) + ' 45.5 ' + f(x + 1) + ' 46.5 Q' + f(x - 5) + ' 44 ' + f(x - 10.8) + ' 53 Z" fill="' + c.hair + '"/>';
+  if (c.hairStyle === 'puffs') hair += '<rect x="' + f(x - 9) + '" y="43.6" width="18" height="2.6" rx="1.3" fill="' + c.accent + '"/>';
+  const armL = '<path d="M' + f(x - 8) + ' 66 Q' + f(x - 14) + ' 72 ' + f(x - 12.5) + ' 79" fill="none" stroke="' + c.top + '" stroke-width="5" stroke-linecap="round"/><circle cx="' + f(x - 12.5) + '" cy="80" r="2.6" fill="' + c.skin + '"/>';
+  const armR = wave
+    ? '<path d="M' + f(x + 8) + ' 66 Q' + f(x + 15) + ' 61 ' + f(x + 15.5) + ' 53" fill="none" stroke="' + c.top + '" stroke-width="5" stroke-linecap="round"/><circle cx="' + f(x + 15.5) + '" cy="51.5" r="2.7" fill="' + c.skin + '"/>'
+    : '<path d="M' + f(x + 8) + ' 66 Q' + f(x + 14) + ' 72 ' + f(x + 12.5) + ' 79" fill="none" stroke="' + c.top + '" stroke-width="5" stroke-linecap="round"/><circle cx="' + f(x + 12.5) + '" cy="80" r="2.6" fill="' + c.skin + '"/>';
+  const scarf = c.hairStyle !== 'puffs'
+    ? '<path d="M' + f(x - 6) + ' 63.5 Q' + x + ' 66.5 ' + f(x + 6) + ' 63.5" fill="none" stroke="' + c.accent + '" stroke-width="3.2" stroke-linecap="round"/><path d="M' + f(x + 3.5) + ' 65 l1.5 7" stroke="' + c.accent + '" stroke-width="3" stroke-linecap="round"/>'
+    : '';
+  return '<g class="figure">' +
+    '<ellipse cx="' + x + '" cy="92.5" rx="12" ry="2.4" fill="#1b2a3a" opacity=".16"/>' +
+    '<rect x="' + f(x - 6) + '" y="78" width="5" height="12" rx="2.2" fill="' + c.pants + '"/>' +
+    '<rect x="' + f(x + 1) + '" y="78" width="5" height="12" rx="2.2" fill="' + c.pants + '"/>' +
+    '<ellipse cx="' + f(x - 4) + '" cy="90.6" rx="4.4" ry="2.3" fill="' + c.shoe + '"/>' +
+    '<ellipse cx="' + f(x + 4) + '" cy="90.6" rx="4.4" ry="2.3" fill="' + c.shoe + '"/>' +
+    armL +
+    '<path d="M' + f(x - 10) + ' 81 Q' + f(x - 10.5) + ' 63 ' + x + ' 62.5 Q' + f(x + 10.5) + ' 63 ' + f(x + 10) + ' 81 Q' + x + ' 83 ' + f(x - 10) + ' 81 Z" fill="' + c.top + '"/>' +
+    '<path d="M' + f(x - 6) + ' 72 H' + f(x + 6) + '" stroke="#ffffff" stroke-opacity=".35" stroke-width="2" stroke-linecap="round"/>' +
+    armR + scarf +
+    '<circle cx="' + x + '" cy="52" r="10.5" fill="' + c.skin + '"/>' + hair +
+    '<circle cx="' + f(x - 3.7) + '" cy="53.2" r="1.35" fill="#1b2433"/><circle cx="' + f(x + 3.7) + '" cy="53.2" r="1.35" fill="#1b2433"/>' +
+    '<circle cx="' + f(x - 6.3) + '" cy="56.4" r="1.9" fill="#ef7f86" opacity=".45"/><circle cx="' + f(x + 6.3) + '" cy="56.4" r="1.9" fill="#ef7f86" opacity=".45"/>' +
+    '<path d="M' + f(x - 2.8) + ' 57.2 q2.8 2.4 5.6 0" fill="none" stroke="#1b2433" stroke-width="1.3" stroke-linecap="round"/>' +
+    '</g>';
+}
+function cloudSVG(x, y, s) {
+  return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')" fill="#ffffff" opacity=".92"><ellipse cx="0" cy="6" rx="26" ry="8"/><circle cx="-9" cy="1" r="9"/><circle cx="6" cy="-2" r="12"/><circle cx="18" cy="4" r="7"/></g>';
+}
+function treeSVG(x, y, s) {
+  return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')"><rect x="-2.5" y="-6" width="5" height="16" rx="2" fill="#7b5a3c"/><circle cx="0" cy="-16" r="13" fill="#5f9e52"/><circle cx="-8" cy="-9" r="9" fill="#5f9e52"/><circle cx="8" cy="-9" r="9" fill="#5f9e52"/><circle cx="-4" cy="-20" r="6" fill="#7dba6c"/></g>';
+}
+
+/* Ilustracja krajobrazu. Most zawsze łączy oba brzegi (x 140–460); zmienia się liczba segmentów.
+   opts.deck: tablica elementów {color, shape} lub null (jej długość = liczba segmentów)
+   opts.charsMode: 'left' | 'right' | 'split'
+   opts.compact: true = niski kadr do ekranu gry */
+let svgUid = 0;
+function landscapeSVG(opts) {
+  const u = 'ls' + (++svgUid);
+  const deck = opts.deck;
+  const n = deck.length;
+  const mode = opts.charsMode || 'left';
+  let xs = [56, 98];
+  if (mode === 'right') xs = [476, 518];
+  if (mode === 'split') xs = [74, 526];
+  const wave = mode !== 'left';
+  const figs = figureSVG(CHARACTERS[0], xs[0], wave) + figureSVG(CHARACTERS[1], xs[1], wave);
+  const charsGroup = '<g class="chars"' + (opts.charsId ? ' id="' + opts.charsId + '"' : '') + '>' + figs + '</g>';
+
+  let rail = '';
+  const step = 320 / n;
+  for (let i = 0; i < n; i++) {
+    const a = 140 + i * step, b = a + step;
+    rail += '<path d="M' + a.toFixed(1) + ' 80 Q' + ((a + b) / 2).toFixed(1) + ' 86 ' + b.toFixed(1) + ' 80" fill="none" stroke="#b08d68" stroke-width="2"/>';
+  }
+  for (let i = 0; i <= n; i++) {
+    rail += '<rect x="' + (140 + i * step - 2.2).toFixed(1) + '" y="69" width="4.4" height="24" rx="2" fill="#7d5c3d"/>';
+  }
+  const viewBox = opts.compact ? '0 34 600 120' : '0 18 600 160';
+  return '<svg viewBox="' + viewBox + '" role="img"' + (opts.svgId ? ' id="' + opts.svgId + '"' : '') + ' aria-label="' + (opts.label || 'Dwa brzegi rzeki połączone mostem') + '">' +
+    '<defs>' +
+      '<linearGradient id="' + u + 'sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bfe0f8"/><stop offset="1" stop-color="#f1f8fe"/></linearGradient>' +
+      '<linearGradient id="' + u + 'water" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8cc7ec"/><stop offset="1" stop-color="#4f93c9"/></linearGradient>' +
+      '<linearGradient id="' + u + 'earth" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c79f74"/><stop offset="1" stop-color="#9c7350"/></linearGradient>' +
+      '<linearGradient id="' + u + 'grass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fd387"/><stop offset="1" stop-color="#6fae5c"/></linearGradient>' +
+      '<linearGradient id="' + u + 'stone" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#d3cdc2"/><stop offset="1" stop-color="#aaa294"/></linearGradient>' +
+    '</defs>' +
+    // tło rozciągnięte poza kadr, aby wypełniało szersze ekrany
+    '<rect x="-900" y="-300" width="2400" height="420" fill="url(#' + u + 'sky)"/>' +
+    '<circle cx="408" cy="52" r="20" fill="#fff4c7" opacity=".75"/><circle cx="408" cy="52" r="13" fill="#ffd45e"/>' +
+    cloudSVG(110, 50, .8) + cloudSVG(300, 46, .65) + cloudSVG(530, 44, .55) + cloudSVG(-130, 48, .8) + cloudSVG(720, 52, .7) +
+    '<path d="M-900 100 H0 Q80 62 175 90 T380 84 T600 74 Q760 66 1500 90 V116 H-900 Z" fill="#d4e9c6"/>' +
+    '<path d="M-900 106 H0 Q130 82 260 100 T600 92 Q800 88 1500 100 V118 H-900 Z" fill="#bcdcab"/>' +
+    '<rect x="-900" y="104" width="2400" height="400" fill="url(#' + u + 'water)"/>' +
+    '<rect x="150" y="104" width="300" height="5" fill="#ffffff" opacity=".25"/>' +
+    '<g stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" fill="none" opacity=".55"><path d="M190 132 q10 -4 20 0 t20 0"/><path d="M330 146 q10 -4 20 0 t20 0"/><path d="M262 166 q8 -3 16 0 t16 0"/><path d="M392 128 q8 -3 16 0"/></g>' +
+    '<path d="M-900 92 H150 Q162 92 164 104 L176 500 H-900 Z" fill="url(#' + u + 'grass)"/>' +
+    '<path d="M1500 92 H450 Q438 92 436 104 L424 500 H1500 Z" fill="url(#' + u + 'grass)"/>' +
+    '<path d="M138 96 Q160 92 164 104 L176 500 H156 L146 112 Q144 100 138 96 Z" fill="url(#' + u + 'earth)"/>' +
+    '<path d="M462 96 Q440 92 436 104 L424 500 H444 L454 112 Q456 100 462 96 Z" fill="url(#' + u + 'earth)"/>' +
+    '<g fill="#5f9e52" opacity=".55"><path d="M30 140 q4 -8 8 0M44 150 q3 -7 6 0M90 128 q4 -8 8 0M70 168 q3 -7 6 0M540 136 q4 -8 8 0M500 160 q3 -7 6 0M566 170 q4 -8 8 0M-60 130 q4 -8 8 0M660 132 q4 -8 8 0"/></g>' +
+    '<g><circle cx="60" cy="122" r="2.2" fill="#fff"/><circle cx="100" cy="150" r="2.2" fill="#f6c945"/><circle cx="24" cy="168" r="2.2" fill="#ef8fb0"/><circle cx="520" cy="118" r="2.2" fill="#f6c945"/><circle cx="560" cy="150" r="2.2" fill="#fff"/><circle cx="480" cy="176" r="2.2" fill="#ef8fb0"/><circle cx="-40" cy="120" r="2.2" fill="#f6c945"/><circle cx="640" cy="124" r="2.2" fill="#ef8fb0"/></g>' +
+    '<path d="M-900 86 H152 Q160 86 160 94 Q160 98 152 98 H-900 Z" fill="#8cc576"/>' +
+    '<path d="M1500 86 H448 Q440 86 440 94 Q440 98 448 98 H1500 Z" fill="#8cc576"/>' +
+    '<rect x="-900" y="86" width="1052" height="4" fill="#a6d690"/><rect x="448" y="86" width="1052" height="4" fill="#a6d690"/>' +
+    treeSVG(22, 86, 1.05) + treeSVG(578, 86, 1.1) + treeSVG(-70, 86, .9) + treeSVG(-160, 86, 1.1) + treeSVG(680, 86, .95) + treeSVG(770, 86, 1.05) +
+    '<path d="M152 109 Q226 140 300 109 Q374 140 448 109" fill="none" stroke="#7d5c3d" stroke-width="5" stroke-linecap="round"/>' +
+    '<path d="M218 125 V500 H234 V125 Q226 119 218 125 Z" fill="url(#' + u + 'stone)"/>' +
+    '<path d="M366 125 V500 H382 V125 Q374 119 366 125 Z" fill="url(#' + u + 'stone)"/>' +
+    '<g stroke="#9a9286" stroke-width="1"><path d="M218 145 H234M218 165 H234M366 145 H382M366 165 H382"/></g>' +
+    rail +
+    '<rect x="136" y="67" width="328" height="5" rx="2.5" fill="#6b4c30"/>' +
+    '<rect x="136" y="107.5" width="328" height="5" rx="2" fill="#6b4c30"/>' +
+    '<g' + (opts.deckId ? ' id="' + opts.deckId + '"' : '') + '>' + deckSegments(deck) + '</g>' +
+    charsGroup +
+    '</svg>';
+}
+
+/* Segmenty mostu na ilustracji — kolor z elementu i biały emblemat kształtu */
+function deckSegments(deck) {
+  const n = deck.length;
+  const w = 320 / n;
+  const scale = Math.min(.32, (w - 8) / 40);
+  let out = '';
+  for (let i = 0; i < n; i++) {
+    const x = 140 + i * w;
+    const p = deck[i];
+    if (p) {
+      out += '<rect x="' + (x + 1).toFixed(1) + '" y="91" width="' + (w - 2).toFixed(1) + '" height="17" rx="3" fill="' + COLORS[p.color].hex + '" stroke="#1b2433" stroke-opacity=".35" stroke-width="1.2"/>' +
+        '<rect x="' + (x + 3).toFixed(1) + '" y="92.5" width="' + (w - 6).toFixed(1) + '" height="3" rx="1.5" fill="#ffffff" opacity=".28"/>' +
+        '<g transform="translate(' + (x + w / 2 - 20 * scale).toFixed(1) + ' ' + (99.5 - 20 * scale).toFixed(1) + ') scale(' + scale.toFixed(3) + ')">' + shapeMarkup(p.shape, '#ffffff', '#ffffff', 2) + '</g>';
+    } else {
+      out += '<rect x="' + (x + 1).toFixed(1) + '" y="91" width="' + (w - 2).toFixed(1) + '" height="17" rx="3" fill="#f1e7d6" stroke="#b39673" stroke-width="1.2" stroke-dasharray="3 2.5"/>' +
+        '<text x="' + (x + w / 2).toFixed(1) + '" y="103.5" text-anchor="middle" font-size="10.5" font-weight="700" fill="#8a6c4c" font-family="system-ui,sans-serif">' + (i + 1) + '</text>';
+    }
+  }
+  return out;
+}
+function solutionDeck(round) {
+  return round.colors.map(function (c, i) { return { color: c, shape: round.shapes[i] }; });
+}
+function miniBridgeSVG(round) {
+  const n = round.colors.length;
+  const w = 76 / n;
+  const sc = Math.min(.13, (w - 2) / 40);
+  let segs = '';
+  round.colors.forEach(function (c, i) {
+    const x = 22 + i * w;
+    segs += '<rect x="' + (x + .4).toFixed(1) + '" y="37" width="' + (w - .8).toFixed(1) + '" height="8" rx="1.5" fill="' + COLORS[c].hex + '"/>' +
+      '<g transform="translate(' + (x + w / 2 - 20 * sc).toFixed(1) + ' ' + (41 - 20 * sc).toFixed(1) + ') scale(' + sc.toFixed(3) + ')">' + shapeMarkup(round.shapes[i], '#fff', '#fff', 2) + '</g>';
+  });
+  return '<svg viewBox="0 0 120 76" aria-hidden="true" focusable="false">' +
+    '<rect width="120" height="76" rx="10" fill="#dcedfb"/><circle cx="18" cy="16" r="6" fill="#ffd45e"/>' +
+    '<rect y="44" width="120" height="32" fill="#7fb7e2"/>' +
+    '<path d="M0 39 H22 L27 76 H0 Z M120 39 H98 L93 76 H120 Z" fill="#8cc576"/>' +
+    '<path d="M24 46 Q42 58 60 46 Q78 58 96 46" fill="none" stroke="#7d5c3d" stroke-width="2"/>' +
+    '<rect x="21" y="29" width="78" height="2" rx="1" fill="#6b4c30"/>' +
+    '<g fill="#7d5c3d"><rect x="21" y="29" width="1.8" height="8"/><rect x="59" y="29" width="1.8" height="8"/><rect x="97.2" y="29" width="1.8" height="8"/></g>' +
+    segs +
+    '<circle cx="104" cy="15" r="10" fill="#17663a"/><path d="M99 15.5l3.5 3.5 6.5-7" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+    '</svg>';
+}
+
+/* =========================================================================
+   3. STAN GRY (pamiętany tylko w bieżącej sesji)
+   ========================================================================= */
+/* Etapy ruchu: 'color' (osoba A), 'shape' (osoba B), 'confirm' (razem),
+   'full' (wszystkie miejsca ułożone), 'done' (most ukończony). */
+function createRoundState(n) {
+  return {
+    placed: new Array(n).fill(null), // umieszczone elementy
+    selectedSlot: 0,                 // aktualne miejsce (indeks od 0)
+    stage: 'color',                  // etap ruchu
+    draftColor: null,                // proponowany kolor
+    draftShape: null,                // proponowany kształt
+    hintOpen: 'A',                   // otwarta wskazówka: 'A', 'B' lub null
+    lastCheck: null,                 // wynik ostatniego sprawdzenia (true/false dla każdego miejsca)
+    roundComplete: false             // czy most jest ukończony
+  };
+}
+const prefersReduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+const state = Object.assign({
+  screen: 'start',
+  roundIndex: 0,          // indeks aktualnej rundy
+  completedRounds: [],    // indeksy wspólnie ukończonych mostów
+  fullList: false,        // pokazywać całą listę wskazówek
+  commMessageId: null,    // aktywny komunikat
+  commOpen: false,        // rozwinięty panel komunikatów (wąskie ekrany)
+  reflectionChoices: [],  // zaznaczone karty na końcu
+  settings: { largeText: false, highContrast: false, reducedMotion: prefersReduced, sharedHints: false }
+}, createRoundState(2));
+/* Zestaw „Każdy ma miejsce”: wspólne ustawienia (większy tekst, kontrast, animacje).
+   „Wspólny podgląd wskazówek” zostaje ustawieniem tylko tej gry. */
+(function () { var shared = window.KMM && KMM.read(); if (shared) Object.assign(state.settings, shared); })();
+
+/* =========================================================================
+   4. POMOCNICZE
+   ========================================================================= */
+const $ = function (sel) { return document.querySelector(sel); };
+function currentRound() { return ROUNDS[state.roundIndex]; }
+function slotCount() { return currentRound().colors.length; }
+function isTutorial() { return state.roundIndex === 0; }
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+function elementLabel(p) { return cap(COLORS[p.color].label) + ' · ' + SHAPES[p.shape].label; }
+function filledCount() { return state.placed.filter(Boolean).length; }
+function isFull() { return filledCount() === slotCount(); }
+function draft() { return { color: state.draftColor, shape: state.draftShape }; }
+function isMoving() { return state.stage === 'color' || state.stage === 'shape' || state.stage === 'confirm'; }
+/* Trwa edycja zajętego miejsca (zapisany element czeka na zastąpienie albo anulowanie) */
+function isEditingOccupied() { return isMoving() && !!state.placed[state.selectedSlot]; }
+/* Sprawdzać można tylko pełny most bez oczekującej zmiany */
+function canCheck() { return isFull() && state.stage === 'full' && !state.roundComplete; }
+
+/* Region aria-live: czyszczenie i ponowne wstawienie, aby czytnik odczytał też powtórzony tekst. */
+function setLive(el, html) {
+  if (el._timer) clearTimeout(el._timer);
+  el.innerHTML = '';
+  el._value = html;
+  el._timer = setTimeout(function () { el.innerHTML = html; }, 60);
+}
+function clearLive(el) {
+  if (el._timer) clearTimeout(el._timer);
+  el.innerHTML = '';
+  el._value = '';
+}
+function announce(text) { setLive($('#status'), text); }
+
+function matchPhrase(n) {
+  if (n === 0) return 'Na razie żaden element nie pasuje.';
+  if (n === 1) return '1 element pasuje.';
+  const last = n % 10, last2 = n % 100;
+  if (last >= 2 && last <= 4 && !(last2 >= 12 && last2 <= 14)) return n + ' elementy pasują.';
+  return n + ' elementów pasuje.';
+}
+function placesPhrase(nums) {
+  if (nums.length === 1) return 'miejscu ' + nums[0];
+  return 'miejscom ' + nums.slice(0, -1).join(', ') + ' i ' + nums[nums.length - 1];
+}
+function placesCount(n) {
+  if (n === 1) return '1 miejsce';
+  const last = n % 10, last2 = n % 100;
+  if (last >= 2 && last <= 4 && !(last2 >= 12 && last2 <= 14)) return n + ' miejsca';
+  return n + ' miejsc';
+}
+function stageText() {
+  const set = isTutorial() ? STAGE_TEXTS.tutorial : STAGE_TEXTS.regular;
+  return set[state.stage] || { main: '', sub: '' };
+}
+/* Krótka blokada po zmianie ekranu: drugie stuknięcie podwójnego kliknięcia
+   nie trafia przypadkiem w przycisk na nowym ekranie. */
+let inputLockUntil = 0;
+function lockInput() { inputLockUntil = Date.now() + 450; }
+function inputLocked() { return Date.now() < inputLockUntil; }
+function focusLater(el) {
+  if (!el) return;
+  setTimeout(function () { if (el.offsetParent !== null && !el.disabled) el.focus(); }, 40);
+}
+
+/* =========================================================================
+   5. RENDEROWANIE INTERFEJSU
+   ========================================================================= */
+let slotButtons = [], colorButtons = [], shapeButtons = [], commButtons = [];
+
+function buildStatic() {
+  document.querySelectorAll('[data-icon]').forEach(function (el) {
+    el.insertAdjacentHTML('afterbegin', icon(el.dataset.icon));
+  });
+
+  Object.keys(COLORS).forEach(function (id) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'btn choice';
+    b.dataset.color = id;
+    b.setAttribute('aria-pressed', 'false');
+    b.innerHTML = swatch(id) + '<span>' + cap(COLORS[id].label) + '</span>';
+    b.addEventListener('click', function () { pickColor(id); });
+    $('#color-buttons').appendChild(b);
+    colorButtons.push(b);
+  });
+  Object.keys(SHAPES).forEach(function (id) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'btn choice';
+    b.dataset.shape = id;
+    b.setAttribute('aria-pressed', 'false');
+    b.innerHTML = '<span class="choice-shape" aria-hidden="true"></span><span>' + cap(SHAPES[id].label) + '</span>';
+    b.addEventListener('click', function () { pickShape(id); });
+    $('#shape-buttons').appendChild(b);
+    shapeButtons.push(b);
+  });
+  COMM_MESSAGES.forEach(function (m) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'btn comm-btn';
+    b.dataset.comm = m.id;
+    b.innerHTML = icon(m.icon) + '<span>' + m.label + '</span>';
+    b.addEventListener('click', function () { showComm(m.id); });
+    $('#comm-buttons').appendChild(b);
+    commButtons.push(b);
+  });
+  REFLECTION_CARDS.forEach(function (text, i) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'btn card-toggle';
+    b.setAttribute('aria-pressed', 'false');
+    b.innerHTML = '<span class="box" aria-hidden="true">' + icon('check') + '</span><span>' + cap(text) + '</span>';
+    b.addEventListener('click', function () { toggleReflectionCard(i); });
+    $('#end-cards').appendChild(b);
+  });
+
+  const last = ROUNDS[ROUNDS.length - 1];
+  $('#start-illus').innerHTML = landscapeSVG({ deck: solutionDeck(last), charsMode: 'split', label: 'Dwa brzegi połączone kolorowym mostem. Na każdym brzegu stoi jedna postać.' });
+  $('#pause-illus').innerHTML = landscapeSVG({ deck: new Array(last.colors.length).fill(null), charsMode: 'split', label: 'Spokojna rzeka i dwa brzegi.' });
+
+  let legend = '';
+  Object.keys(COLORS).forEach(function (id) { legend += '<span>' + swatch(id) + cap(COLORS[id].label) + '</span>'; });
+  Object.keys(SHAPES).forEach(function (id) { legend += '<span>' + shapeSVG(id, NEUTRAL_FILL) + cap(SHAPES[id].label) + '</span>'; });
+  $('#help-legend').innerHTML = legend;
+}
+
+/* Budowa planszy i ilustracji dla aktualnej rundy (zmienna liczba miejsc) */
+function buildRound() {
+  const n = slotCount();
+  const list = $('#slots');
+  list.innerHTML = '';
+  slotButtons = [];
+  for (let i = 0; i < n; i++) {
+    const li = document.createElement('li');
+    li.className = 'slot-item';
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'slot';
+    b.addEventListener('click', function () { selectSlot(i); });
+    li.appendChild(b);
+    list.appendChild(li);
+    slotButtons.push(b);
+  }
+  $('#landscape').innerHTML = landscapeSVG({ deck: state.placed, compact: true, deckId: 'game-deck', charsId: 'game-chars', svgId: 'game-landscape' });
+  $('#round-title').textContent = 'Most ' + (state.roundIndex + 1) + ': ' + currentRound().title + ' · ' + placesCount(n);
+  layoutSlots();
+}
+
+/* Liczba kolumn planszy: zrównoważone rzędy, kolejność miejsc zachowana */
+function layoutSlots() {
+  const list = $('#slots');
+  const n = slotButtons.length;
+  if (!n || list.offsetParent === null) return;
+  const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 18;
+  const minW = 7.6 * rem, gap = .5 * rem, width = list.clientWidth;
+  let cols = n;
+  for (let rows = 1; rows <= n; rows++) {
+    cols = Math.ceil(n / rows);
+    if (cols === 1 || (width - (cols - 1) * gap) / cols >= minW) break;
+  }
+  list.style.gridTemplateColumns = 'repeat(' + cols + ', minmax(0, 1fr))';
+  list.classList.toggle('single', cols === 1);
+}
+
+function renderHeader() {
+  const total = ROUNDS.length;
+  $('#progress-text').textContent = state.screen === 'game'
+    ? 'Most ' + (state.roundIndex + 1) + ' z ' + total
+    : 'Wspólnie ukończone: ' + state.completedRounds.length + ' z ' + total;
+}
+
+function renderLandscape() {
+  const deck = $('#game-deck');
+  if (deck) deck.innerHTML = deckSegments(state.placed);
+  const chars = $('#game-chars');
+  if (chars) chars.classList.toggle('crossed', state.roundComplete);
+  const svg = $('#game-landscape');
+  if (svg) {
+    svg.setAttribute('aria-label', state.roundComplete
+      ? 'Most jest ukończony. Obie postacie przeszły na drugi brzeg rzeki.'
+      : 'Most w budowie: ułożone ' + filledCount() + ' z ' + slotCount() + ' miejsc. Postacie czekają na lewym brzegu.');
+  }
+}
+
+function renderSlots() {
+  const active = state.stage === 'color' || state.stage === 'shape' || state.stage === 'confirm';
+  slotButtons.forEach(function (b, i) {
+    const p = state.placed[i];
+    const selected = active && i === state.selectedSlot;
+    const res = state.lastCheck ? state.lastCheck[i] : null;
+    b.classList.toggle('selected', selected);
+    if (selected) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current');
+    b.disabled = state.roundComplete;
+    let badge = '';
+    if (res === true) badge = '<span class="badge ok">' + icon('check') + 'Pasuje</span>';
+    if (res === false) badge = '<span class="badge check">' + icon('search') + 'Sprawdźcie wskazówki</span>';
+    b.innerHTML =
+      '<span class="slot-top"><span class="slot-num">' + (i + 1) + '</span>' + (selected ? '<span class="slot-tag">teraz</span>' : '') + '</span>' +
+      '<span class="slot-shape">' + (p ? shapeSVG(p.shape, COLORS[p.color].hex) : emptySlotSVG()) + '</span>' +
+      (p ? '<span class="slot-label"><span>' + cap(COLORS[p.color].label) + '</span><span>· ' + SHAPES[p.shape].label + '</span></span>'
+         : '<span class="slot-label empty">Puste</span>') + badge;
+    let label = 'Miejsce ' + (i + 1) + ': ' + (p ? COLORS[p.color].label + ', ' + SHAPES[p.shape].label : 'puste');
+    if (selected) label += ', aktualne miejsce';
+    if (res === true) label += '. Pasuje';
+    if (res === false) label += '. Sprawdźcie wskazówki';
+    b.setAttribute('aria-label', label);
+  });
+}
+
+function renderMovePanel() {
+  const st = state.stage;
+  const n = slotCount();
+  const moving = st === 'color' || st === 'shape' || st === 'confirm';
+
+  // tytuł i pasek etapów
+  let title = 'Miejsce ' + (state.selectedSlot + 1) + ' z ' + n;
+  if (st === 'full') title = 'Wszystkie miejsca są ułożone';
+  if (st === 'done') title = 'Most ukończony';
+  $('#move-title').textContent = title;
+  $('#stage-bar').hidden = !moving;
+  const order = ['color', 'shape', 'confirm'];
+  document.querySelectorAll('#stage-bar .stage').forEach(function (li) {
+    const s = li.dataset.stage;
+    if (s === st) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current');
+    const done = (s === 'color' && state.draftColor && st !== 'color') || (s === 'shape' && state.draftShape && st === 'confirm');
+    li.classList.toggle('done', !!done);
+  });
+
+  // polecenie
+  const t = stageText();
+  let main = t.main, sub = t.sub;
+  if (st === 'full') { main = 'Sprawdźcie most.'; sub = 'Możecie też kliknąć miejsce na moście, aby je zmienić.'; }
+  if (st === 'done') { main = ''; sub = ''; }
+  $('#stage-text').textContent = main;
+  $('#stage-text').hidden = !main;
+  $('#stage-subtext').textContent = sub;
+  $('#stage-subtext').hidden = !sub;
+
+  // miejsce zajęte: stary element zostaje do zatwierdzenia nowego
+  const editing = isEditingOccupied();
+  $('#edit-bar').hidden = !editing;
+  if (editing) $('#occupied-note').textContent = 'Na moście jest teraz: ' + elementLabel(state.placed[state.selectedSlot]) + '. Zostanie, dopóki nie zatwierdzicie nowego elementu.';
+
+  renderHints();
+
+  // podsumowanie wyboru (to, co nie jest teraz wybierane)
+  const sum = $('#draft-summary');
+  let sumHtml = '';
+  if (st === 'shape' && state.draftColor) {
+    sumHtml = '<span class="chip">' + swatch(state.draftColor) + 'Kolor: ' + cap(COLORS[state.draftColor].label) + '</span>' +
+      '<button type="button" class="btn btn-small" id="btn-back-color">' + icon('palette') + 'Zmień kolor</button>';
+  } else if (st === 'color' && state.draftShape) {
+    sumHtml = '<span class="chip">' + shapeSVG(state.draftShape, NEUTRAL_FILL) + 'Kształt zostaje: ' + SHAPES[state.draftShape].label + '</span>';
+  }
+  sum.innerHTML = sumHtml;
+  sum.hidden = !sumHtml;
+  const back = $('#btn-back-color');
+  if (back) back.addEventListener('click', changeColor);
+
+  // przyciski potrzebne w danym etapie
+  $('#color-buttons').hidden = st !== 'color';
+  $('#shape-buttons').hidden = st !== 'shape';
+  colorButtons.forEach(function (b) {
+    b.setAttribute('aria-pressed', String(b.dataset.color === state.draftColor));
+    if (hintVisible('A')) b.setAttribute('aria-describedby', 'hint-now-A'); else b.removeAttribute('aria-describedby');
+  });
+  const fill = state.draftColor ? COLORS[state.draftColor].hex : NEUTRAL_FILL;
+  shapeButtons.forEach(function (b) {
+    b.setAttribute('aria-pressed', String(b.dataset.shape === state.draftShape));
+    b.querySelector('.choice-shape').innerHTML = shapeSVG(b.dataset.shape, fill);
+    if (hintVisible('B')) b.setAttribute('aria-describedby', 'hint-now-B'); else b.removeAttribute('aria-describedby');
+  });
+
+  // wspólna decyzja: podgląd
+  const cz = $('#confirm-zone');
+  cz.hidden = st !== 'confirm';
+  if (st === 'confirm') {
+    const d = draft();
+    $('#preview').innerHTML = shapeSVG(d.shape, COLORS[d.color].hex) +
+      '<span><span class="preview-label">' + elementLabel(d) + '</span><br><span class="preview-slot">miejsce ' + (state.selectedSlot + 1) + '</span></span>';
+  }
+
+  // sprawdzanie
+  $('#check-row').hidden = st === 'done';
+  $('#btn-check').disabled = !canCheck();
+  let checkHint = 'Ułożone: ' + filledCount() + ' z ' + n + '. Sprawdzić można po ułożeniu wszystkich.';
+  if (isFull()) checkHint = st === 'full' ? 'Wszystkie miejsca są ułożone.' : 'Zatwierdźcie zmianę albo anulujcie edycję.';
+  $('#check-hint').textContent = checkHint;
+
+  const res = $('#result');
+  res.classList.toggle('success', state.roundComplete);
+  if (!state.lastCheck && !state.roundComplete && res._value) clearLive(res);
+  $('#success-box').hidden = !state.roundComplete;
+}
+
+/* Wskazówki: które przyciski i karty są dostępne w danym etapie */
+function availableHints() {
+  if (state.stage === 'color') return ['A'];
+  if (state.stage === 'shape') return ['B'];
+  if (state.stage === 'confirm') return ['A', 'B'];
+  return [];
+}
+function hintVisible(k) {
+  const avail = ['color', 'shape', 'confirm'].indexOf(state.stage) !== -1;
+  if (!avail) return false;
+  if (state.settings.sharedHints) return true;
+  return state.hintOpen === k && availableHints().indexOf(k) !== -1;
+}
+function renderHints() {
+  const round = currentRound();
+  const shared = state.settings.sharedHints;
+  const avail = availableHints();
+  const anyVisible = hintVisible('A') || hintVisible('B');
+  $('#hint-zone').hidden = avail.length === 0;
+
+  ['A', 'B'].forEach(function (k) {
+    const btn = $('#btn-hint-' + k);
+    btn.hidden = shared || avail.indexOf(k) === -1;
+    btn.setAttribute('aria-expanded', String(hintVisible(k)));
+    $('#hint-card-' + k).hidden = !hintVisible(k);
+    document.querySelector('[data-hide-hint="' + k + '"]').hidden = shared;
+
+    const s = state.selectedSlot;
+    let body = '';
+    if (!state.fullList) {
+      const visual = k === 'A' ? swatch(round.colors[s]) : shapeSVG(round.shapes[s], NEUTRAL_FILL);
+      const word = k === 'A' ? COLORS[round.colors[s]].label : SHAPES[round.shapes[s]].label;
+      body = '<p class="hint-current" id="hint-now-' + k + '">' + visual + '<span>Miejsce ' + (s + 1) + ' — ' + word + '</span></p>';
+    } else {
+      body = '<ol class="hint-list">';
+      for (let i = 0; i < round.colors.length; i++) {
+        const cur = i === s;
+        const visual = k === 'A' ? swatch(round.colors[i]) : shapeSVG(round.shapes[i], NEUTRAL_FILL);
+        const word = k === 'A' ? COLORS[round.colors[i]].label : SHAPES[round.shapes[i]].label;
+        body += '<li' + (cur ? ' class="current" aria-current="true"' : '') + '>' + visual +
+          '<span' + (cur ? ' id="hint-now-' + k + '"' : '') + '>Miejsce ' + (i + 1) + ' — ' + word + '</span>' +
+          (cur ? '<span class="now">' + icon('arrowLeft') + 'teraz</span>' : '') + '</li>';
+      }
+      body += '</ol>';
+    }
+    $('#hint-body-' + k).innerHTML = body;
+  });
+  const fl = $('#btn-full-list');
+  fl.hidden = !anyVisible;
+  fl.setAttribute('aria-pressed', String(state.fullList));
+  fl.lastChild.textContent = state.fullList ? 'Pokaż tylko aktualne miejsce' : 'Pokaż całą listę';
+}
+
+function isDock() { return window.matchMedia('(max-width:1080px)').matches; }
+function renderComm() {
+  const panel = $('#comm-panel');
+  panel.classList.toggle('open', !!state.commOpen);
+  $('#btn-comm-toggle').setAttribute('aria-expanded', String(isDock() ? !!state.commOpen : true));
+  commButtons.forEach(function (b) { b.classList.toggle('active', b.dataset.comm === state.commMessageId); });
+  const box = $('#comm-message');
+  const m = COMM_MESSAGES.find(function (x) { return x.id === state.commMessageId; });
+  if (!m) { box.hidden = true; box.innerHTML = ''; updateDockSpace(); return; }
+  box.hidden = false;
+  box.innerHTML = icon(m.icon) + '<p class="comm-text">' + m.message + '</p>' +
+    '<button type="button" class="btn btn-small" id="btn-comm-close">' + icon('close') + 'Zamknij komunikat</button>';
+  $('#btn-comm-close').addEventListener('click', closeComm);
+  updateDockSpace();
+}
+/* Miejsce zarezerwowane pod panelem u dołu ekranu */
+function updateDockSpace() {
+  const h = isDock() && state.screen === 'game' ? $('#comm-panel').offsetHeight : 0;
+  document.documentElement.style.setProperty('--dock-h', h + 'px');
+  document.documentElement.classList.toggle('in-game', state.screen === 'game');
+}
+function toggleCommPanel(force) {
+  state.commOpen = typeof force === 'boolean' ? force : !state.commOpen;
+  renderComm();
+  if (state.commOpen && isDock()) focusLater(commButtons[0]);
+}
+
+function renderGame() {
+  renderHeader();
+  renderLandscape();
+  renderSlots();
+  renderMovePanel();
+  renderComm();
+}
+
+function showScreen(name) {
+  state.screen = name;
+  lockInput();
+  ['start', 'game', 'reflection', 'end'].forEach(function (s) { $('#screen-' + s).hidden = s !== name; });
+  $('#topbar').hidden = name === 'start';
+  renderHeader();
+  updateDockSpace();
+  window.scrollTo(0, 0);
+}
+
+/* Fokus po zmianie etapu: pierwszy aktywny przycisk */
+function focusForStage() {
+  if (state.stage === 'color') focusLater(colorButtons[0]);
+  else if (state.stage === 'shape') focusLater(shapeButtons[0]);
+  else if (state.stage === 'confirm') focusLater($('#btn-commit'));
+  else if (state.stage === 'full') focusLater($('#btn-check'));
+  else if (state.stage === 'done') focusLater($('#btn-continue'));
+}
+
+/* =========================================================================
+   6. LOGIKA RUCHU: KOLOR → KSZTAŁT → WSPÓLNA DECYZJA
+   ========================================================================= */
+function stageAnnouncement(prefix) {
+  const t = stageText();
+  let msg = prefix ? prefix + ' ' : '';
+  if (state.stage === 'color') msg += 'Miejsce ' + (state.selectedSlot + 1) + '. Etap 1: kolor. ' + t.main;
+  if (state.stage === 'shape') msg += 'Etap 2: kształt. ' + t.main;
+  if (state.stage === 'confirm') msg += 'Etap 3: wspólna decyzja. Element: ' + elementLabel(draft()) + '. ' + t.main;
+  if (state.stage === 'full') msg += 'Wszystkie miejsca są ułożone. Możecie sprawdzić most.';
+  return msg;
+}
+
+function enterStage(stage, prefix) {
+  state.stage = stage;
+  if (stage === 'color') state.hintOpen = 'A';
+  else if (stage === 'shape') state.hintOpen = 'B';
+  else state.hintOpen = null;
+  renderGame();
+  announce(stageAnnouncement(prefix));
+  focusForStage();
+}
+
+/* Kliknięcie miejsca rozpoczyna jego edycję od etapu A. Plansza się nie zmienia. */
+function selectSlot(i) {
+  if (state.roundComplete || inputLocked()) return;
+  state.selectedSlot = i;
+  state.draftColor = null;
+  state.draftShape = null;
+  enterStage('color');
+}
+
+function pickColor(id) {
+  if (state.stage !== 'color' || inputLocked()) return;
+  state.draftColor = id;
+  enterStage(state.draftShape ? 'confirm' : 'shape', 'Kolor: ' + COLORS[id].label + '.');
+}
+
+function pickShape(id) {
+  if (state.stage !== 'shape' || !state.draftColor || inputLocked()) return;
+  state.draftShape = id;
+  enterStage('confirm', 'Kształt: ' + SHAPES[id].label + '.');
+}
+
+/* Zmiana koloru zachowuje kształt (i odwrotnie), potem wraca do podglądu. */
+function changeColor() { if (state.stage === 'shape' || state.stage === 'confirm') enterStage('color'); }
+function changeShape() { if (state.stage === 'confirm') enterStage('shape'); }
+
+/* Anuluj zmianę: zapisany układ i wynik sprawdzenia zostają bez zmian. */
+function cancelEdit() {
+  if (!isEditingOccupied() || state.roundComplete) return;
+  state.draftColor = null;
+  state.draftShape = null;
+  const msg = 'Zmiana anulowana. Poprzedni element pozostaje na moście.';
+  if (isFull()) {
+    state.stage = 'full';
+    state.hintOpen = null;
+    renderGame();
+    announce(msg);
+    focusLater($('#btn-check'));
+  } else {
+    state.selectedSlot = state.placed.findIndex(function (p) { return !p; });
+    state.stage = 'color';
+    state.hintOpen = 'A';
+    renderGame();
+    announce(msg + ' Miejsce ' + (state.selectedSlot + 1) + '. Etap 1: kolor.');
+    focusLater(colorButtons[0]);
+  }
+}
+
+function findNextEmpty(from) {
+  const n = slotCount();
+  for (let k = 1; k <= n; k++) {
+    const idx = (from + k) % n;
+    if (!state.placed[idx]) return idx;
+  }
+  return -1;
+}
+
+/* „Układamy razem” — jedyny moment, w którym zmienia się plansza */
+function commitElement() {
+  if (state.stage !== 'confirm' || state.roundComplete || !state.draftColor || !state.draftShape || inputLocked()) return;
+  const slot = state.selectedSlot;
+  const el = draft();
+  const hadCheck = state.lastCheck !== null;
+  state.placed[slot] = el;
+  state.lastCheck = null;              // oznaczenia dotyczyły wcześniejszej wersji mostu
+  clearLive($('#result'));
+  state.draftColor = null;
+  state.draftShape = null;
+  const prefix = hadCheck
+    ? 'Most został zmieniony. Możecie sprawdzić go ponownie.'
+    : 'Miejsce ' + (slot + 1) + ': ' + elementLabel(el) + '.';
+  const next = findNextEmpty(slot);
+  if (next === -1) {
+    enterStage('full', prefix);
+  } else {
+    state.selectedSlot = next;
+    enterStage('color', prefix);
+  }
+}
+
+/* =========================================================================
+   7. SPRAWDZANIE ROZWIĄZANIA
+   ========================================================================= */
+function checkBridge() {
+  if (!canCheck() || inputLocked()) return;   // ta sama kontrola co przy przycisku
+  const round = currentRound();
+  const results = state.placed.map(function (p, i) {
+    return p.color === round.colors[i] && p.shape === round.shapes[i];
+  });
+  if (results.every(Boolean)) { completeRound(); return; }
+
+  state.lastCheck = results;
+  const wrong = [];
+  results.forEach(function (v, i) { if (!v) wrong.push(i + 1); });
+  // poprawka zaczyna się od pierwszego niepasującego miejsca, od etapu A
+  state.selectedSlot = wrong[0] - 1;
+  state.draftColor = null;
+  state.draftShape = null;
+  state.stage = 'color';
+  state.hintOpen = 'A';
+  renderGame();
+  setLive($('#result'),
+    '<p class="main">' + matchPhrase(results.filter(Boolean).length) + ' Przyjrzyjcie się wspólnie ' + placesPhrase(wrong) + '.</p>' +
+    '<p>Co mówi wskazówka o kolorze? Co mówi wskazówka o kształcie? Zaczynamy od miejsca ' + wrong[0] + '.</p>');
+  focusLater($('#move-title'));
+}
+
+function completeRound() {
+  if (state.roundComplete) return;           // ukończenie zapisuje się tylko raz
+  state.roundComplete = true;
+  state.lastCheck = null;
+  state.stage = 'done';
+  state.hintOpen = null;
+  if (state.completedRounds.indexOf(state.roundIndex) === -1) state.completedRounds.push(state.roundIndex);
+  renderGame();
+  setLive($('#result'), '<p class="main">Udało się! Połączyliście wskazówki i zbudowaliście most.</p>');
+  focusLater($('#btn-continue'));
+}
+
+/* =========================================================================
+   8. PRZEBIEG RUND, REFLEKSJA, ZAKOŃCZENIE
+   ========================================================================= */
+function startRound(index) {
+  state.roundIndex = index;
+  Object.assign(state, createRoundState(ROUNDS[index].colors.length));
+  state.commMessageId = null;
+  clearLive($('#result'));
+  showScreen('game');
+  buildRound();
+  renderGame();
+  const t = stageText();
+  announce('Most ' + (index + 1) + ': ' + currentRound().title + '. ' + placesCount(slotCount()) + '. Miejsce 1. Etap 1: kolor. ' + t.main);
+  focusLater($('#round-title'));
+}
+
+function startGame() {
+  state.completedRounds = [];
+  state.reflectionChoices = [];
+  startRound(0);
+}
+
+function goToReflection() {
+  if (state.screen !== 'game' || !state.roundComplete || inputLocked()) return;   // ochrona przed podwójnym kliknięciem
+  const round = currentRound();
+  const last = state.roundIndex >= ROUNDS.length - 1;
+  showScreen('reflection');
+  $('#refl-illus').innerHTML = landscapeSVG({ deck: solutionDeck(round), charsMode: 'right', label: 'Gotowy most. Obie postacie przeszły na drugi brzeg.' });
+  $('#refl-eyebrow').textContent = 'Most ' + (state.roundIndex + 1) + ' z ' + ROUNDS.length + ' ukończony';
+  $('#refl-title').textContent = round.title;
+  $('#refl-question').textContent = round.reflection;
+  $('#swap-notice').textContent = '';
+  $('#btn-next-round').lastChild.textContent = last ? 'Zakończenie' : 'Następny most';
+  $('#btn-swap').hidden = last;
+  focusLater($('#refl-title'));
+}
+
+function nextRound() {
+  if (state.screen !== 'reflection' || inputLocked()) return;                      // ochrona przed podwójnym kliknięciem
+  if (state.roundIndex >= ROUNDS.length - 1) { showEnd(); return; }
+  startRound(state.roundIndex + 1);
+}
+
+function showSwap() {
+  setLive($('#swap-notice'), 'Zamieńcie się rolami: osoba, która odczytywała kolory, teraz odczytuje kształty. Na ekranie A nadal oznacza kolory, a B kształty.');
+}
+
+function showEnd() {
+  showScreen('end');
+  $('#end-count').textContent = 'Wspólnie ukończone mosty: ' + state.completedRounds.length + ' z ' + ROUNDS.length;
+  let html = '';
+  ROUNDS.forEach(function (r, i) {
+    const done = state.completedRounds.indexOf(i) !== -1;
+    html += '<li>' + miniBridgeSVG(r) + '<span>Most ' + (i + 1) + '</span><span class="sr-only">: ' + r.title + (done ? ', ukończony' : '') + '</span></li>';
+  });
+  $('#end-bridges').innerHTML = html;
+  renderEndCards();
+  focusLater($('#end-title'));
+}
+
+function renderEndCards() {
+  document.querySelectorAll('#end-cards .card-toggle').forEach(function (b, i) {
+    b.setAttribute('aria-pressed', String(state.reflectionChoices.indexOf(i) !== -1));
+  });
+}
+function toggleReflectionCard(i) {
+  const at = state.reflectionChoices.indexOf(i);
+  if (at === -1) state.reflectionChoices.push(i); else state.reflectionChoices.splice(at, 1);
+  renderEndCards();
+}
+
+function goHome() {
+  state.roundIndex = 0;
+  state.completedRounds = [];
+  state.reflectionChoices = [];
+  Object.assign(state, createRoundState(ROUNDS[0].colors.length));
+  showScreen('start');
+  focusLater($('#start-title'));
+}
+
+/* =========================================================================
+   9. WSKAZÓWKI I KOMUNIKATY
+   ========================================================================= */
+function toggleHint(k) {
+  if (availableHints().indexOf(k) === -1) return;
+  state.hintOpen = state.hintOpen === k ? null : k;
+  renderMovePanel();
+}
+function hideHint(k) {
+  if (state.hintOpen === k) state.hintOpen = null;
+  renderMovePanel();
+  focusLater($('#btn-hint-' + k));
+}
+function toggleFullList() {
+  state.fullList = !state.fullList;
+  renderMovePanel();
+}
+function showComm(id) {
+  state.commMessageId = id;
+  const wasDock = isDock();
+  if (wasDock) state.commOpen = false;          // panel się zwija, komunikat zostaje widoczny
+  renderComm();
+  if (wasDock) focusLater($('#btn-comm-close'));
+  const m = COMM_MESSAGES.find(function (x) { return x.id === id; });
+  setLive($('#comm-live'), m.message);
+}
+function closeComm() {
+  const id = state.commMessageId;
+  state.commMessageId = null;
+  renderComm();
+  const btn = commButtons.find(function (b) { return b.dataset.comm === id; });
+  focusLater(btn && btn.offsetParent !== null ? btn : $('#btn-comm-toggle'));
+}
+
+/* =========================================================================
+   10. USTAWIENIA I OKNA
+   ========================================================================= */
+function applySettings() {
+  const s = state.settings, root = document.documentElement;
+  root.classList.toggle('large-text', s.largeText);
+  root.classList.toggle('high-contrast', s.highContrast);
+  root.classList.toggle('reduce-motion', s.reducedMotion);
+  document.querySelectorAll('[data-setting]').forEach(function (input) { input.checked = !!s[input.dataset.setting]; });
+  document.querySelectorAll('[data-state-for]').forEach(function (el) { el.textContent = s[el.dataset.stateFor] ? 'Włączone' : 'Wyłączone'; });
+}
+
+const dialogOpeners = {};
+function openDialog(id, opener) {
+  const dlg = document.getElementById(id);
+  if (!dlg || dlg.open) return;
+  dialogOpeners[id] = opener || document.activeElement;
+  if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', '');
+  const auto = dlg.querySelector('[autofocus]');
+  if (auto) setTimeout(function () { auto.focus(); }, 30);
+}
+function restoreFocus(id) {
+  const el = dialogOpeners[id];
+  dialogOpeners[id] = null;
+  if (el && document.contains(el)) focusLater(el);
+}
+
+/* =========================================================================
+   11. KONTROLA DANYCH — uruchamiana przed zbudowaniem grafik i planszy
+   ========================================================================= */
+function validateRounds() {
+  const problems = [];
+  if (!Array.isArray(ROUNDS) || ROUNDS.length === 0) {
+    problems.push('Brakuje mostów: tablica ROUNDS musi zawierać co najmniej jedną rundę.');
+    return problems;
+  }
+  ROUNDS.forEach(function (r, i) {
+    const name = 'Most ' + (i + 1);
+    if (!r || typeof r !== 'object') { problems.push(name + ': nieprawidłowy zapis rundy.'); return; }
+    const okC = Array.isArray(r.colors), okS = Array.isArray(r.shapes);
+    if (!okC) problems.push(name + ': „colors” musi być tablicą kolorów.');
+    if (!okS) problems.push(name + ': „shapes” musi być tablicą kształtów.');
+    if (okC && okS) {
+      if (r.colors.length === 0 || r.shapes.length === 0) problems.push(name + ': most musi mieć co najmniej jedno miejsce.');
+      if (r.colors.length !== r.shapes.length) problems.push(name + ': liczba kolorów (' + r.colors.length + ') i kształtów (' + r.shapes.length + ') musi być taka sama.');
+      if (r.colors.length > MAX_SLOTS || r.shapes.length > MAX_SLOTS) problems.push(name + ': najwyżej ' + MAX_SLOTS + ' miejsc.');
+    }
+    if (okC) r.colors.forEach(function (c, j) { if (!COLORS[c]) problems.push(name + ', miejsce ' + (j + 1) + ': nieznany kolor „' + c + '”.'); });
+    if (okS) r.shapes.forEach(function (s, j) { if (!SHAPES[s]) problems.push(name + ', miejsce ' + (j + 1) + ': nieznany kształt „' + s + '”.'); });
+    if (typeof r.title !== 'string' || !r.title) problems.push(name + ': brakuje tytułu („title”).');
+    if (typeof r.reflection !== 'string' || !r.reflection) problems.push(name + ': brakuje pytania („reflection”).');
+  });
+  return problems;
+}
+
+/* =========================================================================
+   12. START I OBSŁUGA ZDARZEŃ
+   ========================================================================= */
+function init() {
+  const problems = validateRounds();
+  if (problems.length) {                     // zatrzymaj start przed tworzeniem grafik i planszy
+    $('#screen-start').hidden = true;
+    $('#screen-error').hidden = false;
+    $('#error-list').innerHTML = problems.map(function (p) {
+      const li = document.createElement('li'); li.textContent = p; return li.outerHTML;
+    }).join('');
+    console.warn('Most współpracy — nieprawidłowe dane:', problems);
+    return;
+  }
+
+  buildStatic();
+  applySettings();
+
+  $('#btn-start').addEventListener('click', startGame);
+  $('#btn-commit').addEventListener('click', commitElement);
+  $('#btn-change-color').addEventListener('click', changeColor);
+  $('#btn-change-shape').addEventListener('click', changeShape);
+  $('#btn-cancel-edit').addEventListener('click', cancelEdit);
+  $('#btn-comm-toggle').addEventListener('click', function () { toggleCommPanel(); });
+  $('#comm-panel').addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && state.commOpen && isDock()) { toggleCommPanel(false); focusLater($('#btn-comm-toggle')); }
+  });
+  if (window.ResizeObserver) new ResizeObserver(updateDockSpace).observe($('#comm-panel'));
+  $('#btn-check').addEventListener('click', checkBridge);
+  $('#btn-continue').addEventListener('click', goToReflection);
+  $('#btn-next-round').addEventListener('click', nextRound);
+  $('#btn-swap').addEventListener('click', showSwap);
+  $('#btn-replay').addEventListener('click', startGame);
+  $('#btn-home').addEventListener('click', goHome);
+  $('#btn-hint-A').addEventListener('click', function () { toggleHint('A'); });
+  $('#btn-hint-B').addEventListener('click', function () { toggleHint('B'); });
+  $('#btn-full-list').addEventListener('click', toggleFullList);
+  document.querySelectorAll('[data-hide-hint]').forEach(function (b) {
+    b.addEventListener('click', function () { hideHint(b.dataset.hideHint); });
+  });
+
+  document.addEventListener('click', function (e) {
+    const o = e.target.closest('[data-open]');
+    if (o) openDialog(o.dataset.open, o);
+    const c = e.target.closest('[data-close]');
+    if (c) c.closest('dialog').close();
+  });
+  document.querySelectorAll('dialog').forEach(function (d) {
+    d.addEventListener('close', function () { restoreFocus(d.id); });
+  });
+  document.querySelectorAll('[data-setting]').forEach(function (input) {
+    input.addEventListener('change', function () {
+      state.settings[input.dataset.setting] = input.checked;
+      applySettings();
+      if (window.KMM) KMM.write(state.settings);   // wspólne ustawienia zestawu
+      if (state.screen === 'game') { renderMovePanel(); layoutSlots(); }
+    });
+  });
+  window.addEventListener('resize', function () { layoutSlots(); renderComm(); });
+  if (window.KMM) KMM.onChange(function (shared) {
+    if (shared) Object.assign(state.settings, shared);
+    applySettings();
+    if (state.screen === 'game') { renderMovePanel(); layoutSlots(); }
+  });
+
+  showScreen('start');
+}
+init();
+</script>
+</body>
+</html>

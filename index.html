@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="Każdy ma miejsce — sześć bezpłatnych gier edukacyjnych o współpracy, różnych potrzebach i wspólnym uczestnictwie. Działają w przeglądarce, także bez internetu. Autor: Michał Siwkowski.">
+<meta name="author" content="Michał Siwkowski">
+<title>Każdy ma miejsce</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232b5f9e'/%3E%3Ccircle cx='22' cy='26' r='7' fill='%23fff'/%3E%3Ccircle cx='42' cy='26' r='7' fill='%23fff'/%3E%3Cpath d='M10 50c2-8 7-12 12-12s10 4 12 12M30 50c2-8 7-12 12-12s10 4 12 12' fill='none' stroke='%23fff' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+<!-- ===== ZESTAW „KAŻDY MA MIEJSCE”: wspólne ustawienia i powrót do menu =====
+     Ten sam fragment znajduje się w menu (index.html) i w każdej grze.
+     ✏️ Wspólny klucz ustawień: 'kazdyMaMiejsce.ustawienia'
+        { largeText: true/false, highContrast: true/false, reducedMotion: true/false }
+     Gry nadal zapisują też swoje dawne klucze i dodatkowe ustawienia — nic nie ginie.
+     Gdy przeglądarka blokuje localStorage, wszystko działa, tylko bez zapamiętywania. -->
+<style id="kmm-style">
+.kmm-nav{box-sizing:border-box;max-width:1320px;margin:0 auto;padding:8px 16px 0;display:flex;flex-wrap:wrap;gap:8px}
+.kmm-home{box-sizing:border-box;display:inline-flex;align-items:center;gap:8px;min-height:48px;min-width:48px;padding:.4rem 1rem;
+  border:2px solid #1f2a33;border-radius:12px;background:#fff;color:#1f2a33;font-family:inherit;font-weight:700;font-size:max(18px,1rem);
+  line-height:1.2;text-decoration:none}
+.kmm-home:hover{background:#eef3f8;text-decoration:underline}
+.kmm-home:focus{outline:none}
+.kmm-home:focus-visible{outline:4px solid #b4400a;outline-offset:3px;box-shadow:0 0 0 7px #fff}
+.kmm-home svg{width:22px;height:22px;flex:none;display:block}
+html.high-contrast .kmm-home,html.hc .kmm-home{border:3px solid #000;color:#000;background:#fff}
+html.high-contrast .kmm-home:focus-visible,html.hc .kmm-home:focus-visible{outline-color:#c00000}
+@media print{.kmm-nav{display:none}}
+</style>
+<script>
+window.KMM = (function () {
+  'use strict';
+  var KEY = 'kazdyMaMiejsce.ustawienia';
+  var NAMES = ['largeText', 'highContrast', 'reducedMotion'];
+  /** Odczyt wspólnych ustawień. Zwraca obiekt tylko z zapisanymi polami albo null. */
+  function read() {
+    try {
+      var raw = window.localStorage.getItem(KEY);
+      if (!raw) return null;
+      var p = JSON.parse(raw), o = {}, n = 0;
+      if (!p || typeof p !== 'object') return null;
+      NAMES.forEach(function (k) { if (typeof p[k] === 'boolean') { o[k] = p[k]; n++; } });
+      return n ? o : null;
+    } catch (e) { return null; }
+  }
+  /** Zapis wspólnych ustawień (tylko trzy wspólne pola). Zwraca false, gdy pamięć jest niedostępna. */
+  function write(s) {
+    try {
+      var o = read() || {};
+      NAMES.forEach(function (k) { if (s && typeof s[k] === 'boolean') o[k] = s[k]; });
+      window.localStorage.setItem(KEY, JSON.stringify(o));
+      return true;
+    } catch (e) { return false; }
+  }
+  var listeners = [];
+  function onChange(fn) { listeners.push(fn); }
+  function notify() { listeners.forEach(function (fn) { try { fn(read()); } catch (e) {} }); }
+  // Każde wyświetlenie strony (także „Wstecz”, gdy przeglądarka odtwarza stare pola formularzy)
+  // i zmiana w innej karcie: ponownie zastosuj aktualne wspólne ustawienia.
+  window.addEventListener('pageshow', function () { notify(); });
+  window.addEventListener('storage', function (e) { if (e.key === KEY) notify(); });
+  /** Zatrzymuje nagrania i syntezę mowy przy wyjściu z gry. */
+  function stopMedia() {
+    try { Array.prototype.forEach.call(document.querySelectorAll('audio,video'), function (m) { m.pause(); }); } catch (e) {}
+    try { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch (e) {}
+  }
+  window.addEventListener('pagehide', stopMedia);
+  document.addEventListener('click', function (e) {
+    var a = e.target && e.target.closest ? e.target.closest('.kmm-home') : null;
+    if (!a) return;
+    stopMedia();
+    try { window.sessionStorage.setItem('kazdyMaMiejsce.powrot', a.getAttribute('data-game') || ''); } catch (err) {}
+  });
+  return { KEY: KEY, read: read, write: write, onChange: onChange, stopMedia: stopMedia };
+})();
+</script>
+<!-- ===== koniec wspólnego fragmentu ===== -->
+<script>
+/* Zastosuj wspólne ustawienia przed pierwszym rysowaniem strony (bez mignięcia). */
+(function () {
+  var s = window.KMM && KMM.read();
+  if (!s) return;
+  var r = document.documentElement;
+  if (s.largeText) r.classList.add('large-text');
+  if (s.highContrast) r.classList.add('high-contrast');
+  if (s.reducedMotion) r.classList.add('reduce-motion');
+})();
+</script>
+<style>
+/* =========================================================
+   WYGLĄD MENU — kolory i rozmiary
+   ========================================================= */
+:root{
+  --bg:#f5f3ee; --surface:#fff; --text:#1f2a33; --muted:#46545e; --line:#8b979f;
+  --accent:#2b5f9e; --accent-strong:#1b4373; --soft:#e8f0fb; --hover:#eef3f8; --focus:#b4400a;
+}
+html{font-size:112.5%}            /* 1rem = 18 px */
+html.large-text{font-size:137.5%} /* 1rem = 22 px */
+html.high-contrast{--bg:#fff;--surface:#fff;--text:#000;--muted:#000;--line:#000;--accent:#0038a8;--accent-strong:#001f5c;--soft:#dfe8ff;--hover:#f0f0f0;--focus:#c00000}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-size:1rem;line-height:1.55;color:var(--text);background:var(--bg)}
+h1{font-size:clamp(1.9rem,6vw,2.8rem);line-height:1.15;margin:0}
+h2{font-size:1.45rem;line-height:1.25;margin:0 0 .6rem}
+h3{font-size:1.2rem;line-height:1.25;margin:0}
+p{margin:.45rem 0}
+a{color:var(--accent-strong)}
+:focus{outline:none}
+:focus-visible{outline:4px solid var(--focus);outline-offset:3px;box-shadow:0 0 0 7px #fff}
+.wrap{max-width:1120px;margin:0 auto;padding:16px}
+.skip{position:absolute;left:12px;top:-200px;z-index:10;background:#fff;color:#000;border:3px solid #000;border-radius:10px;padding:.6rem 1rem;font-weight:700;min-height:48px;display:inline-flex;align-items:center}
+.skip:focus{top:12px}
+.panel{background:var(--surface);border:2px solid var(--line);border-radius:20px;padding:clamp(16px,4vw,32px);margin-bottom:20px}
+html.high-contrast .panel{border-width:3px}
+
+/* Nagłówek */
+.hero{display:grid;gap:18px;align-items:center}
+@media (min-width:820px){.hero{grid-template-columns:1.3fr 1fr}}
+.motto{font-weight:700;color:var(--accent-strong);font-size:1.15rem;margin:.4rem 0 .6rem}
+.lead{font-size:1.08rem}
+.author{font-weight:650;margin-top:.8rem}
+.hero-art svg{width:100%;height:auto;max-width:460px;display:block;margin:0 auto}
+
+/* Kafelki gier */
+.games{list-style:none;padding:0;margin:0;display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr))}
+.tile{--c:#2b5f9e;--cbg:#e8f0fb;display:flex;flex-direction:column;gap:8px;height:100%;min-height:48px;padding:16px 18px 18px;
+  border:2px solid var(--line);border-top:10px solid var(--c);border-radius:18px;background:var(--surface);color:var(--text);text-decoration:none}
+.tile:hover{background:var(--hover);border-color:var(--c)}
+.tile:hover .tile-go{text-decoration:underline}
+.tile-head{display:flex;align-items:center;gap:12px}
+.tile-icon{width:60px;height:60px;flex:none;border-radius:16px;background:var(--cbg);border:2px solid var(--c);display:flex;align-items:center;justify-content:center}
+.tile-icon svg{width:42px;height:42px}
+.tile-num{display:block;font-size:max(16px,.85rem);font-weight:700;color:var(--muted)}
+.tile-motto{font-weight:700;color:var(--text);margin:.2rem 0 0}
+.tile-desc{margin:0;flex:1}
+.tile-meta{display:flex;flex-wrap:wrap;gap:6px;margin:.2rem 0 0}
+.tile-meta span{font-size:max(16px,.85rem);font-weight:650;border:2px solid var(--line);border-radius:999px;padding:0 10px;background:var(--bg)}
+.tile-go{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;min-height:48px;padding:.45rem 1.1rem;margin-top:4px;border-radius:12px;
+  background:var(--accent);border:2px solid var(--accent-strong);color:#fff;font-weight:700}
+.tile-go svg{width:20px;height:20px}
+html.high-contrast .tile{border:3px solid #000;border-top:10px solid #000}
+html.high-contrast .tile-icon{background:#fff;border-color:#000}
+
+/* Jak grać */
+.how{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));list-style:none;padding:0;margin:0}
+.how li{display:flex;gap:12px;align-items:flex-start;background:var(--bg);border:2px solid var(--line);border-radius:14px;padding:12px 14px}
+.how svg{width:32px;height:32px;flex:none;color:var(--accent)}
+.how strong{display:block}
+.note{background:var(--soft);border-left:6px solid var(--accent);padding:.6rem .9rem;border-radius:8px;margin-top:14px}
+
+/* Ustawienia */
+.settings{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));margin:0;padding:0;border:0}
+.settings legend{padding:0;margin-bottom:8px}
+.setting{display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 12px;border:2px solid var(--line);border-radius:14px;background:var(--surface);cursor:pointer;font-weight:650}
+.setting input{width:28px;height:28px;flex:none;margin:0;accent-color:var(--accent)}
+.setting small{display:block;font-weight:500;color:var(--muted);font-size:max(16px,.85rem)}
+.storage-note{margin-top:10px;font-weight:600}
+
+footer{color:var(--muted);font-size:max(16px,.9rem);padding:4px 4px 24px}
+footer p{margin:.3rem 0}
+
+html.reduce-motion *,html.reduce-motion *::before,html.reduce-motion *::after{animation:none !important;transition:none !important;scroll-behavior:auto !important}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none !important;transition:none !important}}
+@media (max-width:599px){.wrap{padding:12px}}
+</style>
+</head>
+<body>
+<a class="skip" href="#gry">Przejdź do listy gier</a>
+<div id="live" class="visually-hidden" aria-live="polite" aria-atomic="true" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap"></div>
+
+<div class="wrap">
+  <header class="panel hero">
+    <div>
+      <h1>Każdy ma miejsce</h1>
+      <p class="motto">Sześć gier o współpracy, różnych potrzebach i wspólnym uczestnictwie.</p>
+      <p class="lead">Budujcie, planujcie, rozmawiajcie i szukajcie rozwiązań, dzięki którym każda osoba może dołączyć. Wybierz grę i zacznij — w dowolnej kolejności.</p>
+      <p class="author">Autor: Michał Siwkowski</p>
+    </div>
+    <div class="hero-art">
+      <svg viewBox="0 0 360 200" role="img" aria-label="Ilustracja: kilka różnych osób siedzi razem przy jednym stole.">
+        <rect x="0" y="0" width="360" height="200" rx="18" fill="#eef3f8"/>
+        <rect x="40" y="128" width="280" height="18" rx="9" fill="#c49a6c" stroke="#1f2a33" stroke-width="2.5"/>
+        <rect x="70" y="146" width="12" height="40" fill="#a9b6bf" stroke="#1f2a33" stroke-width="2"/>
+        <rect x="278" y="146" width="12" height="40" fill="#a9b6bf" stroke="#1f2a33" stroke-width="2"/>
+        <g stroke="#1f2a33" stroke-width="2.5">
+          <path d="M52 128 q0-34 26-34 q26 0 26 34z" fill="#7fb3d5"/><circle cx="78" cy="74" r="17" fill="#f2c9a5"/>
+          <path d="M120 128 q0-38 28-38 q28 0 28 38z" fill="#f2c14e"/><circle cx="148" cy="68" r="18" fill="#8d5a3b"/>
+          <path d="M192 128 q0-36 27-36 q27 0 27 36z" fill="#6fbf7f"/><circle cx="219" cy="72" r="17" fill="#f6d3b8"/>
+          <path d="M262 128 q0-34 25-34 q25 0 25 34z" fill="#b48fd8"/><circle cx="287" cy="76" r="16" fill="#c98e62"/>
+        </g>
+        <g fill="#1f2a33"><circle cx="72" cy="73" r="2.2"/><circle cx="84" cy="73" r="2.2"/><circle cx="142" cy="67" r="2.2"/><circle cx="154" cy="67" r="2.2"/>
+          <circle cx="213" cy="71" r="2.2"/><circle cx="225" cy="71" r="2.2"/><circle cx="281" cy="75" r="2.2"/><circle cx="293" cy="75" r="2.2"/></g>
+        <g fill="none" stroke="#1f2a33" stroke-width="2" stroke-linecap="round"><path d="M73 80q5 4 10 0M143 75q5 4 10 0M214 79q5 4 10 0M282 82q5 4 10 0"/></g>
+        <rect x="150" y="112" width="60" height="16" rx="3" fill="#fff" stroke="#1f2a33" stroke-width="2"/>
+        <path d="M168 24h46a8 8 0 0 1 8 8v16a8 8 0 0 1-8 8h-24l-10 9v-9h-12a8 8 0 0 1-8-8V32a8 8 0 0 1 8-8z" fill="#fff" stroke="#3d7a4a" stroke-width="2.5"/>
+        <path d="M191 50c-7-5-10-8-10-12a5 5 0 0 1 10-1 5 5 0 0 1 10 1c0 4-3 7-10 12z" fill="#e07a5f"/>
+      </svg>
+    </div>
+  </header>
+
+  <main>
+    <section class="panel" id="gry" tabindex="-1" aria-labelledby="gry-title">
+      <h2 id="gry-title">Wybierz grę</h2>
+      <ul class="games" id="games"></ul>
+    </section>
+
+    <section class="panel" aria-labelledby="how-title">
+      <h2 id="how-title">Jak grać?</h2>
+      <ul class="how">
+        <li><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M2.5 20c.5-4 3-6 5.5-6s5 2 5.5 6M10.5 20c.5-4 3-6 5.5-6s5 2 5.5 6"/></svg>
+          <span><strong>Samodzielnie lub razem</strong>Grajcie w parze albo w małej grupie przy jednym ekranie. Rozmawiajcie, wskazujcie i decydujcie wspólnie.</span></li>
+        <li><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          <span><strong>Bez pośpiechu</strong>Nie ma limitu czasu, punktów, rankingu ani przegranej. Każdą decyzję można poprawić.</span></li>
+        <li><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M6 10h1M9 10h1M12 10h1M15 10h1M18 10h0M7 14h10"/></svg>
+          <span><strong>Mysz, dotyk lub klawiatura</strong><kbd>Tab</kbd> przechodzi dalej, <kbd>Enter</kbd> lub <kbd>Spacja</kbd> wybiera, <kbd>Esc</kbd> zamyka okno.</span></li>
+        <li><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 19l-7-7 7-7M3 12h18"/></svg>
+          <span><strong>Powrót do menu</strong>W każdej grze przycisk „Wszystkie gry” u góry strony prowadzi tutaj.</span></li>
+      </ul>
+      <p class="note">To uproszczone sytuacje. W prawdziwej klasie i grupie najlepsze rozwiązania ustalamy razem z osobami, których dotyczą.</p>
+    </section>
+
+    <section class="panel" aria-labelledby="set-title">
+      <h2 id="set-title">Ustawienia dla wszystkich gier</h2>
+      <p>Wybór działa od razu w menu i we wszystkich grach. Możesz go też zmienić w ustawieniach każdej gry.</p>
+      <fieldset class="settings">
+        <legend class="visually-hidden" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Ustawienia dostępności</legend>
+        <label class="setting"><input type="checkbox" autocomplete="off" id="set-largeText" data-setting="largeText"><span>Większy tekst<small>Powiększa napisy.</small></span></label>
+        <label class="setting"><input type="checkbox" autocomplete="off" id="set-highContrast" data-setting="highContrast"><span>Wysoki kontrast<small>Białe tło, czarny tekst, grubsze ramki.</small></span></label>
+        <label class="setting"><input type="checkbox" autocomplete="off" id="set-reducedMotion" data-setting="reducedMotion"><span>Ograniczone animacje<small>Zmiany bez płynnych przejść.</small></span></label>
+      </fieldset>
+      <p class="storage-note" id="storage-note" hidden>Ustawienia działają teraz, ale ta przeglądarka nie pozwala ich zapamiętać.</p>
+    </section>
+  </main>
+
+  <footer>
+    <p><strong>Każdy ma miejsce</strong> — zestaw gier edukacyjnych. Autor: Michał Siwkowski.</p>
+    <p>Gry działają w przeglądarce, także bez internetu. Nie zbierają danych. Ustawienia są zapamiętywane tylko na tym urządzeniu.</p>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  /* =====================================================================
+     ✏️ LISTA GIER — kolejność kafelków, nazwy plików, hasła i opisy
+     ===================================================================== */
+  var GAMES = [
+    { file: 'most-wspolpracy.html', title: 'Most współpracy', motto: 'Różne wskazówki. Wspólny cel.',
+      desc: 'Zbudujcie razem pięć mostów. Jedna osoba zna kolory, druga zna kształty. Połączcie wskazówki i znajdźcie wspólne rozwiązanie.',
+      tags: ['najlepiej we dwoje', 'współpraca'], color: '#2b5f9e', bg: '#e3f0fb', icon: 'bridge' },
+    { file: 'klasa-dla-kazdego.html', title: 'Klasa dla każdego', motto: 'Różne potrzeby. Wspólna przestrzeń.',
+      desc: 'Poznajcie cztery osoby i ich potrzeby. Rozmieśćcie wyposażenie tak, aby każdy mógł wygodnie uczyć się i współpracować.',
+      tags: ['planowanie przestrzeni'], color: '#3d7a4a', bg: '#e4f4e6', icon: 'room' },
+    { file: 'co-powiesz.html', title: 'Co powiesz?', motto: 'Zatrzymaj się. Posłuchaj. Wybierz słowa.',
+      desc: 'Osiem szkolnych rozmów. Wybieraj wypowiedzi i sprawdzaj, co może wydarzyć się dalej.',
+      tags: ['komunikacja'], color: '#8a6810', bg: '#fff4cf', icon: 'talk' },
+    { file: 'kazdy-ma-swoja-droge.html', title: 'Każdy ma swoją drogę', motto: 'Wspólny cel. Różne potrzeby.',
+      desc: 'Pomóż trzem osobom dotrzeć na wspólne spotkanie. Poznaj ich potrzeby, dostosuj otoczenie i sprawdź drogi.',
+      tags: ['dostępność otoczenia'], color: '#6e4c94', bg: '#f1e8fa', icon: 'path' },
+    { file: 'wspolny-piknik.html', title: 'Wspólny piknik', motto: 'Planujemy razem. Pamiętamy o każdym.',
+      desc: 'Wybierz miejsce, dwie aktywności i wyposażenie. Przygotuj piknik, w którym każda osoba znajdzie dla siebie miejsce.',
+      tags: ['planowanie wydarzenia'], color: '#a14a2a', bg: '#fbe9df', icon: 'picnic' },
+    { file: 'detektywi-barier.html', title: 'Detektywi barier', motto: 'Sprawdźmy, co możemy zmienić.',
+      desc: 'Wyszukaj na ilustracjach przeszkody w przejściu, komunikacji i zasadach. Wybierz zmiany, które ułatwiają wspólny udział.',
+      tags: ['szukanie rozwiązań'], color: '#1d6670', bg: '#dcefef', icon: 'search' }
+  ];
+  var S = 'fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"';
+  var ICONS = {
+    bridge: '<svg viewBox="0 0 48 48" aria-hidden="true" ' + S + '><path d="M4 30h40M4 30v8M44 30v8"/><path d="M6 30c6-14 30-14 36 0"/><path d="M14 30v-7M24 30v-9M34 30v-7"/></svg>',
+    room:   '<svg viewBox="0 0 48 48" aria-hidden="true" ' + S + '><rect x="5" y="7" width="38" height="34" rx="3"/><path d="M24 7v34M5 24h15M28 24h15"/><rect x="9" y="11" width="8" height="8" rx="1"/><circle cx="36" cy="33" r="4"/></svg>',
+    talk:   '<svg viewBox="0 0 48 48" aria-hidden="true" ' + S + '><path d="M5 8h24v15H15l-6 5v-5H5z"/><path d="M33 18h10v15h-4v5l-6-5H19v-6"/></svg>',
+    path:   '<svg viewBox="0 0 48 48" aria-hidden="true" ' + S + '><circle cx="10" cy="38" r="4"/><path d="M14 38h8a6 6 0 0 0 0-12h-4a6 6 0 0 1 0-12h12"/><path d="M34 6v14M34 6l8 4-8 4"/></svg>',
+    picnic: '<svg viewBox="0 0 48 48" aria-hidden="true" ' + S + '><path d="M8 20h32l-4 20H12z"/><path d="M16 20c0-7 4-11 8-11s8 4 8 11"/><path d="M10 30h28M18 20l-2 20M30 20l2 20"/></svg>',
+    search: '<svg viewBox="0 0 48 48" aria-hidden="true" ' + S + '><circle cx="20" cy="20" r="12"/><path d="M29 29l12 12"/><path d="M14 20l4 4 8-8"/></svg>'
+  };
+  var ARROW = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+  function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  var list = document.getElementById('games');
+  GAMES.forEach(function (g, i) {
+    var li = document.createElement('li');
+    // Cały kafelek jest jednym linkiem; ścieżka względna działa lokalnie i na GitHub Pages.
+    li.innerHTML =
+      '<a class="tile" href="./' + esc(g.file) + '" data-game="' + esc(g.file) + '" style="--c:' + g.color + ';--cbg:' + g.bg + '"' +
+        ' aria-labelledby="t' + i + '" aria-describedby="m' + i + ' d' + i + '">' +
+        '<div class="tile-head"><div class="tile-icon" style="color:' + g.color + '">' + ICONS[g.icon] + '</div>' +
+        '<div><span class="tile-num" aria-hidden="true">Gra ' + (i + 1) + ' z ' + GAMES.length + '</span><h3 id="t' + i + '">' + esc(g.title) + '</h3></div></div>' +
+        '<p class="tile-motto" id="m' + i + '">' + esc(g.motto) + '</p>' +
+        '<p class="tile-desc" id="d' + i + '">' + esc(g.desc) + '</p>' +
+        '<div class="tile-meta" aria-hidden="true">' + g.tags.map(function (t) { return '<span>' + esc(t) + '</span>'; }).join('') + '</div>' +
+        '<span class="tile-go" aria-hidden="true">Zagraj ' + ARROW + '</span>' +
+      '</a>';
+    list.appendChild(li);
+  });
+
+  /* ---------- Wspólne ustawienia ---------- */
+  var settings = { largeText: false, highContrast: false, reducedMotion: false };
+  var shared = window.KMM && KMM.read();
+  if (shared) Object.keys(shared).forEach(function (k) { settings[k] = shared[k]; });
+  var live = document.getElementById('live');
+  var NAMES = { largeText: 'Większy tekst', highContrast: 'Wysoki kontrast', reducedMotion: 'Ograniczone animacje' };
+  function apply() {
+    var r = document.documentElement;
+    r.classList.toggle('large-text', settings.largeText);
+    r.classList.toggle('high-contrast', settings.highContrast);
+    r.classList.toggle('reduce-motion', settings.reducedMotion);
+    Object.keys(settings).forEach(function (k) { document.getElementById('set-' + k).checked = settings[k]; });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('[data-setting]'), function (inp) {
+    inp.addEventListener('change', function () {
+      var k = inp.getAttribute('data-setting');
+      settings[k] = inp.checked;
+      apply();
+      var saved = window.KMM ? KMM.write(settings) : false;
+      document.getElementById('storage-note').hidden = saved;
+      live.textContent = '';
+      setTimeout(function () { live.textContent = NAMES[k] + (inp.checked ? ': włączone.' : ': wyłączone.'); }, 60);
+    });
+  });
+  if (window.KMM) KMM.onChange(function (s) {
+    if (s) Object.keys(s).forEach(function (k) { settings[k] = s[k]; });
+    apply();
+  });
+  apply();
+
+  /* ---------- Po powrocie z gry: fokus na jej kafelku ---------- */
+  function focusReturned() {
+    var from = null;
+    try { from = window.sessionStorage.getItem('kazdyMaMiejsce.powrot'); window.sessionStorage.removeItem('kazdyMaMiejsce.powrot'); } catch (e) {}
+    if (!from) return;
+    var tile = document.querySelector('.tile[data-game="' + from.replace(/"/g, '') + '"]');
+    if (tile) tile.focus();
+  }
+  focusReturned();
+  window.addEventListener('pageshow', function (e) { if (e.persisted) focusReturned(); });
+})();
+</script>
+</body>
+</html>

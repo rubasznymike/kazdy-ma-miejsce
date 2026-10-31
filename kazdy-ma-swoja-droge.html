@@ -1,0 +1,1440 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Każdy ma swoją drogę — pomóż trzem osobom dotrzeć na wspólne spotkanie: dostosuj otoczenie i sprawdź drogi. Część zestawu „Każdy ma miejsce”.">
+<meta name="author" content="Michał Siwkowski">
+<title>Każdy ma swoją drogę</title>
+<style>
+/* =========================================================
+   WYGLĄD — spokojne kolory. Kolory symboli można zmienić tutaj.
+   ========================================================= */
+:root{
+  --bg:#f5f3ec; --surface:#ffffff; --surface-2:#faf8f2;
+  --ink:#1d2830; --muted:#46525c; --line:#cdc5b3;
+  --accent:#1d6a72; --accent-dark:#134c52; --accent-ink:#ffffff; --accent-soft:#dcefed;
+  --road:#efe6d3; --road-dot:#c3b28c;
+  --wall:#56616b; --wall-line:#77828c;
+  --step:#86643f; --noise:#a83c2a; --sign-bg:#f2c84b; --sign-ink:#3b2f00;
+  --adapt:#1d6a72; --adapt-fill:#bfe3df;
+  --goal:#c48a08;
+  --route:#123a6b; --route-badge:#123a6b;
+  --ok:#1d6334; --ok-soft:#e1f2e5; --warn:#7a4300; --warn-soft:#fbeedb;
+  --focus:#0a3a8c;
+  --radius:14px;
+  --cell:clamp(52px, 15.5vw, 80px);
+}
+html{font-size:18px;}
+html.big{font-size:22px;}
+html.hc{
+  --bg:#ffffff; --surface:#ffffff; --surface-2:#ffffff;
+  --ink:#000000; --muted:#000000; --line:#000000;
+  --accent:#003c46; --accent-dark:#00262c; --accent-soft:#ffffff;
+  --road:#ffffff; --road-dot:#000000;
+  --wall:#000000; --wall-line:#555555;
+  --step:#4a2a00; --noise:#8a0000; --sign-bg:#ffd400; --sign-ink:#000000;
+  --adapt:#003c46; --adapt-fill:#9fe0d8;
+  --goal:#7a5200; --route:#000000; --route-badge:#000000;
+  --ok:#004d1a; --ok-soft:#ffffff; --warn:#5a2e00; --warn-soft:#ffffff;
+  --focus:#000000;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Atkinson Hyperlegible",Verdana,"Segoe UI",system-ui,sans-serif;
+  font-size:1rem;line-height:1.55;}
+h1,h2,h3{line-height:1.25;margin:0 0 .4em;}
+h1{font-size:2rem;} h2{font-size:1.5rem;} h3{font-size:1.15rem;}
+p{margin:0 0 .7em;}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+.small{font-size:.9rem;color:var(--muted);}
+[hidden]{display:none !important;}
+
+/* Fokus zawsze widoczny */
+:focus-visible{outline:4px solid var(--focus);outline-offset:3px;box-shadow:0 0 0 7px #fff;}
+button:focus{outline:4px solid var(--focus);outline-offset:3px;}
+button:focus:not(:focus-visible){outline:none;box-shadow:none;}
+
+.skip{position:absolute;left:-999px;top:0;background:var(--accent);color:#fff;padding:.5em 1em;z-index:10;}
+.skip:focus{left:8px;top:8px;}
+
+/* Przyciski */
+button{font:inherit;cursor:pointer;min-height:48px;min-width:48px;}
+.btn{min-height:48px;min-width:48px;height:auto;white-space:normal;padding:.55em 1.1em;border-radius:12px;border:2px solid var(--accent);
+  background:var(--surface);color:var(--accent-dark);font-weight:700;font-size:1rem;}
+.btn:hover{background:var(--accent-soft);}
+.btn.primary{background:var(--accent);color:var(--accent-ink);}
+.btn.primary:hover{background:var(--accent-dark);}
+.btn.big{font-size:1.15rem;padding:.7em 1.4em;min-height:56px;}
+.btn[aria-disabled="true"],.btn:disabled{opacity:.55;cursor:not-allowed;}
+html.hc .btn{border-width:3px;}
+.row{display:flex;flex-wrap:wrap;gap:.7rem;align-items:center;}
+
+/* Pasek górny — instrukcja i przerwa dostępne zawsze */
+.topbar{display:flex;flex-wrap:wrap;gap:.5rem 1rem;align-items:center;justify-content:space-between;
+  padding:.6rem 1rem;background:var(--surface);border-bottom:2px solid var(--line);}
+.brand{font-weight:700;color:var(--accent-dark);}
+.topbar nav{display:flex;flex-wrap:wrap;gap:.5rem;}
+.topbar .btn{padding:.35em .9em;font-size:1rem;}
+
+main{max-width:1180px;margin:0 auto;padding:1rem;}
+.screen{padding-bottom:2rem;}
+.panel{background:var(--surface);border:2px solid var(--line);border-radius:var(--radius);padding:1rem 1.1rem;}
+
+/* Ekran startowy */
+.start{display:grid;gap:1.2rem;align-items:center;}
+@media (min-width:860px){.start{grid-template-columns:1.05fr 1fr;}}
+.slogan{font-size:1.3rem;font-weight:700;color:var(--accent-dark);}
+.illustration svg{width:100%;height:auto;max-width:560px;display:block;margin:auto;}
+.note{border-left:6px solid var(--accent);background:var(--surface-2);padding:.6rem .9rem;border-radius:8px;}
+
+/* Nagłówek planszy */
+.map-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:.5rem 1rem;align-items:flex-end;margin-bottom:.8rem;}
+.progress{display:flex;gap:.5rem;align-items:center;font-weight:700;margin:0;}
+.dots{display:flex;gap:6px;}
+.dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--accent);background:var(--surface);}
+.dot.done{background:var(--accent);}
+.dot.now{box-shadow:0 0 0 3px var(--accent-soft);background:var(--adapt-fill);}
+.hint{display:flex;gap:.5rem;align-items:flex-start;background:var(--surface);border:2px dashed var(--line);
+  border-radius:12px;padding:.5rem .8rem;margin:0 0 1rem;}
+
+/* Karty postaci */
+.people{display:grid;gap:.8rem;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));margin-bottom:1rem;}
+.person{background:var(--surface);border:2px solid var(--line);border-radius:var(--radius);padding:.8rem;
+  display:grid;grid-template-columns:72px 1fr;gap:.3rem .8rem;align-items:start;}
+.person .portrait{width:72px;height:72px;}
+.person h3{margin:0;font-size:1.2rem;}
+.person .need{margin:0;}
+.person .actions{grid-column:1 / -1;display:flex;flex-wrap:wrap;gap:.5rem;}
+.person .btn{padding:.4em .8em;font-size:1rem;}
+.status{grid-column:1 / -1;display:flex;gap:.5rem;align-items:flex-start;border-radius:10px;padding:.45rem .6rem;
+  font-weight:700;background:var(--surface-2);border:2px solid var(--line);}
+.status svg{flex:0 0 26px;width:26px;height:26px;}
+.status.ok{background:var(--ok-soft);border-color:var(--ok);color:var(--ok);}
+.status.no{background:var(--warn-soft);border-color:var(--warn);color:var(--warn);}
+.status .q{display:block;font-weight:400;color:var(--ink);}
+
+/* Plansza i panel boczny */
+.play{display:grid;gap:1.2rem;}
+@media (min-width:900px){.play{grid-template-columns:auto minmax(320px,1fr);align-items:start;}}
+.board-wrap{display:flex;flex-direction:column;align-items:center;gap:.6rem;}
+.board{display:grid;grid-template-columns:repeat(5,var(--cell));gap:4px;padding:8px;background:var(--line);
+  border-radius:14px;width:max-content;max-width:100%;}
+html.hc .board{background:#000;}
+.cell{position:relative;width:var(--cell);height:var(--cell);min-width:48px;min-height:48px;padding:0;
+  border:2px solid transparent;border-radius:8px;background:var(--road);display:grid;place-items:center;overflow:visible;}
+.cell svg.sym{width:86%;height:86%;pointer-events:none;}
+.cell.t-wall{background:var(--wall);}
+.cell.t-goal{background:#fbefc9;}
+.cell.t-start{background:#eef3f6;}
+html.hc .cell{border-color:#000;}
+.cell.target::before{content:"";position:absolute;inset:3px;border:3px dotted var(--accent);border-radius:6px;pointer-events:none;}
+.cell.on-route::after{content:"";position:absolute;inset:2px;border:4px dashed var(--route);border-radius:7px;pointer-events:none;}
+.cell .step{position:absolute;top:-6px;left:-6px;min-width:24px;height:24px;padding:0 4px;border-radius:12px;
+  background:var(--route-badge);color:#fff;font-size:14px;font-weight:700;line-height:24px;text-align:center;
+  border:2px solid #fff;pointer-events:none;z-index:2;}
+.cell:focus-visible{z-index:3;}
+.cell-info{width:100%;max-width:460px;min-height:3.2em;background:var(--surface);border:2px solid var(--line);
+  border-radius:12px;padding:.5rem .8rem;font-size:1rem;}
+.route-bar{width:100%;max-width:460px;display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;justify-content:space-between;
+  background:var(--surface);border:3px dashed var(--route);border-radius:12px;padding:.5rem .8rem;}
+.route-bar p{margin:0;font-weight:700;}
+
+.side{display:flex;flex-direction:column;gap:1rem;}
+.tools{display:grid;gap:.6rem;}
+.tool{display:grid;grid-template-columns:48px 1fr;gap:.2rem .7rem;align-items:center;text-align:left;
+  min-height:64px;padding:.45rem .7rem;border-radius:12px;border:2px solid var(--line);background:var(--surface);color:var(--ink);}
+.tool svg{width:48px;height:48px;grid-row:span 2;}
+.tool .tname{font-weight:700;font-size:1.05rem;}
+.tool .tstate{font-size:.9rem;color:var(--muted);}
+.tool:hover{border-color:var(--accent);}
+.tool[aria-pressed="true"]{border:3px solid var(--accent);background:var(--accent-soft);box-shadow:inset 6px 0 0 var(--accent);}
+.tool[aria-pressed="true"] .tname::after{content:" — wybrane";}
+.tool:disabled{opacity:.6;cursor:not-allowed;}
+.message{min-height:3em;background:var(--surface);border:2px solid var(--line);border-radius:12px;padding:.6rem .8rem;}
+.message:empty{display:none;}
+.blocked{color:var(--warn);font-weight:700;margin:.3rem 0 0;}
+.success{background:var(--ok-soft);border:3px solid var(--ok);border-radius:var(--radius);padding:1rem;}
+.success h3{color:var(--ok);display:flex;gap:.5rem;align-items:center;font-size:1.3rem;}
+.success:focus{outline:4px solid var(--focus);outline-offset:3px;}
+
+/* Legenda */
+.legend{margin-top:1.4rem;}
+.legend ul{list-style:none;padding:0;margin:0;display:grid;gap:.5rem;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));}
+.legend li{display:flex;gap:.6rem;align-items:center;}
+.legend .sw{width:44px;height:44px;flex:0 0 44px;border-radius:8px;display:grid;place-items:center;border:2px solid var(--line);background:var(--road);}
+.legend .sw svg{width:86%;height:86%;}
+.legend .sw.t-wall{background:var(--wall);} .legend .sw.t-goal{background:#fbefc9;} .legend .sw.t-start{background:#eef3f6;}
+.legend .sw.route{border:4px dashed var(--route);}
+
+/* Podsumowanie */
+.picks{display:grid;gap:.7rem;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));margin:1rem 0 1.4rem;}
+.pick{display:flex;gap:.6rem;align-items:center;text-align:left;min-height:64px;padding:.6rem .8rem;border-radius:12px;
+  border:2px solid var(--line);background:var(--surface);color:var(--ink);font-size:1.05rem;}
+.pick .box{flex:0 0 30px;width:30px;height:30px;border:3px solid var(--accent);border-radius:8px;display:grid;place-items:center;background:#fff;}
+.pick .box svg{width:22px;height:22px;visibility:hidden;}
+.pick[aria-pressed="true"]{border:3px solid var(--accent);background:var(--accent-soft);}
+.pick[aria-pressed="true"] .box{background:var(--accent);}
+.pick[aria-pressed="true"] .box svg{visibility:visible;}
+.pick .chosen{font-size:.9rem;color:var(--accent-dark);font-weight:700;display:block;}
+
+/* Ekran błędu danych */
+.error-screen .panel{border:3px solid var(--warn);}
+.error-screen li{margin-bottom:.3em;}
+
+/* Okna dialogowe */
+dialog{border:3px solid var(--accent);border-radius:16px;padding:0;max-width:min(640px,94vw);width:100%;
+  background:var(--surface);color:var(--ink);}
+dialog::backdrop{background:rgba(20,30,40,.55);}
+.dlg{padding:1.2rem 1.3rem;max-height:85vh;overflow:auto;}
+.dlg ol{padding-left:1.4em;} .dlg li{margin-bottom:.35em;}
+.setting{display:flex;gap:.7rem;align-items:center;min-height:52px;font-size:1.05rem;}
+.setting input{width:28px;height:28px;accent-color:var(--accent);}
+.quote{font-size:1.25rem;font-weight:700;background:var(--surface-2);border-left:6px solid var(--accent);padding:.7rem .9rem;border-radius:8px;}
+.person-dlg{display:flex;gap:1rem;align-items:center;margin-bottom:.8rem;}
+.person-dlg svg{width:96px;height:96px;flex:0 0 96px;}
+.breath{width:120px;height:120px;margin:1rem auto;border-radius:50%;background:var(--accent-soft);border:4px solid var(--accent);
+  animation:breath 8s ease-in-out infinite;}
+@keyframes breath{0%,100%{transform:scale(.75);}50%{transform:scale(1);}}
+
+/* Ograniczone animacje */
+.fade-in{animation:fade .35s ease-out;}
+@keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+html.calm *,html.calm *::before,html.calm *::after{animation:none !important;transition:none !important;}
+
+@media (max-width:420px){
+  main{padding:.7rem;}
+  .board{padding:6px;gap:3px;}
+  h1{font-size:1.7rem;}
+  .person{grid-template-columns:60px 1fr;}
+  .person .portrait{width:60px;height:60px;}
+}
+</style>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232b5f9e'/%3E%3Ccircle cx='22' cy='26' r='7' fill='%23fff'/%3E%3Ccircle cx='42' cy='26' r='7' fill='%23fff'/%3E%3Cpath d='M10 50c2-8 7-12 12-12s10 4 12 12M30 50c2-8 7-12 12-12s10 4 12 12' fill='none' stroke='%23fff' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+<!-- ===== ZESTAW „KAŻDY MA MIEJSCE”: wspólne ustawienia i powrót do menu =====
+     Ten sam fragment znajduje się w menu (index.html) i w każdej grze.
+     ✏️ Wspólny klucz ustawień: 'kazdyMaMiejsce.ustawienia'
+        { largeText: true/false, highContrast: true/false, reducedMotion: true/false }
+     Gry nadal zapisują też swoje dawne klucze i dodatkowe ustawienia — nic nie ginie.
+     Gdy przeglądarka blokuje localStorage, wszystko działa, tylko bez zapamiętywania. -->
+<style id="kmm-style">
+.kmm-nav{box-sizing:border-box;max-width:1320px;margin:0 auto;padding:8px 16px 0;display:flex;flex-wrap:wrap;gap:8px}
+.kmm-home{box-sizing:border-box;display:inline-flex;align-items:center;gap:8px;min-height:48px;min-width:48px;padding:.4rem 1rem;
+  border:2px solid #1f2a33;border-radius:12px;background:#fff;color:#1f2a33;font-family:inherit;font-weight:700;font-size:max(18px,1rem);
+  line-height:1.2;text-decoration:none}
+.kmm-home:hover{background:#eef3f8;text-decoration:underline}
+.kmm-home:focus{outline:none}
+.kmm-home:focus-visible{outline:4px solid #b4400a;outline-offset:3px;box-shadow:0 0 0 7px #fff}
+.kmm-home svg{width:22px;height:22px;flex:none;display:block}
+html.high-contrast .kmm-home,html.hc .kmm-home{border:3px solid #000;color:#000;background:#fff}
+html.high-contrast .kmm-home:focus-visible,html.hc .kmm-home:focus-visible{outline-color:#c00000}
+@media print{.kmm-nav{display:none}}
+</style>
+<script>
+window.KMM = (function () {
+  'use strict';
+  var KEY = 'kazdyMaMiejsce.ustawienia';
+  var NAMES = ['largeText', 'highContrast', 'reducedMotion'];
+  /** Odczyt wspólnych ustawień. Zwraca obiekt tylko z zapisanymi polami albo null. */
+  function read() {
+    try {
+      var raw = window.localStorage.getItem(KEY);
+      if (!raw) return null;
+      var p = JSON.parse(raw), o = {}, n = 0;
+      if (!p || typeof p !== 'object') return null;
+      NAMES.forEach(function (k) { if (typeof p[k] === 'boolean') { o[k] = p[k]; n++; } });
+      return n ? o : null;
+    } catch (e) { return null; }
+  }
+  /** Zapis wspólnych ustawień (tylko trzy wspólne pola). Zwraca false, gdy pamięć jest niedostępna. */
+  function write(s) {
+    try {
+      var o = read() || {};
+      NAMES.forEach(function (k) { if (s && typeof s[k] === 'boolean') o[k] = s[k]; });
+      window.localStorage.setItem(KEY, JSON.stringify(o));
+      return true;
+    } catch (e) { return false; }
+  }
+  var listeners = [];
+  function onChange(fn) { listeners.push(fn); }
+  function notify() { listeners.forEach(function (fn) { try { fn(read()); } catch (e) {} }); }
+  // Każde wyświetlenie strony (także „Wstecz”, gdy przeglądarka odtwarza stare pola formularzy)
+  // i zmiana w innej karcie: ponownie zastosuj aktualne wspólne ustawienia.
+  window.addEventListener('pageshow', function () { notify(); });
+  window.addEventListener('storage', function (e) { if (e.key === KEY) notify(); });
+  /** Zatrzymuje nagrania i syntezę mowy przy wyjściu z gry. */
+  function stopMedia() {
+    try { Array.prototype.forEach.call(document.querySelectorAll('audio,video'), function (m) { m.pause(); }); } catch (e) {}
+    try { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch (e) {}
+  }
+  window.addEventListener('pagehide', stopMedia);
+  document.addEventListener('click', function (e) {
+    var a = e.target && e.target.closest ? e.target.closest('.kmm-home') : null;
+    if (!a) return;
+    stopMedia();
+    try { window.sessionStorage.setItem('kazdyMaMiejsce.powrot', a.getAttribute('data-game') || ''); } catch (err) {}
+  });
+  return { KEY: KEY, read: read, write: write, onChange: onChange, stopMedia: stopMedia };
+})();
+</script>
+<!-- ===== koniec wspólnego fragmentu ===== -->
+</head>
+<body>
+<a class="skip" href="#main">Przejdź do treści</a>
+<!-- ✏️ Zestaw „Każdy ma miejsce”: powrót do menu (ścieżka względna — działa lokalnie i na GitHub Pages) -->
+<nav class="kmm-nav" aria-label="Zestaw gier Każdy ma miejsce"><a class="kmm-home" href="./index.html" data-game="kazdy-ma-swoja-droge.html"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg><span>Wszystkie gry</span></a></nav>
+
+
+<header class="topbar">
+  <span class="brand">Każdy ma swoją drogę</span>
+  <nav aria-label="Pomoc i ustawienia">
+    <button class="btn" type="button" data-open="dlgHelp">Jak grać?</button>
+    <button class="btn" type="button" data-open="dlgSettings">Ustawienia</button>
+    <button class="btn" type="button" data-open="dlgPause">Przerwa</button>
+  </nav>
+</header>
+
+<main id="main">
+  <!-- ============ EKRAN BŁĘDU DANYCH (widoczny tylko przy błędnych mapach) ============ -->
+  <section id="screenError" class="screen error-screen" role="alert" aria-labelledby="errorTitle" hidden>
+    <div class="panel">
+      <h1 id="errorTitle" tabindex="-1">Nie można uruchomić gry</h1>
+      <p>W danych map są problemy. Popraw je w pliku (sekcja „2. DANE MAP”) i otwórz grę ponownie.</p>
+      <ul id="errorList"></ul>
+    </div>
+  </section>
+
+  <!-- ============ EKRAN STARTOWY ============ -->
+  <section id="screenStart" class="screen" aria-labelledby="startTitle">
+    <div class="start">
+      <div>
+        <h1 id="startTitle" tabindex="-1">Każdy ma swoją drogę</h1>
+        <p class="slogan">Wspólny cel. Różne potrzeby.</p>
+        <p>Pomóż trzem osobom dotrzeć na wspólne spotkanie. Poznaj ich potrzeby, dostosuj otoczenie i sprawdź drogi.</p>
+        <div class="row" style="margin:1rem 0;">
+          <button class="btn primary big" type="button" id="btnStart">Zaczynamy</button>
+          <button class="btn big" type="button" data-open="dlgHelp">Jak grać?</button>
+          <button class="btn big" type="button" data-open="dlgSettings">Ustawienia</button>
+        </div>
+        <p class="note">To uproszczona gra. W prawdziwym miejscu pytamy jego użytkowników, jakie rozwiązania im pomagają.</p>
+      </div>
+      <div class="illustration" id="startIllustration"></div>
+    </div>
+  </section>
+
+  <!-- ============ EKRAN GRY ============ -->
+  <section id="screenGame" class="screen" aria-labelledby="mapTitle" hidden>
+    <div class="map-head">
+      <div>
+        <p class="progress"><span id="progressText">Plansza 1 z 3</span> <span class="dots" id="progressDots" aria-hidden="true"></span></p>
+        <h2 id="mapTitle" tabindex="-1">Plansza</h2>
+      </div>
+    </div>
+    <p class="hint" id="mapHint"></p>
+
+    <h3 class="sr-only">Osoby</h3>
+    <div class="people" id="people"></div>
+
+    <div class="play">
+      <div class="board-wrap">
+        <div id="board" class="board" role="group" aria-label="Plansza 5 na 5 pól" aria-describedby="boardHelp"></div>
+        <p id="boardHelp" class="small" style="margin:0;text-align:center;">Strzałki przesuwają po polach. Enter lub Spacja wykonuje działanie.</p>
+        <div id="cellInfo" class="cell-info"></div>
+        <div id="routeBar" class="route-bar" hidden>
+          <p id="routeCaption"></p>
+          <button class="btn" type="button" id="btnHideRoute">Schowaj drogę</button>
+        </div>
+      </div>
+
+      <div class="side">
+        <section class="panel" aria-labelledby="toolsTitle">
+          <h3 id="toolsTitle">Dostosowania</h3>
+          <p class="small">Wybierz dostosowanie, a potem wskaż pole na planszy. Każde masz jedno.</p>
+          <div class="tools" id="tools"></div>
+          <div class="row" style="margin-top:.7rem;">
+            <button class="btn" type="button" id="btnCancel">Anuluj wybór</button>
+          </div>
+        </section>
+
+        <div id="message" class="message" role="status" aria-live="polite"></div>
+
+        <div>
+          <button class="btn primary big" type="button" id="btnCheck" aria-describedby="checkBlocked">Sprawdź drogi</button>
+          <p class="blocked" id="checkBlocked" hidden>Najpierw ustaw dostosowanie albo anuluj wybór.</p>
+        </div>
+
+        <section id="successBox" class="success" tabindex="-1" aria-labelledby="successTitle" hidden>
+          <h3 id="successTitle"></h3>
+          <p>Drogi mogą się różnić. Ważne, że każdy może uczestniczyć.</p>
+          <p class="small">Możesz obejrzeć drogi na kartach osób.</p>
+          <div class="row">
+            <button class="btn" type="button" id="btnKeepEditing">Jeszcze zmieniamy</button>
+            <button class="btn primary" type="button" id="btnNext">Następna plansza</button>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <section class="legend panel" aria-labelledby="legendTitle">
+      <h3 id="legendTitle">Legenda</h3>
+      <ul id="legendList"></ul>
+    </section>
+  </section>
+
+  <!-- ============ PODSUMOWANIE ============ -->
+  <section id="screenSummary" class="screen" aria-labelledby="summaryTitle" hidden>
+    <div class="panel">
+      <h2 id="summaryTitle" tabindex="-1">Różne drogi. Wspólne spotkanie.</h2>
+      <p>Dostosowywaliście otoczenie do różnych potrzeb. Każda osoba mogła znaleźć drogę do wspólnego celu.</p>
+      <h3 id="picksQuestion">Co pomaga uczestniczyć?</h3>
+      <p class="small">Zaznacz dowolne karty. Każdy wybór jest w porządku.</p>
+      <div class="picks" id="picks" role="group" aria-labelledby="picksQuestion"></div>
+      <div class="row">
+        <button class="btn primary big" type="button" id="btnPlayAgain">Zagraj ponownie</button>
+        <button class="btn big" type="button" id="btnHome">Wróć do początku</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ============ OKNA ============ -->
+<dialog id="dlgHelp" aria-labelledby="helpTitle">
+  <div class="dlg">
+    <h2 id="helpTitle">Jak grać?</h2>
+    <ol>
+      <li>Poznaj potrzeby osób.</li>
+      <li>Wybierz dostosowanie i wskaż miejsce.</li>
+      <li>Sprawdź, czy wszyscy mogą dotrzeć do celu.</li>
+      <li>Możesz zmieniać rozwiązanie i próbować ponownie.</li>
+    </ol>
+    <h3>Dostosowania</h3>
+    <ul>
+      <li><strong>Podjazd</strong> — ustawiasz na stopniu. Pomaga Adzie.</li>
+      <li><strong>Oznaczenie</strong> — ustawiasz w miejscu z nieczytelnym kierunkiem. Pomaga Benowi.</li>
+      <li><strong>Wyciszenie</strong> — ustawiasz w głośnym miejscu. Pomaga Celinie.</li>
+    </ul>
+    <p>Kliknięcie dostosowanego pola (bez wybranego narzędzia) usuwa dostosowanie. Możesz je ustawić gdzie indziej.</p>
+    <p>Każda osoba może iść inną drogą. Nie ma limitu czasu ani punktów.</p>
+    <p class="note">To uproszczona gra. W prawdziwym miejscu pytamy jego użytkowników, jakie rozwiązania im pomagają. Reguły gry nie opisują w pełni możliwości ani potrzeb prawdziwych osób.</p>
+    <button class="btn primary" type="button" data-close>Zamknij</button>
+  </div>
+</dialog>
+
+<dialog id="dlgSettings" aria-labelledby="settingsTitle">
+  <div class="dlg">
+    <h2 id="settingsTitle">Ustawienia</h2>
+    <label class="setting"><input type="checkbox" id="setBig"> Większy tekst</label>
+    <label class="setting"><input type="checkbox" id="setHc"> Wysoki kontrast</label>
+    <label class="setting"><input type="checkbox" id="setCalm"> Ograniczone animacje</label>
+    <p class="small">Zmiany działają od razu. Ponowna gra ich nie usuwa.</p>
+    <button class="btn primary" type="button" data-close>Gotowe</button>
+  </div>
+</dialog>
+
+<dialog id="dlgPause" aria-labelledby="pauseTitle">
+  <div class="dlg" style="text-align:center;">
+    <h2 id="pauseTitle">Przerwa</h2>
+    <p>Gra czeka. Nic się nie zmieni.</p>
+    <div class="breath" aria-hidden="true"></div>
+    <p>Możesz spokojnie oddychać. Wróć, kiedy chcesz.</p>
+    <button class="btn primary big" type="button" data-close>Wracam do gry</button>
+  </div>
+</dialog>
+
+<dialog id="dlgPerson" aria-labelledby="personTitle">
+  <div class="dlg">
+    <div class="person-dlg"><span id="personPortrait"></span><h2 id="personTitle" style="margin:0;"></h2></div>
+    <p class="quote" id="personQuote"></p>
+    <div class="row">
+      <button class="btn" type="button" id="btnSpeak" hidden>Przeczytaj na głos</button>
+      <button class="btn primary" type="button" data-close>Zamknij</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+'use strict';
+
+/* =========================================================================
+   1. DANE POSTACI
+   NAUCZYCIEL / UCZNIOWIE: tutaj możecie zmienić imiona, odmianę imienia
+   („genitive” — np. „drogę Ady”), krótki opis potrzeby, wypowiedź
+   i kolory portretu. Kształt portretu zmienicie w funkcji portraitSVG.
+   barrier — litera pola, które ta osoba pokonuje tylko z dostosowaniem;
+   tool — dostosowanie, które jej pomaga.
+   ========================================================================= */
+const CHARACTERS = [
+  { id:'ada', name:'Ada', genitive:'Ady', startSymbol:'A',
+    need:'Potrzebuje drogi bez stopni.',
+    quote:'Potrzebuję drogi bez stopni. Przy stopniu pomoże mi podjazd.',
+    question:'Czy można ominąć stopień albo dodać podjazd?',
+    barrier:'H', tool:'ramp',
+    look:{ bg:'#fde3cf', skin:'#e8b48a', hair:'#5a3825', shirt:'#c0601c', style:'bun' } },
+  { id:'ben', name:'Ben', genitive:'Bena', startSymbol:'B',
+    need:'Potrzebuje czytelnych wskazówek.',
+    quote:'Potrzebuję czytelnych wskazówek. W niejasnym miejscu pomoże mi oznaczenie.',
+    question:'Czy na dostępnej drodze są czytelne oznaczenia?',
+    barrier:'I', tool:'sign',
+    look:{ bg:'#dbe6f7', skin:'#8d5a3b', hair:'#1f1a17', shirt:'#2f5fa8', style:'short' } },
+  { id:'celina', name:'Celina', genitive:'Celiny', startSymbol:'C',
+    need:'Potrzebuje spokojniejszej drogi.',
+    quote:'Potrzebuję spokojniejszej drogi. Głośne miejsce można wyciszyć albo ominąć.',
+    question:'Czy można wybrać spokojniejszą trasę albo wyciszyć miejsce?',
+    barrier:'N', tool:'mute',
+    look:{ bg:'#ece0f4', skin:'#f1c9a5', hair:'#9a4a1f', shirt:'#7b4a9e', style:'long' } }
+];
+
+/* =========================================================================
+   2. DANE MAP
+   NAUCZYCIEL / UCZNIOWIE: tutaj możecie zmienić lub dodać układy map.
+   Każda mapa: 5 wierszy po 5 znaków. Dokładnie jedno A, B, C i G.
+     A — start Ady, B — start Bena, C — start Celiny, G — wspólny cel
+     . — zwykła droga, # — ściana, H — stopień,
+     I — nieczytelny kierunek, N — głośne miejsce
+   Gra sama sprawdza poprawność map przy uruchomieniu (validateMap).
+   ========================================================================= */
+const MAPS = [
+  { title:'Poznajemy potrzeby',
+    hint:'Sprawdź, co utrudnia drogę każdej osobie.',
+    grid:[ "A.H..",
+           "####.",
+           "B.I.G",
+           "####.",
+           "C.N.." ] },
+  { title:'Wspólna droga',
+    hint:'Na tej samej drodze różne osoby mogą potrzebować różnych zmian.',
+    grid:[ "A####",
+           ".####",
+           "BHING",
+           ".####",
+           "C####" ] },
+  { title:'Można inaczej',
+    hint:'Nie wszyscy muszą iść tędy samą drogą. Poszukaj rozwiązania dla każdej osoby.',
+    grid:[ "AHIN.",
+           ".###.",
+           "B###G",
+           ".###.",
+           "CNIH." ] }
+];
+const GRID_SIZE = 5;
+
+/* Opisy rodzajów pól (używane w etykietach, opisie pod planszą i legendzie). */
+const TILE_INFO = {
+  '.': { name:'zwykła droga', cls:'t-road' },
+  '#': { name:'ściana, teren niedostępny', cls:'t-wall' },
+  'H': { name:'stopień', missing:'Brakuje podjazdu.', adapted:'stopień z podjazdem', cls:'t-step' },
+  'I': { name:'miejsce z nieczytelnym kierunkiem', missing:'Brakuje oznaczenia.', adapted:'miejsce z nieczytelnym kierunkiem, z czytelnym oznaczeniem', cls:'t-unclear' },
+  'N': { name:'głośne miejsce', missing:'Brakuje wyciszenia.', adapted:'głośne miejsce z wyciszeniem', cls:'t-noisy' },
+  'A': { name:'start Ady', cls:'t-start' },
+  'B': { name:'start Bena', cls:'t-start' },
+  'C': { name:'start Celiny', cls:'t-start' },
+  'G': { name:'wspólny cel, miejsce spotkania', cls:'t-goal' }
+};
+
+/* =========================================================================
+   3. DANE NARZĘDZI (dostosowań)
+   ========================================================================= */
+const TOOLS = [
+  { id:'ramp', name:'Podjazd', acc:'podjazd', target:'H',
+    selectMsg:'Wybrano podjazd. Wskaż pole ze stopniem.',
+    wrongMsg:'Podjazd ustawiamy przy stopniu.' },
+  { id:'sign', name:'Oznaczenie', acc:'oznaczenie', target:'I',
+    selectMsg:'Wybrano oznaczenie. Wskaż miejsce z nieczytelnym kierunkiem.',
+    wrongMsg:'Oznaczenie ustawiamy w miejscu z nieczytelnym kierunkiem.' },
+  { id:'mute', name:'Wyciszenie', acc:'wyciszenie', target:'N',
+    selectMsg:'Wybrano wyciszenie. Wskaż głośne miejsce.',
+    wrongMsg:'Wyciszenie ustawiamy w głośnym miejscu.' }
+];
+const toolById = id => TOOLS.find(t => t.id === id);
+const charById = id => CHARACTERS.find(c => c.id === id);
+
+const SUMMARY_CARDS = ['droga bez stopni','czytelne oznaczenia','spokojniejsze miejsca',
+  'możliwość wyboru trasy','pytanie o potrzeby','zmienianie otoczenia'];
+
+/* =========================================================================
+   4. SYMBOLE SVG
+   NAUCZYCIEL / UCZNIOWIE: tutaj możecie podmienić portrety i symbole pól.
+   Każda funkcja zwraca kod SVG (viewBox 0 0 40 40 dla pól).
+   ========================================================================= */
+function portraitSVG(ch, cls){
+  const k = ch.look;
+  let back = '', front = '', extra = '';
+  if(k.style === 'bun'){
+    front = `<circle cx="50" cy="15" r="9" fill="${k.hair}"/>
+      <path d="M29 42 C29 24 40 18 50 18 C62 18 72 25 71 42 C66 33 58 29 50 29 C42 29 34 33 29 42Z" fill="${k.hair}"/>`;
+  } else if(k.style === 'short'){
+    front = `<path d="M30 40 C30 23 40 18 50 18 C61 18 70 23 70 40 C64 31 56 29 50 29 C44 29 36 31 30 40Z" fill="${k.hair}"/>`;
+    extra = `<g stroke="#2b2b2b" stroke-width="2" fill="none"><circle cx="42" cy="46" r="6"/><circle cx="58" cy="46" r="6"/><path d="M48 46h4"/></g>`;
+  } else {
+    back = `<path d="M27 44 C25 22 40 15 50 15 C62 15 76 22 73 44 L77 78 L23 78 Z" fill="${k.hair}"/>`;
+    front = `<path d="M29 42 C30 26 40 20 50 20 C60 20 70 26 71 42 C62 33 50 30 40 33 C35 35 31 38 29 42Z" fill="${k.hair}"/>
+      <path d="M31 31 Q50 19 69 31" stroke="${k.shirt}" stroke-width="4" fill="none" stroke-linecap="round"/>`;
+  }
+  return `<svg class="${cls||''}" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+    <circle cx="50" cy="50" r="49" fill="${k.bg}" stroke="#00000022" stroke-width="2"/>
+    ${back}
+    <path d="M17 100 C19 75 33 66 50 66 C67 66 81 75 83 100 Z" fill="${k.shirt}"/>
+    <rect x="43" y="56" width="14" height="14" rx="5" fill="${k.skin}"/>
+    <ellipse cx="50" cy="44" rx="20" ry="22" fill="${k.skin}"/>
+    ${front}
+    <circle cx="42" cy="46" r="2.6" fill="#2b2b2b"/><circle cx="58" cy="46" r="2.6" fill="#2b2b2b"/>
+    <path d="M42 55 Q50 61 58 55" stroke="#2b2b2b" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    ${extra}
+  </svg>`;
+}
+
+const svg = inner => `<svg class="sym" viewBox="0 0 40 40" aria-hidden="true" focusable="false">${inner}</svg>`;
+const SYMBOLS = {
+  road:   () => svg(`<circle cx="20" cy="20" r="2.2" fill="var(--road-dot)"/>`),
+  wall:   () => svg(`<path d="M0 13H40M0 27H40M13 0V13M27 13V27M13 27V40" stroke="var(--wall-line)" stroke-width="2"/>`),
+  step:   adapted => svg(`<path d="M4 34V28H13V21H22V14H31V7H36V34Z" fill="var(--step)"/>` +
+            (adapted ? `<path d="M3 35L37 9V35Z" fill="var(--adapt-fill)" fill-opacity=".85" stroke="var(--adapt)" stroke-width="3" stroke-linejoin="round"/>` : '')),
+  unclear: adapted => svg(`<rect x="18.5" y="17" width="3" height="20" fill="#6b5b45"/>` +
+            (adapted
+              ? `<rect x="5" y="4" width="30" height="15" rx="3" fill="var(--adapt)"/><path d="M10 11.5H28M23 6.5L28.5 11.5L23 16.5" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`
+              : `<rect x="5" y="4" width="30" height="15" rx="3" fill="var(--sign-bg)" stroke="var(--sign-ink)" stroke-width="1.5"/><text x="20" y="16.5" text-anchor="middle" font-size="14" font-weight="700" fill="var(--sign-ink)" font-family="Verdana,sans-serif">?</text>`)),
+  noisy:  adapted => adapted
+      ? svg(`<path d="M4 16H9L15 10.5V29.5L9 24H4Z" fill="var(--noise)"/><path d="M18 17Q20 20 18 23" stroke="var(--noise)" stroke-width="2" fill="none" stroke-linecap="round"/>
+             <rect x="22" y="4" width="14" height="32" rx="4" fill="var(--adapt)"/>
+             <path d="M25 10l4 3.5 4-3.5M25 18l4 3.5 4-3.5M25 26l4 3.5 4-3.5" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`)
+      : svg(`<path d="M5 15H11L19 8V32L11 25H5Z" fill="var(--noise)"/><path d="M24 14Q28 20 24 26M28.5 10Q35.5 20 28.5 30" stroke="var(--noise)" stroke-width="2.8" fill="none" stroke-linecap="round"/>`),
+  goal:   () => svg(`<rect x="9" y="5" width="3" height="31" rx="1" fill="#4a4a4a"/><path d="M12 6H34L29 13L34 20H12Z" fill="var(--goal)"/>
+            <path d="M21 9.3l1.2 2.5 2.7.3-2 1.8.6 2.7-2.5-1.4-2.4 1.4.5-2.7-2-1.8 2.7-.3Z" fill="#fff"/><ellipse cx="10.5" cy="36" rx="7" ry="2" fill="#00000033"/>`),
+  start:  ch => portraitSVG(ch, 'sym'),
+  check:  () => `<svg viewBox="0 0 26 26" aria-hidden="true" focusable="false"><circle cx="13" cy="13" r="12" fill="currentColor"/><path d="M7 13.5l4 4 8-9" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  search: () => `<svg viewBox="0 0 26 26" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="3" fill="none"/><path d="M16 16l7 7" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/></svg>`,
+  waiting:() => `<svg viewBox="0 0 26 26" aria-hidden="true" focusable="false"><circle cx="13" cy="13" r="11" stroke="currentColor" stroke-width="2.5" fill="none" stroke-dasharray="4 3"/></svg>`,
+  tick:   () => `<svg viewBox="0 0 22 22" aria-hidden="true" focusable="false"><path d="M4 11.5l4.5 4.5L18 6" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+};
+const TOOL_SYMBOL = { ramp:() => SYMBOLS.step(true), sign:() => SYMBOLS.unclear(true), mute:() => SYMBOLS.noisy(true) };
+
+/* =========================================================================
+   5. REGUŁY PRZECHODNIOŚCI I ODCZYT PÓL  (czyste funkcje, bez DOM)
+   Uproszczone reguły gry — nie opisują w pełni prawdziwych osób.
+   ========================================================================= */
+function getTileType(map, r, c){
+  if(r < 0 || c < 0 || r >= GRID_SIZE || c >= GRID_SIZE) return null;
+  return map.grid[r][c];
+}
+function findSymbol(map, sym){
+  for(let r = 0; r < GRID_SIZE; r++) for(let c = 0; c < GRID_SIZE; c++)
+    if(map.grid[r][c] === sym) return { r, c };
+  return null;
+}
+/* Które dostosowanie stoi na polu (r,c)? Każde ma zapisane jedno położenie. */
+function adaptationAt(placements, r, c){
+  for(const t of TOOLS){ const p = placements[t.id]; if(p && p.r === r && p.c === c) return t.id; }
+  return null;
+}
+/* Czy konkretna postać może wejść na pole? */
+function canEnter(ch, map, placements, r, c){
+  const t = getTileType(map, r, c);
+  if(t === null || t === '#') return false;            // poza planszą lub ściana
+  if(t === ch.barrier){                                  // bariera tej osoby
+    const p = placements[ch.tool];
+    return !!p && p.r === r && p.c === c;                // tylko z jej dostosowaniem
+  }
+  return true;                                           // pozostałe pola (także starty innych i cel)
+}
+
+/* =========================================================================
+   6. ALGORYTM BFS — tylko 4 kierunki, bez przekątnych
+   ========================================================================= */
+const DIRS = [[-1,0],[0,1],[1,0],[0,-1]];
+function findPath(ch, map, placements){
+  const start = findSymbol(map, ch.startSymbol), goal = findSymbol(map, 'G');
+  if(!start || !goal) return null;
+  const key = (r,c) => r * GRID_SIZE + c;
+  const prev = new Map([[key(start.r,start.c), null]]);
+  const queue = [start];
+  while(queue.length){
+    const cur = queue.shift();
+    if(cur.r === goal.r && cur.c === goal.c){
+      const path = []; let k = key(cur.r, cur.c), node = cur;
+      while(node){ path.unshift(node); node = prev.get(key(node.r,node.c)); }
+      return path;
+    }
+    for(const [dr,dc] of DIRS){
+      const nr = cur.r + dr, nc = cur.c + dc;
+      if(prev.has(key(nr,nc)) || !canEnter(ch, map, placements, nr, nc)) continue;
+      prev.set(key(nr,nc), cur);
+      queue.push({ r:nr, c:nc });
+    }
+  }
+  return null;
+}
+/* Ocena wszystkich trzech dróg — liczona zawsze z aktualnego układu. */
+function evaluateAll(map, placements){
+  const out = {};
+  for(const ch of CHARACTERS) out[ch.id] = findPath(ch, map, placements);
+  return out;
+}
+const allReachable = results => !!results && CHARACTERS.every(ch => !!results[ch.id]);
+
+/* =========================================================================
+   7. LOGIKA DOSTOSOWAŃ (czyste funkcje: zwracają nowe położenia)
+   ========================================================================= */
+function emptyPlacements(){ return { ramp:null, sign:null, mute:null }; }
+/* Umieszczenie lub przeniesienie. Zwraca {status, placements}. */
+function applyPlacement(map, placements, toolId, r, c){
+  const tool = toolById(toolId);
+  if(getTileType(map, r, c) !== tool.target) return { status:'wrong', placements };
+  const old = placements[toolId];
+  if(old && old.r === r && old.c === c) return { status:'same', placements };
+  const next = { ...placements, [toolId]: { r, c } };  // jedno położenie = brak kopii
+  return { status: old ? 'moved' : 'placed', placements: next };
+}
+function applyRemoval(placements, toolId){
+  return { ...placements, [toolId]: null };
+}
+
+/* Walidacja jednej mapy. Nigdy nie zgłasza wyjątku — zwraca listę problemów. */
+function validateMap(map){
+  const errors = [];
+  if(map === null || typeof map !== 'object' || Array.isArray(map))
+    return ['Brak poprawnego obiektu mapy (oczekiwano { title, hint, grid }).'];
+  if(typeof map.title !== 'string' || !map.title.trim()) errors.push('Brak tytułu mapy (title).');
+  if(typeof map.hint !== 'string') errors.push('Brak wskazówki mapy (hint).');
+  if(!Array.isArray(map.grid)){ errors.push('Brak tablicy grid z wierszami mapy.'); return errors; }
+  if(map.grid.length !== GRID_SIZE) errors.push(`Siatka musi mieć ${GRID_SIZE} wierszy (jest: ${map.grid.length}).`);
+  let rowsAreText = true;
+  map.grid.forEach((row, i) => {
+    if(typeof row !== 'string'){ rowsAreText = false; errors.push(`Wiersz ${i+1} nie jest tekstem.`); return; }
+    if(row.length !== GRID_SIZE) errors.push(`Wiersz ${i+1} musi mieć ${GRID_SIZE} znaków (jest: ${row.length}).`);
+    for(const ch of row)
+      if(!Object.prototype.hasOwnProperty.call(TILE_INFO, ch)) errors.push(`Nieznany symbol „${ch}” w wierszu ${i+1}.`);
+  });
+  if(rowsAreText){
+    const all = map.grid.join('');
+    for(const s of ['A','B','C','G']){
+      const n = all.split(s).length - 1;
+      if(n !== 1) errors.push(`Znak ${s} występuje ${n} razy (powinien dokładnie raz).`);
+    }
+  }
+  return errors;
+}
+/* Walidacja całego zestawu map — wykonywana przed uruchomieniem gry. */
+function validateMaps(maps){
+  if(!Array.isArray(maps)) return ['Dane MAPS nie są tablicą map.'];
+  if(maps.length === 0) return ['Brak map w danych MAPS.'];
+  return maps.flatMap((m, i) => validateMap(m).map(e => `Mapa ${i+1}: ${e}`));
+}
+
+/* =========================================================================
+   8. STAN ROZGRYWKI
+   ========================================================================= */
+const state = {
+  screen:'start',
+  mapIndex:0,
+  placements: emptyPlacements(),
+  selectedTool:null,
+  results:null,          // wynik ostatniego sprawdzenia lub null
+  shownRoute:null,       // id osoby, której droga jest pokazana
+  completed:false,       // plansza ukończona (ustawiane tylko z wyniku BFS)
+  focus:{ r:0, c:0 },
+  picks:new Set()
+};
+const currentMap = () => MAPS[state.mapIndex];
+
+/* =========================================================================
+   9. RENDEROWANIE
+   ========================================================================= */
+const $ = id => document.getElementById(id);
+const el = {};
+let cellButtons = [];
+
+function describeCell(r, c){
+  const map = currentMap(), t = getTileType(map, r, c), info = TILE_INFO[t];
+  const adapted = adaptationAt(state.placements, r, c);
+  let text = `Rząd ${r+1}, kolumna ${c+1}: `;
+  if(info.missing) text += adapted ? `${info.adapted}.` : `${info.name}. ${info.missing}`;
+  else text += `${info.name}.`;
+  return text;
+}
+function routeStepAt(r, c){
+  if(!state.shownRoute || !state.results) return 0;
+  const path = state.results[state.shownRoute];
+  if(!path) return 0;
+  const i = path.findIndex(p => p.r === r && p.c === c);
+  return i + 1;
+}
+function cellLabel(r, c){
+  let label = describeCell(r, c);
+  const adapted = adaptationAt(state.placements, r, c);
+  const t = getTileType(currentMap(), r, c);
+  if(!state.completed){
+    if(state.selectedTool){
+      if(toolById(state.selectedTool).target === t) label += ` Naciśnij, aby ustawić ${toolById(state.selectedTool).acc}.`;
+    } else if(adapted){
+      label += ` Naciśnij, aby usunąć ${toolById(adapted).acc}.`;
+    }
+  }
+  const step = routeStepAt(r, c);
+  if(step) label += ` Krok ${step} na drodze ${charById(state.shownRoute).genitive}.`;
+  return label;
+}
+function updateCellInfo(r, c){
+  let text = describeCell(r, c);
+  const step = routeStepAt(r, c);
+  if(step) text += ` Krok ${step} na drodze ${charById(state.shownRoute).genitive}.`;
+  el.cellInfo.textContent = text;
+}
+function cellSymbol(t, adapted){
+  switch(t){
+    case '#': return SYMBOLS.wall();
+    case 'H': return SYMBOLS.step(adapted);
+    case 'I': return SYMBOLS.unclear(adapted);
+    case 'N': return SYMBOLS.noisy(adapted);
+    case 'G': return SYMBOLS.goal();
+    case 'A': case 'B': case 'C': return SYMBOLS.start(CHARACTERS.find(ch => ch.startSymbol === t));
+    default:  return SYMBOLS.road();
+  }
+}
+
+function buildBoard(){
+  el.board.innerHTML = '';
+  cellButtons = [];
+  for(let r = 0; r < GRID_SIZE; r++){
+    cellButtons[r] = [];
+    for(let c = 0; c < GRID_SIZE; c++){
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'cell';
+      b.dataset.r = r; b.dataset.c = c;
+      el.board.appendChild(b);
+      cellButtons[r][c] = b;
+    }
+  }
+}
+function renderBoard(){
+  const map = currentMap();
+  const tool = state.selectedTool ? toolById(state.selectedTool) : null;
+  for(let r = 0; r < GRID_SIZE; r++) for(let c = 0; c < GRID_SIZE; c++){
+    const b = cellButtons[r][c], t = getTileType(map, r, c);
+    const adapted = !!adaptationAt(state.placements, r, c);
+    const step = routeStepAt(r, c);
+    b.className = 'cell ' + TILE_INFO[t].cls +
+      (tool && tool.target === t && !state.completed ? ' target' : '') +
+      (step ? ' on-route' : '');
+    b.innerHTML = cellSymbol(t, adapted) + (step ? `<span class="step" aria-hidden="true">${step}</span>` : '');
+    b.setAttribute('aria-label', cellLabel(r, c));
+    b.tabIndex = (r === state.focus.r && c === state.focus.c) ? 0 : -1;
+  }
+  updateCellInfo(state.focus.r, state.focus.c);
+}
+
+function buildPeople(){
+  el.people.innerHTML = '';
+  for(const ch of CHARACTERS){
+    const card = document.createElement('article');
+    card.className = 'person';
+    card.setAttribute('aria-labelledby', `name-${ch.id}`);
+    card.innerHTML = `
+      ${portraitSVG(ch, 'portrait')}
+      <div><h3 id="name-${ch.id}">${ch.name}</h3><p class="need">${ch.need}</p></div>
+      <div class="status" id="status-${ch.id}"></div>
+      <div class="actions">
+        <button class="btn" type="button" data-quote="${ch.id}">Co mówi ${ch.name}?</button>
+        <button class="btn" type="button" data-route="${ch.id}" hidden>Pokaż drogę ${ch.genitive}</button>
+      </div>`;
+    el.people.appendChild(card);
+  }
+}
+function renderPeople(){
+  for(const ch of CHARACTERS){
+    const st = $(`status-${ch.id}`);
+    const rb = el.people.querySelector(`[data-route="${ch.id}"]`);
+    if(!state.results){
+      st.className = 'status';
+      st.innerHTML = `${SYMBOLS.waiting()}<span>Jeszcze nie sprawdzono</span>`;
+      rb.hidden = true;
+    } else if(state.results[ch.id]){
+      st.className = 'status ok';
+      st.innerHTML = `${SYMBOLS.check()}<span>Droga dostępna</span>`;
+      rb.hidden = false;
+      rb.setAttribute('aria-pressed', state.shownRoute === ch.id ? 'true' : 'false');
+    } else {
+      st.className = 'status no';
+      st.innerHTML = `${SYMBOLS.search()}<span>Poszukajmy rozwiązania<span class="q">${ch.question}</span></span>`;
+      rb.hidden = true;
+    }
+  }
+}
+
+function buildTools(){
+  el.tools.innerHTML = '';
+  for(const t of TOOLS){
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'tool'; b.dataset.tool = t.id;
+    b.innerHTML = `${TOOL_SYMBOL[t.id]()}<span class="tname">${t.name}</span><span class="tstate"></span>`;
+    el.tools.appendChild(b);
+  }
+}
+function renderTools(){
+  for(const b of el.tools.querySelectorAll('.tool')){
+    const t = toolById(b.dataset.tool), p = state.placements[t.id];
+    const where = p ? `Na planszy: rząd ${p.r+1}, kolumna ${p.c+1}` : 'Gotowe do ustawienia';
+    b.querySelector('.tstate').textContent = where;
+    b.setAttribute('aria-pressed', state.selectedTool === t.id ? 'true' : 'false');
+    b.disabled = state.completed;
+  }
+  el.btnCancel.disabled = !state.selectedTool;
+}
+function renderCheck(){
+  const blocked = !!state.selectedTool;
+  el.btnCheck.setAttribute('aria-disabled', (blocked || state.completed) ? 'true' : 'false');
+  el.checkBlocked.hidden = !blocked;
+}
+function renderRoute(){
+  if(state.shownRoute && state.results && state.results[state.shownRoute]){
+    const ch = charById(state.shownRoute), n = state.results[state.shownRoute].length;
+    el.routeCaption.textContent = `Pokazujemy drogę ${ch.genitive}. Numery 1–${n} to kolejne pola od startu do celu.`;
+    el.routeBar.hidden = false;
+  } else {
+    el.routeBar.hidden = true;
+  }
+}
+function renderSuccess(){
+  el.successBox.hidden = !state.completed;
+  el.successTitle.innerHTML = `<span style="width:30px;height:30px;display:inline-flex">${SYMBOLS.check()}</span> Każda osoba może dotrzeć na spotkanie!`;
+  el.btnNext.textContent = state.mapIndex < MAPS.length - 1 ? 'Następna plansza' : 'Podsumowanie';
+}
+function renderHeader(){
+  const m = currentMap();
+  el.progressText.textContent = `Plansza ${state.mapIndex+1} z ${MAPS.length}`;
+  el.mapTitle.textContent = m.title;
+  el.mapHint.innerHTML = `<strong>Wskazówka:</strong>&nbsp;<span>${m.hint}</span>`;
+  el.progressDots.innerHTML = MAPS.map((_, i) =>
+    `<span class="dot ${i < state.mapIndex ? 'done' : i === state.mapIndex ? 'now' : ''}"></span>`).join('');
+}
+function renderGame(){
+  renderHeader(); renderPeople(); renderTools(); renderBoard(); renderCheck(); renderRoute(); renderSuccess();
+}
+function setMessage(text){ el.message.textContent = text; }
+
+function buildLegend(){
+  const items = [
+    ['t-road', SYMBOLS.road(), 'Zwykła droga'],
+    ['t-wall', SYMBOLS.wall(), 'Ściana, teren niedostępny'],
+    ['', SYMBOLS.step(false), 'Stopień'],
+    ['', SYMBOLS.unclear(false), 'Nieczytelny kierunek'],
+    ['', SYMBOLS.noisy(false), 'Głośne miejsce'],
+    ...CHARACTERS.map(ch => ['t-start', SYMBOLS.start(ch), `Start: ${ch.name}`]),
+    ['t-goal', SYMBOLS.goal(), 'Wspólny cel — spotkanie'],
+    ['', SYMBOLS.step(true), 'Stopień z podjazdem'],
+    ['', SYMBOLS.unclear(true), 'Czytelne oznaczenie'],
+    ['', SYMBOLS.noisy(true), 'Wyciszenie (osłona akustyczna)'],
+    ['route', '<span class="step" style="position:static;display:inline-block;min-width:24px;height:24px;border-radius:12px;background:var(--route-badge);color:#fff;font-weight:700;font-size:14px;line-height:24px;text-align:center;">3</span>', 'Pole na pokazanej drodze (numer kroku)']
+  ];
+  el.legendList.innerHTML = items.map(([cls, s, name]) =>
+    `<li><span class="sw ${cls}" aria-hidden="true">${s}</span><span>${name}</span></li>`).join('');
+}
+
+function buildStartIllustration(){
+  const [a,b,c] = CHARACTERS;
+  const fig = (ch, x, y) => `<g transform="translate(${x-26},${y-26})"><svg width="52" height="52" viewBox="0 0 100 100">${portraitSVG(ch,'').replace(/^<svg[^>]*>|<\/svg>$/g,'')}</svg></g>
+    <text x="${x}" y="${y+44}" text-anchor="middle" font-size="17" font-weight="700" fill="var(--ink)" font-family="Verdana,sans-serif">${ch.name}</text>`;
+  el.startIllustration.innerHTML = `
+  <svg viewBox="0 0 520 330" role="img" aria-label="Trzy osoby: Ada, Ben i Celina. Każda idzie inną drogą do wspólnego miejsca spotkania.">
+    <rect x="4" y="4" width="512" height="322" rx="22" fill="var(--surface)" stroke="var(--line)" stroke-width="3"/>
+    <path d="M95 70 C200 40 300 60 410 160" stroke="#c0601c" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="2 18"/>
+    <path d="M95 165 C220 165 300 165 410 165" stroke="#2f5fa8" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="18 12"/>
+    <path d="M95 260 C180 300 320 290 410 172" stroke="#7b4a9e" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <circle cx="430" cy="165" r="58" fill="#fbefc9" stroke="var(--goal)" stroke-width="4"/>
+    <g transform="translate(410,128) scale(1.6)"><rect x="0" y="0" width="3" height="31" rx="1" fill="#4a4a4a"/><path d="M3 1H25L20 8L25 15H3Z" fill="var(--goal)"/></g>
+    <text x="430" y="203" text-anchor="middle" font-size="15" font-weight="700" fill="var(--ink)" font-family="Verdana,sans-serif">spotkanie</text>
+    ${fig(a, 70, 52)}${fig(b, 70, 150)}${fig(c, 70, 248)}
+  </svg>`;
+}
+
+function buildPicks(){
+  el.picks.innerHTML = SUMMARY_CARDS.map((txt, i) =>
+    `<button type="button" class="pick" data-pick="${i}" aria-pressed="false">
+       <span class="box" aria-hidden="true">${SYMBOLS.tick()}</span>
+       <span>${txt.charAt(0).toUpperCase() + txt.slice(1)}<span class="chosen" hidden>Zaznaczone</span></span>
+     </button>`).join('');
+}
+function renderPicks(){
+  for(const b of el.picks.querySelectorAll('.pick')){
+    const on = state.picks.has(+b.dataset.pick);
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    b.querySelector('.chosen').hidden = !on;
+  }
+}
+
+function showScreen(name){
+  state.screen = name;
+  el.screenStart.hidden = name !== 'start';
+  el.screenGame.hidden = name !== 'game';
+  el.screenSummary.hidden = name !== 'summary';
+  const heading = { start:el.startTitle, game:el.mapTitle, summary:el.summaryTitle }[name];
+  heading.focus();
+  window.scrollTo(0, 0);
+}
+
+/* =========================================================================
+   10. OBSŁUGA INTERAKCJI
+   ========================================================================= */
+/* Każda rzeczywista zmiana otoczenia usuwa nieaktualny wynik i podgląd drogi. */
+function invalidateResults(){
+  state.results = null;
+  state.shownRoute = null;
+  state.completed = false;
+}
+const CHANGED = 'Otoczenie zostało zmienione. Możesz sprawdzić drogi ponownie.';
+
+function loadMap(i){
+  state.mapIndex = i;
+  state.placements = emptyPlacements();
+  state.selectedTool = null;
+  invalidateResults();
+  state.focus = { r:0, c:0 };
+  buildBoard();
+  renderGame();
+  setMessage('');
+}
+function resetGame(){
+  state.picks.clear();
+  renderPicks();
+  loadMap(0);
+}
+
+function selectTool(id){
+  if(state.completed) return;
+  if(state.selectedTool === id){ cancelSelection(); return; }
+  state.selectedTool = id;
+  const t = toolById(id);
+  setMessage(t.selectMsg + (state.placements[id] ? ` ${t.name} zostanie przeniesione na nowe miejsce.`.replace('Podjazd zostanie przeniesione','Podjazd zostanie przeniesiony') : ''));
+  renderTools(); renderBoard(); renderCheck();
+}
+function cancelSelection(){
+  if(!state.selectedTool) return;
+  state.selectedTool = null;
+  setMessage('Anulowano wybór. Plansza się nie zmieniła.');
+  renderTools(); renderBoard(); renderCheck();
+}
+
+function onCellActivate(r, c){
+  state.focus = { r, c };
+  const map = currentMap();
+  if(state.completed){
+    setMessage('Plansza jest ukończona. Wybierz „Jeszcze zmieniamy”, aby zmieniać otoczenie.');
+    renderBoard();
+    return;
+  }
+  if(state.selectedTool){
+    const t = toolById(state.selectedTool);
+    const res = applyPlacement(map, state.placements, t.id, r, c);
+    if(res.status === 'wrong'){
+      setMessage(t.wrongMsg);                 // wybór narzędzia zostaje, zasób nie jest zużyty
+      renderBoard();
+      return;
+    }
+    state.selectedTool = null;
+    if(res.status === 'same'){
+      setMessage(`${t.name} już jest w tym miejscu. Nic się nie zmieniło.`);
+    } else {
+      state.placements = res.placements;
+      invalidateResults();
+      const verb = res.status === 'moved'
+        ? (t.id === 'ramp' ? 'przeniesiony' : 'przeniesione')
+        : (t.id === 'ramp' ? 'ustawiony' : 'ustawione');
+      setMessage(`${t.name} ${verb}: rząd ${r+1}, kolumna ${c+1}. ${CHANGED}`);
+    }
+    renderGame();
+    return;
+  }
+  const adapted = adaptationAt(state.placements, r, c);
+  if(adapted){
+    const t = toolById(adapted);
+    state.placements = applyRemoval(state.placements, adapted);
+    invalidateResults();
+    setMessage(`${t.name} ${t.id === 'ramp' ? 'usunięty' : 'usunięte'} i ${t.id === 'ramp' ? 'wrócił' : 'wróciło'} do zasobów. ${CHANGED}`);
+    renderGame();
+    return;
+  }
+  renderBoard();   // samo wskazanie pola — pokazujemy jego opis
+}
+
+function checkRoutes(){
+  // Blokada także wewnątrz funkcji, nie tylko na przycisku.
+  if(state.selectedTool){
+    setMessage('Najpierw ustaw dostosowanie albo anuluj wybór.');
+    el.checkBlocked.hidden = false;
+    return false;
+  }
+  if(state.completed){
+    setMessage('Wszystkie drogi są już sprawdzone. Każda osoba może dotrzeć na spotkanie.');
+    return false;
+  }
+  state.results = evaluateAll(currentMap(), state.placements);
+  state.shownRoute = null;
+  state.completed = allReachable(state.results);
+  const ok = CHARACTERS.filter(ch => state.results[ch.id]).map(ch => ch.name);
+  const no = CHARACTERS.filter(ch => !state.results[ch.id]).map(ch => ch.name);
+  if(state.completed) setMessage('Sprawdzono drogi. Każda osoba może dotrzeć na spotkanie!');
+  else if(!ok.length) setMessage(`Sprawdzono drogi. Na razie nikt nie ma dostępnej drogi. Poszukajmy rozwiązania dla: ${no.join(', ')}.`);
+  else setMessage(`Sprawdzono drogi. Drogę do celu ${ok.length > 1 ? 'mają' : 'ma'}: ${ok.join(', ')}. Poszukajmy rozwiązania dla: ${no.join(', ')}.`);
+  renderGame();
+  if(state.completed) el.successBox.focus();
+  return true;
+}
+
+function showRoute(id){
+  if(!state.results || !state.results[id]) return;
+  state.shownRoute = state.shownRoute === id ? null : id;
+  renderPeople(); renderBoard(); renderRoute();
+}
+function hideRoute(){
+  const id = state.shownRoute;
+  state.shownRoute = null;
+  renderPeople(); renderBoard(); renderRoute();
+  const rb = id && el.people.querySelector(`[data-route="${id}"]`);
+  if(rb && !rb.hidden) rb.focus();
+}
+function keepEditing(){
+  invalidateResults();     // usuwa ukończenie, wynik i podgląd; dostosowania zostają
+  setMessage('Możesz dalej zmieniać otoczenie. Dostosowania zostały na miejscach.');
+  renderGame();
+  const first = el.tools.querySelector('.tool'); if(first) first.focus();
+}
+/* Przejście jest możliwe tylko z ukończonej planszy z aktualnym wynikiem.
+   Kontrola jest w funkcji, więc nie zależy od widoczności przycisku. */
+function canAdvance(){
+  return state.screen === 'game'
+    && state.completed
+    && !!state.results
+    && allReachable(state.results)
+    && allReachable(evaluateAll(currentMap(), state.placements));   // wynik zgodny z aktualnym układem
+}
+function nextMap(){
+  if(!canAdvance()) return false;
+  // loadMap zeruje „completed”, więc kolejne szybkie wywołanie nie przejdzie dalej.
+  if(state.mapIndex < MAPS.length - 1){
+    loadMap(state.mapIndex + 1);
+    el.mapTitle.focus();
+    window.scrollTo(0, 0);
+  } else {
+    state.completed = false;
+    renderPicks();
+    showScreen('summary');   // ekran ≠ 'game', więc kolejne wywołanie nic nie zrobi
+  }
+  return true;
+}
+
+/* Okna: przywracanie fokusu do przycisku, który je otworzył */
+const openers = new WeakMap();
+function openDialog(dlg, opener){
+  openers.set(dlg, opener || document.activeElement);
+  if(typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open','');
+}
+function openPerson(id, opener){
+  const ch = charById(id);
+  $('personTitle').textContent = ch.name;
+  $('personPortrait').innerHTML = portraitSVG(ch, '');
+  $('personQuote').textContent = `„${ch.quote}”`;
+  $('btnSpeak').dataset.char = id;
+  openDialog($('dlgPerson'), opener);
+}
+
+/* Ustawienia dostępności (zapamiętywane w przeglądarce, jeśli to możliwe) */
+const SETTINGS_KEY = 'kmsd-ustawienia';
+function applySettings(s){
+  document.documentElement.classList.toggle('big', !!s.big);
+  document.documentElement.classList.toggle('hc', !!s.hc);
+  document.documentElement.classList.toggle('calm', !!s.calm);
+  $('setBig').checked = !!s.big; $('setHc').checked = !!s.hc; $('setCalm').checked = !!s.calm;
+}
+function readSettings(){
+  let s = null;
+  try{ s = JSON.parse(localStorage.getItem(SETTINGS_KEY)); }catch(e){ s = null; }
+  if(!s) s = { big:false, hc:false, calm: window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches };
+  // Wspólne ustawienia zestawu mają pierwszeństwo (inne nazwy pól w tej grze: big / hc / calm)
+  const shared = window.KMM && KMM.read();
+  if(shared){
+    if(typeof shared.largeText === 'boolean') s.big = shared.largeText;
+    if(typeof shared.highContrast === 'boolean') s.hc = shared.highContrast;
+    if(typeof shared.reducedMotion === 'boolean') s.calm = shared.reducedMotion;
+  }
+  return s;
+}
+function saveSettings(){
+  const s = { big:$('setBig').checked, hc:$('setHc').checked, calm:$('setCalm').checked };
+  applySettings(s);
+  try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); }catch(e){ /* brak zapisu — ustawienia działają do zamknięcia */ }
+  if(window.KMM) KMM.write({ largeText:s.big, highContrast:s.hc, reducedMotion:s.calm });   // wspólne ustawienia zestawu
+}
+
+function moveFocus(dr, dc, abs){
+  let { r, c } = state.focus;
+  if(abs){ r = abs.r ?? r; c = abs.c ?? c; }
+  else { r = Math.max(0, Math.min(GRID_SIZE-1, r+dr)); c = Math.max(0, Math.min(GRID_SIZE-1, c+dc)); }
+  state.focus = { r, c };
+  for(const row of cellButtons) for(const b of row) b.tabIndex = -1;
+  cellButtons[r][c].tabIndex = 0;
+  cellButtons[r][c].focus();
+  updateCellInfo(r, c);
+}
+
+function bindEvents(){
+  $('btnStart').addEventListener('click', () => { resetGame(); showScreen('game'); });
+  el.board.addEventListener('click', e => {
+    const b = e.target.closest('.cell'); if(!b) return;
+    onCellActivate(+b.dataset.r, +b.dataset.c);
+  });
+  el.board.addEventListener('focusin', e => {
+    const b = e.target.closest('.cell'); if(!b) return;
+    const r = +b.dataset.r, c = +b.dataset.c;
+    if(state.focus.r !== r || state.focus.c !== c){
+      state.focus = { r, c };
+      for(const row of cellButtons) for(const x of row) x.tabIndex = -1;
+      b.tabIndex = 0;
+    }
+    updateCellInfo(r, c);
+  });
+  el.board.addEventListener('mouseover', e => {
+    const b = e.target.closest('.cell'); if(b) updateCellInfo(+b.dataset.r, +b.dataset.c);
+  });
+  el.board.addEventListener('mouseleave', () => updateCellInfo(state.focus.r, state.focus.c));
+  el.board.addEventListener('keydown', e => {
+    const k = e.key;
+    if(k === 'ArrowUp'){ moveFocus(-1,0); }
+    else if(k === 'ArrowDown'){ moveFocus(1,0); }
+    else if(k === 'ArrowLeft'){ moveFocus(0,-1); }
+    else if(k === 'ArrowRight'){ moveFocus(0,1); }
+    else if(k === 'Home'){ moveFocus(0,0,{ c:0 }); }
+    else if(k === 'End'){ moveFocus(0,0,{ c:GRID_SIZE-1 }); }
+    else if(k === 'Escape' && state.selectedTool){ cancelSelection(); }
+    else return;
+    e.preventDefault();
+  });
+  el.tools.addEventListener('click', e => {
+    const b = e.target.closest('.tool'); if(b && !b.disabled) selectTool(b.dataset.tool);
+  });
+  el.btnCancel.addEventListener('click', cancelSelection);
+  el.btnCheck.addEventListener('click', checkRoutes);
+  el.people.addEventListener('click', e => {
+    const q = e.target.closest('[data-quote]'); if(q){ openPerson(q.dataset.quote, q); return; }
+    const r = e.target.closest('[data-route]'); if(r) showRoute(r.dataset.route);
+  });
+  $('btnHideRoute').addEventListener('click', hideRoute);
+  el.btnKeepEditing.addEventListener('click', keepEditing);
+  el.btnNext.addEventListener('click', nextMap);
+  el.picks.addEventListener('click', e => {
+    const b = e.target.closest('.pick'); if(!b) return;
+    const i = +b.dataset.pick;
+    state.picks.has(i) ? state.picks.delete(i) : state.picks.add(i);
+    renderPicks();
+  });
+  $('btnPlayAgain').addEventListener('click', () => { resetGame(); showScreen('game'); });
+  $('btnHome').addEventListener('click', () => { resetGame(); showScreen('start'); });
+
+  document.addEventListener('click', e => {
+    const o = e.target.closest('[data-open]'); if(o){ openDialog($(o.dataset.open), o); return; }
+    const c = e.target.closest('[data-close]'); if(c){ c.closest('dialog').close(); }
+  });
+  for(const dlg of document.querySelectorAll('dialog')){
+    dlg.addEventListener('close', () => {
+      if('speechSynthesis' in window) speechSynthesis.cancel();
+      const o = openers.get(dlg);
+      if(o && document.contains(o) && !o.closest('[hidden]')) o.focus();
+    });
+  }
+  for(const id of ['setBig','setHc','setCalm']) $(id).addEventListener('change', saveSettings);
+
+  if('speechSynthesis' in window){
+    $('btnSpeak').hidden = false;
+    $('btnSpeak').addEventListener('click', () => {
+      const ch = charById($('btnSpeak').dataset.char);
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(`${ch.name} mówi: ${ch.quote}`);
+      u.lang = 'pl-PL'; u.rate = .9;
+      speechSynthesis.speak(u);
+    });
+  }
+}
+
+/* =========================================================================
+   11. AUTOTESTY LOGIKI — w konsoli: KMSD.runSelfTests()
+   ========================================================================= */
+function allPlacementCombos(map){
+  const opts = TOOLS.map(t => {
+    const list = [null];
+    map.grid.forEach((row, r) => [...row].forEach((ch, c) => { if(ch === t.target) list.push({ r, c }); }));
+    return list;
+  });
+  const combos = [];
+  for(const a of opts[0]) for(const b of opts[1]) for(const c of opts[2])
+    combos.push({ ramp:a, sign:b, mute:c });
+  return combos;
+}
+function runSelfTests(){
+  const out = [];
+  const t = (name, pass, info) => out.push({ name, pass: !!pass, info: info || '' });
+  MAPS.forEach((m, i) => {
+    t(`Mapa ${i+1}: 5×5, jedno A, B, C, G`, validateMap(m).length === 0, validateMap(m).join(' '));
+    t(`Mapa ${i+1}: bez dostosowań brak pełnego sukcesu`, !allReachable(evaluateAll(m, emptyPlacements())));
+    const wins = allPlacementCombos(m).filter(p => allReachable(evaluateAll(m, p)));
+    t(`Mapa ${i+1}: rozwiązywalna jednym narzędziem każdego rodzaju`, wins.length > 0, `${wins.length} poprawnych układów`);
+    if(i === 2) t('Mapa 3: akceptuje różne rozmieszczenia', wins.length >= 2, `${wins.length} poprawnych układów`);
+    // Każda znaleziona trasa: start → cel, ruch tylko o 1 pole w pionie/poziomie, bez ścian, zgodnie z regułami osoby
+    for(const p of wins) for(const ch of CHARACTERS){
+      const path = findPath(ch, m, p), s = findSymbol(m, ch.startSymbol), g = findSymbol(m, 'G');
+      const okEnds = path[0].r === s.r && path[0].c === s.c && path.at(-1).r === g.r && path.at(-1).c === g.c;
+      const okSteps = path.every((q, k) => k === 0 || Math.abs(q.r - path[k-1].r) + Math.abs(q.c - path[k-1].c) === 1);
+      const okCells = path.every(q => getTileType(m, q.r, q.c) !== '#' && canEnter(ch, m, p, q.r, q.c));
+      if(!(okEnds && okSteps && okCells)){ t(`Mapa ${i+1}: trasa ${ch.name}`, false, JSON.stringify(path)); }
+    }
+  });
+  // Reguły indywidualne na mapie 2
+  const m2 = MAPS[1];
+  const only = (tool, pos) => ({ ...emptyPlacements(), [tool]: pos });
+  const r2 = evaluateAll(m2, only('ramp', { r:2, c:1 }));
+  t('BFS: na mapie 2 sam podjazd otwiera drogę tylko Adzie', r2.ada && !r2.ben && !r2.celina);
+  const m1 = MAPS[0];
+  const r1 = evaluateAll(m1, only('ramp', { r:0, c:2 }));
+  t('BFS: podjazd pomaga tylko Adzie na mapie 1', r1.ada && !r1.ben && !r1.celina);
+  t('Reguły: Ben przechodzi przez stopień i głośne pole', canEnter(charById('ben'), m2, emptyPlacements(), 2, 1) && canEnter(charById('ben'), m2, emptyPlacements(), 2, 3));
+  t('Reguły: ściana nieprzechodnia dla wszystkich', CHARACTERS.every(ch => !canEnter(ch, m1, emptyPlacements(), 1, 0)));
+  t('Reguły: starty innych osób są przechodnie', canEnter(charById('ada'), m2, emptyPlacements(), 2, 0));
+  // Przenoszenie i usuwanie
+  const m3 = MAPS[2];
+  let p = applyPlacement(m3, emptyPlacements(), 'ramp', 0, 1).placements;
+  const moved = applyPlacement(m3, p, 'ramp', 4, 3);
+  const count = TOOLS.reduce((n, tl) => n + (moved.placements[tl.id] ? 1 : 0), 0);
+  t('Przeniesienie nie tworzy kopii', moved.status === 'moved' && count === 1 && adaptationAt(moved.placements, 0, 1) === null && adaptationAt(moved.placements, 4, 3) === 'ramp');
+  t('Złe pole nie zużywa zasobu', applyPlacement(m3, emptyPlacements(), 'ramp', 0, 2).status === 'wrong');
+  const removed = applyRemoval(moved.placements, 'ramp');
+  t('Usunięcie przywraca pierwotne pole', removed.ramp === null && !canEnter(charById('ada'), m3, removed, 4, 3));
+
+  // Liczba poprawnych układów: mapa 1 → 1, mapa 2 → 1, mapa 3 → 8
+  const winCounts = MAPS.map(m => allPlacementCombos(m).filter(pl => allReachable(evaluateAll(m, pl))).length);
+  t('Liczba rozwiązań map: 1, 1, 8', winCounts.join(',') === '1,1,8', winCounts.join(','));
+
+  // Walidacja błędnych danych — wyłącznie na KOPIACH, oryginalne MAPS pozostają bez zmian
+  const clone = o => JSON.parse(JSON.stringify(o));
+  const before = JSON.stringify(MAPS);
+  const bad = (name, maps, fragment) => {
+    let errs = [], threw = false;
+    try{ errs = validateMaps(maps); }catch(e){ threw = true; }
+    t(`Walidacja: ${name}`, !threw && errs.length > 0 && (!fragment || errs.join(' ').includes(fragment)),
+      threw ? 'zgłoszono wyjątek' : errs.join(' | '));
+  };
+  bad('brak map (pusta tablica)', [], 'Brak map');
+  bad('MAPS nie jest tablicą (null)', null, 'nie są tablicą');
+  bad('MAPS jako tekst', 'mapa', 'nie są tablicą');
+  bad('pusta mapa {}', [{}], 'grid');
+  bad('mapa null', [null], 'obiektu mapy');
+  bad('mapa jako liczba', [5], 'obiektu mapy');
+  let d = clone(MAPS); delete d[0].grid;            bad('brak grid', d, 'Brak tablicy grid');
+  d = clone(MAPS); d[0].grid = 'A.H..';             bad('grid nie jest tablicą', d, 'Brak tablicy grid');
+  d = clone(MAPS); d[1].grid.pop();                 bad('4 wiersze', d, 'jest: 4');
+  d = clone(MAPS); d[1].grid.push('.....');         bad('6 wierszy', d, 'jest: 6');
+  d = clone(MAPS); d[0].grid[2] += '.';             bad('wiersz 6 znaków', d, 'Wiersz 3 musi mieć');
+  d = clone(MAPS); d[0].grid[3] = '###';            bad('wiersz 3 znaki', d, 'Wiersz 4 musi mieć');
+  d = clone(MAPS); d[0].grid[1] = 12345;            bad('wiersz nie jest tekstem', d, 'nie jest tekstem');
+  d = clone(MAPS); d[2].grid[1] = '.#X#.';          bad('nieznany symbol', d, 'Nieznany symbol „X”');
+  d = clone(MAPS); d[0].grid[0] = '..H..';          bad('brak startu A', d, 'Znak A występuje 0');
+  d = clone(MAPS); d[1].grid[1] = 'B####';          bad('podwójny start B', d, 'Znak B występuje 2');
+  d = clone(MAPS); d[2].grid[4] = '.NIH.';          bad('brak startu C', d, 'Znak C występuje 0');
+  d = clone(MAPS); d[0].grid[2] = 'B.I..';          bad('brak celu G', d, 'Znak G występuje 0');
+  d = clone(MAPS); d[2].grid[0] = 'AHING';          bad('podwójny cel G', d, 'Znak G występuje 2');
+  d = clone(MAPS); delete d[0].title;               bad('brak tytułu', d, 'title');
+  t('Oryginalne MAPS bez zmian po testach', JSON.stringify(MAPS) === before && validateMaps(MAPS).length === 0);
+  t('Gra uruchomiła się z poprawnymi danymi', GAME_STARTED === true);
+  return out;
+}
+
+/* =========================================================================
+   11b. TEST PRZEBIEGU GRY — w konsoli: KMSD.runFlowTests()
+   UWAGA: ten test rozgrywa całą grę i na końcu wraca do ekranu startowego.
+   ========================================================================= */
+function runFlowTests(){
+  const out = [];
+  const t = (name, pass, info) => out.push({ name, pass: !!pass, info: info || '' });
+  const solveCurrent = () => {
+    const m = currentMap();
+    const win = allPlacementCombos(m).find(pl => allReachable(evaluateAll(m, pl)));
+    for(const tool of TOOLS){ const pos = win[tool.id]; if(pos){ selectTool(tool.id); onCellActivate(pos.r, pos.c); } }
+  };
+  const fresh = () => !state.placements.ramp && !state.placements.sign && !state.placements.mute &&
+    !state.selectedTool && !state.results && !state.shownRoute && !state.completed;
+
+  resetGame(); showScreen('start');
+  t('nextMap() poza ekranem gry nic nie robi', nextMap() === false && state.screen === 'start' && state.mapIndex === 0);
+
+  showScreen('game');
+  t('nextMap() przed sprawdzeniem nic nie robi', nextMap() === false && state.mapIndex === 0);
+  checkRoutes();
+  t('nextMap() po nieudanym sprawdzeniu nic nie robi', nextMap() === false && state.mapIndex === 0);
+  state.completed = true; state.results = null;      // sztucznie ustawiona flaga bez wyniku
+  t('nextMap() z flagą ukończenia, ale bez wyniku, nic nie robi', nextMap() === false && state.mapIndex === 0);
+  state.completed = false;
+
+  solveCurrent(); checkRoutes();
+  const first = nextMap(), second = nextMap();
+  t('Dwa szybkie wywołania nextMap(): przejście o jedną planszę', first === true && second === false && state.mapIndex === 1);
+  t('Nowa plansza bez dostosowań, wyboru, wyniku i trasy', fresh());
+  t('Fokus na tytule nowej planszy', document.activeElement === el.mapTitle);
+
+  solveCurrent(); checkRoutes(); nextMap();
+  t('Przejście na planszę 3', state.mapIndex === 2 && fresh());
+
+  solveCurrent(); checkRoutes();
+  const toSummary = nextMap(), again = nextMap();
+  t('Z planszy 3 do podsumowania, kolejne wywołanie ignorowane',
+    toSummary === true && again === false && state.screen === 'summary' && !el.screenSummary.hidden);
+
+  const settingsBefore = document.documentElement.className;
+  state.picks.add(0);
+  $('btnPlayAgain').click();
+  t('Ponowna gra: plansza 1, wyzerowany stan, ustawienia zachowane',
+    state.screen === 'game' && state.mapIndex === 0 && fresh() && state.picks.size === 0 &&
+    document.documentElement.className === settingsBefore);
+
+  resetGame(); showScreen('start'); setMessage('');
+  return out;
+}
+
+/* =========================================================================
+   12. START
+   ========================================================================= */
+/* Ekran błędu — komunikaty wstawiane jako tekst (textContent), nie jako HTML. */
+function showStartupError(errors){
+  for(const id of ['screenStart','screenGame','screenSummary']){ const s = $(id); if(s) s.hidden = true; }
+  const startBtn = $('btnStart'); if(startBtn){ startBtn.disabled = true; startBtn.hidden = true; }
+  const nav = document.querySelector('.topbar nav'); if(nav) nav.hidden = true;
+  const list = $('errorList');
+  list.replaceChildren(...errors.map(e => { const li = document.createElement('li'); li.textContent = String(e); return li; }));
+  $('screenError').hidden = false;
+  $('errorTitle').focus();
+  state.screen = 'error';
+}
+function init(){
+  applySettings(readSettings());          // ustawienia czytelności działają także na ekranie błędu
+  if(window.KMM) KMM.onChange(shared => { if(shared) applySettings(readSettings()); });   // bez wspólnych ustawień nic nie nadpisuj
+  // Walidacja PRZED budowaniem ilustracji, planszy i obsługi rozgrywki
+  let errors;
+  try{ errors = validateMaps(MAPS); }catch(e){ errors = ['Nieoczekiwany błąd podczas sprawdzania map.']; }
+  if(errors.length){
+    showStartupError(errors);
+    console.error('Nie można uruchomić gry:', errors);
+    return false;                          // inicjalizacja zatrzymana
+  }
+  for(const id of ['board','cellInfo','people','tools','btnCancel','btnCheck','checkBlocked','message','routeBar','routeCaption',
+    'successBox','successTitle','btnKeepEditing','btnNext','progressText','progressDots','mapTitle','mapHint','legendList',
+    'screenStart','screenGame','screenSummary','startTitle','summaryTitle','picks','startIllustration']) el[id] = $(id);
+  buildStartIllustration(); buildLegend(); buildPeople(); buildTools(); buildPicks();
+  bindEvents();
+  loadMap(0);
+  state.screen = 'start';
+  return true;
+}
+const GAME_STARTED = init();
+
+/* Dostęp do logiki dla testów i ciekawskich uczniów (konsola przeglądarki). */
+window.KMSD = { CHARACTERS, MAPS, TOOLS, state, started: GAME_STARTED, getTileType, canEnter, findPath, evaluateAll,
+  allReachable, applyPlacement, applyRemoval, validateMap, validateMaps, runSelfTests, runFlowTests, checkRoutes, nextMap };
+</script>
+</body>
+</html>

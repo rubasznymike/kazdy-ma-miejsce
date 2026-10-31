@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Klasa dla każdego — poznaj potrzeby czterech osób i rozmieść wyposażenie sali tak, aby każdy mógł się uczyć i współpracować. Część zestawu „Każdy ma miejsce”.">
+<meta name="author" content="Michał Siwkowski">
+<meta name="color-scheme" content="light">
+<title>Klasa dla każdego</title>
+<style>
+/* =========================================================
+   KOLORY I WYGLĄD — tu można zmienić paletę gry
+   ========================================================= */
+:root{
+  --bg:#f6f4ee; --surface:#ffffff; --text:#1f2a33; --muted:#46545e; --line:#8b979f;
+  --accent:#2b5f9e; --accent-strong:#1b4373; --sel-bg:#e8f0fb; --hover:#eef3f8;
+  --focus:#b4400a; --wall:#5b6770;
+  --quiet:#e3f0fb; --quiet-b:#3b6e99;
+  --info:#fff4cf; --info-b:#8a6810;
+  --work:#e4f4e6; --work-b:#3d7a4a;
+  --collab:#f1e8fa; --collab-b:#6e4c94;
+  --path:#f4f1ea; --path-b:#6f6552;
+  --ok:#2c6a3b; --ok-bg:#eef8f0; --check:#8a5200; --check-bg:#fff6e6;
+  --board:#2f5d46; --door:#7e5228; --window:#cfe8f7;
+}
+html{font-size:112.5%} /* 1rem = 18 px */
+html.large-text{font-size:137.5%} /* 1rem = 22 px */
+html.high-contrast{
+  --bg:#ffffff; --surface:#ffffff; --text:#000; --muted:#000; --line:#000;
+  --accent:#0038a8; --accent-strong:#001f5c; --sel-bg:#dfe8ff; --hover:#f0f0f0;
+  --focus:#c00000; --wall:#000;
+  --quiet:#fff; --quiet-b:#000; --info:#fff; --info-b:#000; --work:#fff; --work-b:#000;
+  --collab:#fff; --collab-b:#000; --path:#fff; --path-b:#000;
+  --ok:#00561b; --ok-bg:#fff; --check:#6b3300; --check-bg:#fff;
+  --board:#000; --door:#000; --window:#fff;
+}
+html.high-contrast .zone,html.high-contrast .slot,html.high-contrast .item-select,
+html.high-contrast .person,html.high-contrast .result-card{border-width:4px}
+
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;
+  font-size:1rem;line-height:1.5;color:var(--text);background:var(--bg)}
+html{scroll-padding-top:var(--sticky-h,0px)}
+h1{font-size:clamp(1.55rem,4.5vw,2.3rem);line-height:1.2;margin:0}
+h2{font-size:1.3rem;line-height:1.25;margin:0 0 .4rem}
+h3{font-size:1.15rem;margin:0 0 .4rem}
+p{margin:.4rem 0}
+[hidden]{display:none !important}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+:focus{outline:none}
+:focus-visible{outline:4px solid var(--focus);outline-offset:3px;box-shadow:0 0 0 7px #fff}
+[tabindex="-1"]:focus-visible{outline-offset:6px}
+svg{display:block}
+
+/* ---------- Przyciski ---------- */
+.btn{font:inherit;font-weight:650;min-height:48px;min-width:48px;padding:.5rem 1.1rem;border-radius:12px;
+  border:2px solid var(--text);background:var(--surface);color:var(--text);cursor:pointer;line-height:1.25}
+.btn:hover{background:var(--hover)}
+.btn-primary{background:var(--accent);border-color:var(--accent-strong);color:#fff}
+.btn-primary:hover{background:var(--accent-strong)}
+.btn-big{font-size:1.15rem;padding:.7rem 1.6rem;min-height:56px}
+.btn[aria-disabled="true"]{background:#e3e6e8;color:#333;border-style:dashed;border-color:#555;cursor:not-allowed}
+.btn-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:1rem}
+
+/* ---------- Ekrany ---------- */
+.screen{max-width:1320px;margin:0 auto;padding:16px}
+.motto{font-weight:650;color:var(--accent-strong);font-size:1.1rem;margin:.2rem 0 0}
+.hint{color:var(--muted);font-size:max(16px,.9rem);margin:.1rem 0 .6rem}
+
+/* Start */
+.start-card{max-width:820px;margin:0 auto;background:var(--surface);border:2px solid var(--line);border-radius:20px;padding:clamp(16px,4vw,36px)}
+.start-illustration{margin:1rem 0;max-width:520px}
+.start-illustration svg{width:100%;height:auto}
+.steps{padding-left:1.4rem;margin:.6rem 0}
+.steps li{margin:.25rem 0}
+.note{background:var(--sel-bg);border-left:6px solid var(--accent);padding:.6rem .9rem;border-radius:8px}
+
+/* Nagłówek gry */
+.game-header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.game-header h1{font-size:clamp(1.35rem,3.5vw,1.9rem)}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px}
+
+/* Postacie */
+.people{background:var(--surface);border:2px solid var(--line);border-radius:16px;padding:12px;margin-bottom:12px}
+.people-list{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,165px),1fr));gap:10px}
+.person{border:2px solid var(--line);border-radius:14px;padding:6px 8px 8px;background:var(--bg)}
+.person-btn{display:flex;align-items:center;gap:10px;width:100%;min-height:64px;border:2px solid transparent;border-radius:12px;
+  background:transparent;font:inherit;font-weight:700;font-size:1.1rem;color:var(--text);cursor:pointer;padding:4px;text-align:left}
+.person-btn:hover{border-color:var(--line);background:var(--surface)}
+.person-btn svg{width:56px;height:56px;flex:none}
+.person-need{font-size:max(16px,.9rem);color:var(--muted);margin:2px 4px 0}
+
+/* Pasek stanu */
+.status-bar{position:sticky;top:0;z-index:5;background:var(--surface);border:2px solid var(--accent);border-radius:12px;
+  padding:8px 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin:0 0 14px}
+.status-bar.has-selection{border-width:4px;background:var(--sel-bg)}
+.status-bar.is-locked{border-color:var(--ok)}
+.status-text{margin:0;font-weight:600;flex:1 1 260px}
+.status-actions{display:flex;flex-wrap:wrap;gap:8px}
+
+/* Układ gry */
+.game-main{display:grid;gap:20px}
+@media (min-width:1000px){.status-bar{position:static}.game-main{grid-template-columns:minmax(0,1.55fr) minmax(300px,1fr);align-items:start}}
+.panel{background:var(--surface);border:2px solid var(--line);border-radius:16px;padding:12px}
+
+/* =========================================================
+   PLAN SALI
+   ========================================================= */
+.room-wrap{--cols:1fr 1fr minmax(56px,1.1fr) 1fr 1fr;--gap:8px;--frame:6px;max-width:900px;margin:0 auto}
+.wall-top,.wall-bottom{display:grid;grid-template-columns:var(--cols);gap:var(--gap);padding:0 calc(var(--gap) + var(--frame))}
+.wall-top{align-items:end;margin-bottom:-2px}
+.wall-bottom{align-items:start;margin-top:-2px}
+.window{grid-column:1 / 2;justify-self:center;width:85%;text-align:center;font-size:max(16px,.85rem);font-weight:650}
+.window-pane{height:20px;border:3px solid var(--wall);background:var(--window);
+  background-image:linear-gradient(90deg,transparent 47%,var(--wall) 47%,var(--wall) 53%,transparent 53%)}
+.board{grid-column:2 / 5;justify-self:center;width:62%;min-height:38px;background:var(--board);color:#fff;
+  font-weight:700;display:flex;align-items:center;justify-content:center;border-radius:4px 4px 0 0;font-size:max(16px,.9rem)}
+.door{grid-column:3 / 4;justify-self:center;width:100%;max-width:130px;min-height:34px;background:var(--door);color:#fff;
+  font-weight:700;display:flex;align-items:center;justify-content:center;border-radius:0 0 6px 6px;font-size:max(16px,.9rem)}
+.path-caption{grid-column:1 / -1;text-align:center;font-weight:700;margin-top:6px;font-size:max(16px,.9rem)}
+.room-frame{border:var(--frame) solid var(--wall);border-radius:6px;padding:var(--gap);background:#fffdf8}
+html.high-contrast .room-frame{background:#fff}
+.room-grid{display:grid;grid-template-columns:var(--cols);grid-template-rows:auto auto;gap:var(--gap)}
+
+.zone{--zb:var(--line);--zbg:var(--surface);border:3px solid var(--zb);background:var(--zbg);border-radius:12px;
+  padding:6px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.zone--quiet{--zb:var(--quiet-b);--zbg:var(--quiet)}
+.zone--info{--zb:var(--info-b);--zbg:var(--info)}
+.zone--work{--zb:var(--work-b);--zbg:var(--work)}
+.zone--collab{--zb:var(--collab-b);--zbg:var(--collab)}
+.zone--path{--zb:var(--path-b);--zbg:var(--path);border-style:dashed;
+  background-image:repeating-linear-gradient(0deg,transparent 0 22px,rgba(111,101,82,.13) 22px 26px)}
+.zone-head{display:flex;align-items:center;gap:6px;font-weight:700;font-size:max(16px,.9rem);line-height:1.2;min-width:0;overflow-wrap:break-word;hyphens:manual}
+.zone-head svg{width:24px;height:24px;flex:none;color:var(--zb)}
+.zone-name-short{display:none}
+.zone-slots{display:grid;grid-template-columns:1fr 1fr;gap:6px;flex:1}
+.zone--path .zone-slots{grid-template-columns:1fr;grid-template-rows:1fr 1fr}
+
+.slot{position:relative;font:inherit;color:var(--text);min-height:124px;min-width:48px;width:100%;
+  border:2px solid var(--zb);border-radius:10px;background:var(--surface);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:4px;padding:6px 4px;cursor:pointer;transition:transform .15s,box-shadow .15s}
+.slot:hover{box-shadow:0 0 0 3px var(--zb)}
+.slot.is-empty{border-style:dashed;background:rgba(255,255,255,.65)}
+.slot-code{font-size:max(16px,.85rem);font-weight:700;line-height:1}
+.slot-art svg{width:56px;height:56px}
+.slot-name{font-size:max(16px,.85rem);text-align:center;line-height:1.2;overflow-wrap:anywhere;hyphens:auto;max-width:100%}
+.slot.is-empty .slot-name{color:var(--muted);font-style:italic}
+.slot-flag{display:none;font-size:max(16px,.8rem);font-weight:700;background:var(--accent);color:#fff;border-radius:6px;padding:0 6px}
+.slot.is-source{border:4px solid var(--accent);background:var(--sel-bg)}
+.slot.is-source .slot-flag{display:block}
+.is-targeting .slot:not(.is-source){border-color:var(--accent);border-width:3px;border-style:dashed}
+.is-targeting .slot:not(.is-source):hover{transform:translateY(-2px)}
+body.is-locked .slot,body.is-locked .item-select{cursor:not-allowed}
+
+.place-info{margin:.6rem auto 0;max-width:900px;font-size:max(16px,.9rem);background:var(--bg);border:2px solid var(--line);border-radius:10px;padding:.4rem .7rem;min-height:2.2em}
+.counter{max-width:900px;margin:.4rem auto 0;font-weight:600}
+
+@media (min-width:700px){.path-caption{display:none}}
+@media (max-width:699px){
+  .screen{padding:12px}
+  .room-wrap{--gap:5px;--frame:5px}
+  .slot{min-height:76px;padding:4px 2px}
+  .slot-art svg{width:36px;height:36px}
+  .slot-name{display:none}
+  .slot-flag{position:absolute;top:-10px;left:50%;transform:translateX(-50%);white-space:nowrap}
+  .zone{padding:4px}
+  .zone-head{flex-direction:column;text-align:center;gap:2px}
+  .zone-head svg{width:20px;height:20px}
+  .zone-name-full{display:none}
+  .zone-name-short{display:block}
+  .zone--path .zone-name-short{display:none}
+  .board{width:80%}
+}
+
+/* =========================================================
+   PÓŁKA
+   ========================================================= */
+.shelf{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,150px),1fr));gap:10px}
+.item-card{position:relative}
+.item-select{width:100%;height:100%;min-height:156px;display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:10px 8px 12px;border:2px solid var(--line);border-radius:14px;background:var(--surface);font:inherit;
+  color:var(--text);text-align:center;cursor:pointer}
+.item-select:hover{background:var(--hover)}
+.item-select svg{width:56px;height:56px}
+.item-name{font-weight:700;line-height:1.25;overflow-wrap:break-word;hyphens:auto;max-width:100%}
+.item-loc{font-size:max(16px,.85rem);color:var(--muted);line-height:1.25}
+.item-card.is-placed .item-loc{color:var(--ok);font-weight:650}
+.item-card.is-placed .item-select{background:var(--bg)}
+.item-sel{display:none;font-size:max(16px,.85rem);font-weight:700;background:var(--accent);color:#fff;border-radius:6px;padding:0 8px}
+.item-card.is-selected .item-select{border:4px solid var(--accent);background:var(--sel-bg)}
+.item-card.is-selected .item-sel{display:block}
+.item-info{position:absolute;top:6px;right:6px;width:48px;height:48px;border-radius:50%;border:2px solid var(--text);
+  background:var(--surface);font:inherit;font-weight:800;font-style:italic;font-family:Georgia,serif;font-size:1.2rem;cursor:pointer;color:var(--text)}
+.item-info:hover{background:var(--hover)}
+
+/* =========================================================
+   SPRAWDZANIE I WYNIKI
+   ========================================================= */
+.check-section{margin-top:20px}
+.check-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.warning{margin:.4rem 0;background:var(--check-bg);border:3px solid var(--check);border-radius:10px;padding:.5rem .8rem;font-weight:650}
+.notice{margin:.6rem 0;background:var(--sel-bg);border:3px dashed var(--accent);border-radius:10px;padding:.5rem .8rem;font-weight:650}
+.success{border:4px solid var(--ok);background:var(--ok-bg);border-radius:16px;padding:16px;margin:14px 0;display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+.success svg{width:84px;height:84px;flex:none}
+.success-body{flex:1 1 280px}
+.success h2{font-size:1.45rem;color:var(--ok)}
+.results{margin-top:14px}
+.result-list{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:10px}
+.result-card{border:3px solid var(--line);border-radius:14px;padding:10px;background:var(--surface);display:flex;gap:10px;align-items:flex-start}
+.result-card svg.portrait{width:56px;height:56px;flex:none}
+.result-card.met{border-color:var(--ok);background:var(--ok-bg)}
+.result-card.unmet{border-color:var(--check);border-style:dashed;background:var(--check-bg)}
+.result-name{font-weight:700;font-size:1.1rem}
+.result-status{display:flex;gap:6px;align-items:center;font-weight:700}
+.result-status svg{width:24px;height:24px;flex:none}
+.met .result-status{color:var(--ok)}
+.unmet .result-status{color:var(--check)}
+.result-hint,.result-explain{margin:.3rem 0 0}
+.talk{margin-top:14px;border:3px dotted var(--accent);border-radius:14px;padding:10px 14px;background:var(--sel-bg)}
+.talk p{margin:.2rem 0}
+.talk-q{font-weight:700;font-size:1.1rem}
+.talk-note{color:var(--muted);font-size:max(16px,.9rem)}
+.path-result{margin-top:10px}
+
+@keyframes pop{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}
+.success svg{animation:pop .5s ease-out}
+
+/* Refleksja */
+.reflection{max-width:900px;margin:0 auto}
+.reflection-list{list-style:none;padding:0;margin:1rem 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:12px}
+.ref-card{width:100%;min-height:96px;display:flex;align-items:center;gap:12px;padding:12px;font:inherit;font-weight:650;
+  text-align:left;color:var(--text);background:var(--surface);border:2px solid var(--line);border-radius:14px;cursor:pointer}
+.ref-card:hover{background:var(--hover)}
+.ref-card svg{width:36px;height:36px;flex:none;color:var(--accent)}
+.ref-card .ref-state{display:block;font-size:max(16px,.85rem);font-weight:600;color:var(--muted)}
+.ref-card[aria-pressed="true"]{border:4px solid var(--accent);background:var(--sel-bg)}
+.ref-card[aria-pressed="true"] .ref-state{color:var(--accent-strong)}
+
+/* =========================================================
+   OKNA DIALOGOWE
+   ========================================================= */
+dialog{border:3px solid var(--text);border-radius:18px;padding:0;width:min(640px,calc(100% - 24px));max-height:90vh;
+  color:var(--text);background:var(--surface)}
+dialog::backdrop{background:rgba(20,30,40,.55)}
+.dlg-body{padding:20px 22px;overflow:auto}
+.dlg-body h2{font-size:1.4rem}
+.dlg-portrait{width:120px;height:120px;margin:0 auto 8px}
+.dlg-art{width:96px;height:96px;margin:0 auto 8px}
+.quote{font-size:1.15rem;background:var(--bg);border-left:6px solid var(--accent);padding:.7rem 1rem;border-radius:8px;margin:.8rem 0}
+.center{text-align:center}
+.setting{display:flex;align-items:center;gap:12px;min-height:56px;padding:6px 10px;border:2px solid var(--line);border-radius:12px;margin:8px 0;cursor:pointer;font-weight:600}
+.setting input{width:28px;height:28px;flex:none;accent-color:var(--accent);margin:0}
+.kbd-list li{margin:.2rem 0}
+kbd{font:inherit;font-weight:700;border:2px solid var(--line);border-radius:6px;padding:0 6px;background:var(--bg)}
+
+/* Ograniczone animacje */
+html.reduce-motion *,html.reduce-motion *::before,html.reduce-motion *::after{animation:none !important;transition:none !important;scroll-behavior:auto !important}
+html.reduce-motion .is-targeting .slot:hover{transform:none}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none !important;transition:none !important}}
+</style>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232b5f9e'/%3E%3Ccircle cx='22' cy='26' r='7' fill='%23fff'/%3E%3Ccircle cx='42' cy='26' r='7' fill='%23fff'/%3E%3Cpath d='M10 50c2-8 7-12 12-12s10 4 12 12M30 50c2-8 7-12 12-12s10 4 12 12' fill='none' stroke='%23fff' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+<!-- ===== ZESTAW „KAŻDY MA MIEJSCE”: wspólne ustawienia i powrót do menu =====
+     Ten sam fragment znajduje się w menu (index.html) i w każdej grze.
+     ✏️ Wspólny klucz ustawień: 'kazdyMaMiejsce.ustawienia'
+        { largeText: true/false, highContrast: true/false, reducedMotion: true/false }
+     Gry nadal zapisują też swoje dawne klucze i dodatkowe ustawienia — nic nie ginie.
+     Gdy przeglądarka blokuje localStorage, wszystko działa, tylko bez zapamiętywania. -->
+<style id="kmm-style">
+.kmm-nav{box-sizing:border-box;max-width:1320px;margin:0 auto;padding:8px 16px 0;display:flex;flex-wrap:wrap;gap:8px}
+.kmm-home{box-sizing:border-box;display:inline-flex;align-items:center;gap:8px;min-height:48px;min-width:48px;padding:.4rem 1rem;
+  border:2px solid #1f2a33;border-radius:12px;background:#fff;color:#1f2a33;font-family:inherit;font-weight:700;font-size:max(18px,1rem);
+  line-height:1.2;text-decoration:none}
+.kmm-home:hover{background:#eef3f8;text-decoration:underline}
+.kmm-home:focus{outline:none}
+.kmm-home:focus-visible{outline:4px solid #b4400a;outline-offset:3px;box-shadow:0 0 0 7px #fff}
+.kmm-home svg{width:22px;height:22px;flex:none;display:block}
+html.high-contrast .kmm-home,html.hc .kmm-home{border:3px solid #000;color:#000;background:#fff}
+html.high-contrast .kmm-home:focus-visible,html.hc .kmm-home:focus-visible{outline-color:#c00000}
+@media print{.kmm-nav{display:none}}
+</style>
+<script>
+window.KMM = (function () {
+  'use strict';
+  var KEY = 'kazdyMaMiejsce.ustawienia';
+  var NAMES = ['largeText', 'highContrast', 'reducedMotion'];
+  /** Odczyt wspólnych ustawień. Zwraca obiekt tylko z zapisanymi polami albo null. */
+  function read() {
+    try {
+      var raw = window.localStorage.getItem(KEY);
+      if (!raw) return null;
+      var p = JSON.parse(raw), o = {}, n = 0;
+      if (!p || typeof p !== 'object') return null;
+      NAMES.forEach(function (k) { if (typeof p[k] === 'boolean') { o[k] = p[k]; n++; } });
+      return n ? o : null;
+    } catch (e) { return null; }
+  }
+  /** Zapis wspólnych ustawień (tylko trzy wspólne pola). Zwraca false, gdy pamięć jest niedostępna. */
+  function write(s) {
+    try {
+      var o = read() || {};
+      NAMES.forEach(function (k) { if (s && typeof s[k] === 'boolean') o[k] = s[k]; });
+      window.localStorage.setItem(KEY, JSON.stringify(o));
+      return true;
+    } catch (e) { return false; }
+  }
+  var listeners = [];
+  function onChange(fn) { listeners.push(fn); }
+  function notify() { listeners.forEach(function (fn) { try { fn(read()); } catch (e) {} }); }
+  // Każde wyświetlenie strony (także „Wstecz”, gdy przeglądarka odtwarza stare pola formularzy)
+  // i zmiana w innej karcie: ponownie zastosuj aktualne wspólne ustawienia.
+  window.addEventListener('pageshow', function () { notify(); });
+  window.addEventListener('storage', function (e) { if (e.key === KEY) notify(); });
+  /** Zatrzymuje nagrania i syntezę mowy przy wyjściu z gry. */
+  function stopMedia() {
+    try { Array.prototype.forEach.call(document.querySelectorAll('audio,video'), function (m) { m.pause(); }); } catch (e) {}
+    try { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch (e) {}
+  }
+  window.addEventListener('pagehide', stopMedia);
+  document.addEventListener('click', function (e) {
+    var a = e.target && e.target.closest ? e.target.closest('.kmm-home') : null;
+    if (!a) return;
+    stopMedia();
+    try { window.sessionStorage.setItem('kazdyMaMiejsce.powrot', a.getAttribute('data-game') || ''); } catch (err) {}
+  });
+  return { KEY: KEY, read: read, write: write, onChange: onChange, stopMedia: stopMedia };
+})();
+</script>
+<!-- ===== koniec wspólnego fragmentu ===== -->
+</head>
+<body>
+<!-- ✏️ Zestaw „Każdy ma miejsce”: powrót do menu (ścieżka względna — działa lokalnie i na GitHub Pages) -->
+<nav class="kmm-nav" aria-label="Zestaw gier Każdy ma miejsce"><a class="kmm-home" href="./index.html" data-game="klasa-dla-kazdego.html"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg><span>Wszystkie gry</span></a></nav>
+
+
+<!-- Komunikaty dla czytników ekranu (wybór, umieszczenie, odłożenie, wynik) -->
+<div id="live" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+<!-- ===================== EKRAN STARTOWY ===================== -->
+<section id="screen-start" class="screen" aria-labelledby="start-title">
+  <div class="start-card">
+    <h1 id="start-title" tabindex="-1">Klasa dla każdego</h1>
+    <p class="motto">Różne potrzeby. Wspólna przestrzeń.</p>
+    <div class="start-illustration" id="start-illustration"></div>
+    <p>Poznajcie cztery osoby i ich potrzeby. Rozmieśćcie wyposażenie tak, aby każdy mógł wygodnie uczyć się i współpracować.</p>
+    <h2>Jak grać?</h2>
+    <ol class="steps">
+      <li>Poznaj potrzeby osób.</li>
+      <li>Wybierz element i kliknij miejsce w sali.</li>
+      <li>Sprawdź klasę i wprowadź poprawki.</li>
+    </ol>
+    <p class="note">Możecie grać samodzielnie albo wspólnie — wystarczy, że jedna osoba naraz obsługuje ekran lub klawiaturę. Nie ma limitu czasu ani punktów.</p>
+    <div class="btn-row">
+      <button type="button" id="btn-start" class="btn btn-primary btn-big">Urządzamy klasę</button>
+      <button type="button" class="btn" data-open="dlg-help">Jak grać?</button>
+      <button type="button" class="btn" data-open="dlg-settings">Ustawienia</button>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== EKRAN GRY ===================== -->
+<section id="screen-game" class="screen" aria-labelledby="game-title" hidden>
+  <header class="game-header">
+    <div>
+      <h1 id="game-title" tabindex="-1">Klasa dla każdego</h1>
+      <p class="motto">Różne potrzeby. Wspólna przestrzeń.</p>
+    </div>
+    <nav class="toolbar" aria-label="Pomoc, ustawienia i przerwa">
+      <button type="button" class="btn" data-open="dlg-help">Jak grać?</button>
+      <button type="button" class="btn" data-open="dlg-settings">Ustawienia</button>
+      <button type="button" class="btn" data-open="dlg-pause" id="btn-pause">Przerwa</button>
+    </nav>
+  </header>
+
+  <section class="people" aria-labelledby="people-title">
+    <h2 id="people-title">Osoby w klasie</h2>
+    <p class="hint">Naciśnij portret lub imię, aby przeczytać, czego potrzebuje dana osoba.</p>
+    <ul id="people-list" class="people-list"></ul>
+  </section>
+
+  <div id="status-bar" class="status-bar">
+    <p id="status-text" class="status-text">Wybierz element z półki wyposażenia.</p>
+    <div class="status-actions">
+      <button type="button" id="btn-jump" class="btn" hidden>Przejdź do planu sali</button>
+      <button type="button" id="btn-return" class="btn" hidden>Odłóż na półkę</button>
+      <button type="button" id="btn-cancel" class="btn" hidden>Anuluj wybór</button>
+    </div>
+  </div>
+
+  <div class="game-main">
+    <section class="panel" aria-labelledby="room-title">
+      <h2 id="room-title">Plan sali</h2>
+      <p class="hint">Widok z góry. Tablica jest u góry, drzwi na dole, okno przy spokojnym kąciku. Środkiem prowadzi przejście. Między polami można poruszać się strzałkami.</p>
+      <div class="room-wrap">
+        <div class="wall-top" aria-hidden="true">
+          <div class="window"><span>Okno</span><div class="window-pane"></div></div>
+          <div class="board">Tablica</div>
+        </div>
+        <div class="room-frame">
+          <div id="room-grid" class="room-grid" role="group" aria-label="Pola w sali"></div>
+        </div>
+        <div class="wall-bottom" aria-hidden="true">
+          <div class="door">Drzwi</div>
+          <div class="path-caption">↕ Środkowa kolumna: Przejście — zostaw wolne</div>
+        </div>
+      </div>
+      <p id="place-info" class="place-info">Wskaż pole, aby zobaczyć tu jego pełną nazwę.</p>
+      <p id="counter" class="counter"></p>
+    </section>
+
+    <section class="panel" aria-labelledby="shelf-title">
+      <h2 id="shelf-title">Półka z wyposażeniem</h2>
+      <p class="hint">Wyposażenie jest dla wszystkich w klasie. Przycisk „i” pokazuje opis.</p>
+      <ul id="shelf" class="shelf"></ul>
+    </section>
+  </div>
+
+  <section class="check-section panel" aria-labelledby="check-title">
+    <h2 id="check-title">Sprawdzanie klasy</h2>
+    <div class="check-row">
+      <button type="button" id="btn-check" class="btn btn-primary btn-big">Sprawdź klasę</button>
+    </div>
+    <p id="check-warning" class="warning" hidden>Najpierw ustaw wybrany element albo anuluj wybór.</p>
+    <p id="changed-notice" class="notice" hidden>Układ sali został zmieniony. Możesz sprawdzić go ponownie.</p>
+
+    <div id="success" class="success" hidden>
+      <div id="success-art"></div>
+      <div class="success-body">
+        <h2 id="success-title" tabindex="-1">Ta klasa daje miejsce każdemu.</h2>
+        <p>Przygotowaliście spokojny kącik, czytelne informacje, wygodne miejsce pracy i różne sposoby komunikowania się.</p>
+        <div class="btn-row">
+          <button type="button" id="btn-keep" class="btn">Jeszcze zmieniamy</button>
+          <button type="button" id="btn-finish" class="btn btn-primary">Kończymy</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="results" class="results" hidden>
+      <h3 id="results-title" tabindex="-1">Wynik sprawdzania</h3>
+      <ul id="result-list" class="result-list"></ul>
+      <div id="path-result" class="path-result"></div>
+      <!-- ✏️ Dobrowolne pytanie do rozmowy — bez wymaganej odpowiedzi -->
+      <div class="talk">
+        <p class="talk-q">Która zmiana może pomóc także innym osobom w klasie?</p>
+        <p>Możecie odpowiedzieć słowem, gestem lub wskazaniem.</p>
+        <p class="talk-note">Całe wyposażenie jest dostępne dla wszystkich w klasie.</p>
+      </div>
+    </div>
+  </section>
+</section>
+
+<!-- ===================== EKRAN REFLEKSJI ===================== -->
+<section id="screen-reflection" class="screen" aria-labelledby="reflection-title" hidden>
+  <div class="reflection panel">
+    <h1 id="reflection-title" tabindex="-1">Co sprawiło, że w tej klasie łatwiej uczestniczyć?</h1>
+    <p>Zaznaczcie dowolne karty — jedną, kilka albo wszystkie. Każda odpowiedź jest dobra i może być początkiem rozmowy.</p>
+    <ul id="reflection-list" class="reflection-list"></ul>
+    <div class="btn-row">
+      <button type="button" id="btn-again" class="btn btn-primary">Zagraj ponownie</button>
+      <button type="button" id="btn-home" class="btn">Wróć do początku</button>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== OKNA DIALOGOWE ===================== -->
+<dialog id="dlg-help" aria-labelledby="help-title">
+  <div class="dlg-body">
+    <h2 id="help-title">Jak grać?</h2>
+    <ol class="steps">
+      <li>Poznaj potrzeby osób.</li>
+      <li>Wybierz element i kliknij miejsce w sali.</li>
+      <li>Sprawdź klasę i wprowadź poprawki.</li>
+    </ol>
+    <p>Kliknięcie zajętego pola wybiera stojący tam element, który możesz przenieść, odłożyć na półkę albo zostawić („Anuluj wybór”). Jeśli wskażesz zajęte pole, element, który tam stał, wraca na półkę.</p>
+    <h3>Klawiatura</h3>
+    <ul class="kbd-list">
+      <li><kbd>Tab</kbd> — przejście do kolejnego przycisku.</li>
+      <li><kbd>Enter</kbd> lub <kbd>Spacja</kbd> — wybór elementu lub pola.</li>
+      <li>Strzałki — ruch między polami na planie sali.</li>
+      <li><kbd>Esc</kbd> — anulowanie wyboru albo zamknięcie okna.</li>
+    </ul>
+    <p class="note">Gracie samodzielnie albo wspólnie: jedna osoba obsługuje ekran, a pozostałe podpowiadają. Nie ma limitu czasu, kar ani rankingu.</p>
+    <p>To uproszczona, edukacyjna układanka. W prawdziwej klasie najlepsze rozwiązania ustalamy wspólnie z osobami, które z niej korzystają.</p>
+    <div class="btn-row"><button type="button" class="btn btn-primary" data-close>Zamknij</button></div>
+  </div>
+</dialog>
+
+<dialog id="dlg-settings" aria-labelledby="settings-title">
+  <div class="dlg-body">
+    <h2 id="settings-title">Ustawienia</h2>
+    <p class="hint">Zmiany działają od razu i zostają zapamiętane w tej przeglądarce.</p>
+    <label class="setting"><input type="checkbox" id="set-large"> Większy tekst</label>
+    <label class="setting"><input type="checkbox" id="set-contrast"> Wysoki kontrast</label>
+    <label class="setting"><input type="checkbox" id="set-motion"> Ograniczone animacje</label>
+    <div class="btn-row"><button type="button" class="btn btn-primary" data-close>Zamknij</button></div>
+  </div>
+</dialog>
+
+<dialog id="dlg-pause" aria-labelledby="pause-title" aria-describedby="pause-desc">
+  <div class="dlg-body center">
+    <h2 id="pause-title">Przerwa</h2>
+    <p id="pause-desc">Gra czeka. Rozmieszczenie i wybrany element zostały zachowane.</p>
+    <div class="btn-row" style="justify-content:center"><button type="button" class="btn btn-primary btn-big" data-close>Wracamy do gry</button></div>
+  </div>
+</dialog>
+
+<dialog id="dlg-person" aria-labelledby="person-title" aria-describedby="person-quote">
+  <div class="dlg-body">
+    <div class="dlg-portrait" id="person-portrait"></div>
+    <h2 id="person-title" class="center"></h2>
+    <p id="person-need" class="center hint"></p>
+    <p id="person-quote" class="quote"></p>
+    <div class="btn-row"><button type="button" class="btn btn-primary" data-close>Zamknij</button></div>
+  </div>
+</dialog>
+
+<dialog id="dlg-item" aria-labelledby="item-title" aria-describedby="item-desc">
+  <div class="dlg-body">
+    <div class="dlg-art" id="item-art"></div>
+    <h2 id="item-title" class="center"></h2>
+    <p id="item-desc" class="quote"></p>
+    <p id="item-where" class="center"></p>
+    <div class="btn-row"><button type="button" class="btn btn-primary" data-close>Zamknij</button></div>
+  </div>
+</dialog>
+
+<script>
+(function () {
+'use strict';
+
+/* =====================================================================
+   1. ILUSTRACJE
+   ---------------------------------------------------------------------
+   Każda ilustracja to zwykły kod SVG (viewBox 0 0 64 64).
+   ✏️ ABY UŻYĆ RYSUNKU UCZNIA: zamień wybrany SVG na znacznik obrazka, np.
+      '<img src="rysunki/sluchawki.png" alt="" width="56" height="56">'
+   (plik obrazka umieść obok pliku gry) albo na obraz zapisany jako data:URL,
+   jeśli gra ma pozostać jednym plikiem.
+   ===================================================================== */
+const S = 'stroke="#1f2a33" stroke-width="2.5" stroke-linejoin="round"';
+const ITEM_ART = {
+  acousticScreen: `<svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><g ${S}>
+    <path d="M7 15 L22 10 L22 52 L7 57 Z" fill="#9cc3e4"/><path d="M22 10 L42 15 L42 57 L22 52 Z" fill="#c9e0f2"/>
+    <path d="M42 15 L57 10 L57 52 L42 57 Z" fill="#9cc3e4"/></g>
+    <g stroke="#3b6e99" stroke-width="2" stroke-linecap="round" fill="none"><path d="M14.5 22v26M32 23v26M49.5 22v26"/></g></svg>`,
+  headphones: `<svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+    <path d="M14 40 V31 A18 18 0 0 1 50 31 V40" fill="none" stroke="#1f2a33" stroke-width="4" stroke-linecap="round"/>
+    <rect x="7" y="35" width="13" height="21" rx="6" fill="#7fb3d5" ${S}/><rect x="44" y="35" width="13" height="21" rx="6" fill="#7fb3d5" ${S}/></svg>`,
+  daySchedule: `<svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+    <rect x="15" y="4" width="34" height="57" rx="4" fill="#fff4cf" ${S}/>
+    <rect x="21" y="9" width="22" height="14" rx="2" fill="#fff" ${S}/><circle cx="32" cy="16" r="4" fill="#f2c14e" stroke="#1f2a33" stroke-width="1.5"/>
+    <rect x="21" y="26" width="22" height="14" rx="2" fill="#fff" ${S}/><path d="M25 29 h7 v8 h-7z M32 29 h7 v8 h-7z" fill="#7fb3d5" stroke="#1f2a33" stroke-width="1.5"/>
+    <rect x="21" y="43" width="22" height="14" rx="2" fill="#fff" ${S}/><circle cx="32" cy="50.5" r="4.2" fill="#e07a5f" stroke="#1f2a33" stroke-width="1.5"/></svg>`,
+  pictureLabels: `<svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+    <rect x="7" y="8" width="50" height="50" rx="4" fill="#f3e3c9" ${S}/><line x1="7" y1="33" x2="57" y2="33" ${S}/>
+    <rect x="20" y="13" width="24" height="15" rx="2" fill="#fff" ${S}/><path d="M25 25 L36 16 L39 19 L28 27 Z" fill="#f2c14e" stroke="#1f2a33" stroke-width="1.5"/>
+    <rect x="20" y="38" width="24" height="15" rx="2" fill="#fff" ${S}/>
+    <circle cx="26" cy="45.5" r="3" fill="#e07a5f"/><circle cx="32" cy="45.5" r="3" fill="#6fbf7f"/><circle cx="38" cy="45.5" r="3" fill="#7fb3d5"/></svg>`,
+  adjustableTable: `<svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+    <rect x="5" y="16" width="54" height="9" rx="3" fill="#c49a6c" ${S}/>
+    <rect x="12" y="25" width="7" height="31" fill="#a9b6bf" ${S}/><rect x="45" y="25" width="7" height="31" fill="#a9b6bf" ${S}/>
+    <path d="M32 30 v22 M26 36 l6 -6 l6 6 M26 46 l6 6 l6 -6" stroke="#3d7a4a" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  organizer: `<svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+    <path d="M17 30 V9" stroke="#e07a5f" stroke-width="5" stroke-linecap="round"/><path d="M23 30 V13" stroke="#7fb3d5" stroke-width="5" stroke-linecap="round"/>
+    <path d="M47 30 V15" stroke="#f2c14e" stroke-width="5" stroke-linecap="round"/>
+    <rect x="9" y="26" width="46" height="30" rx="3" fill="#6fbf7f" ${S}/><line x1="25" y1="26" x2="25" y2="56" ${S}/><line x1="40" y1="26" x2="40" y2="56" ${S}/>
+    <rect x="29" y="20" width="8" height="8" fill="#fff" stroke="#1f2a33" stroke-width="1.5"/></svg>`,
+  pointingBoard: `<svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+    <rect x="5" y="6" width="54" height="42" rx="4" fill="#fff" ${S}/>
+    <rect x="10" y="11" width="20" height="15" rx="2" fill="#f1e8fa" stroke="#6e4c94" stroke-width="3"/><circle cx="20" cy="18.5" r="4.5" fill="#f2c14e" stroke="#1f2a33" stroke-width="1.5"/>
+    <rect x="34" y="11" width="20" height="15" rx="2" fill="#fff" stroke="#1f2a33" stroke-width="1.5"/><path d="M44 15 l4.5 8 h-9z" fill="#7fb3d5" stroke="#1f2a33" stroke-width="1.5"/>
+    <rect x="10" y="29" width="20" height="15" rx="2" fill="#fff" stroke="#1f2a33" stroke-width="1.5"/><rect x="16" y="32.5" width="8" height="8" fill="#6fbf7f" stroke="#1f2a33" stroke-width="1.5"/>
+    <rect x="34" y="29" width="20" height="15" rx="2" fill="#fff" stroke="#1f2a33" stroke-width="1.5"/><path d="M40 39 q4 -7 8 0" fill="none" stroke="#e07a5f" stroke-width="2.5"/>
+    <path d="M18 62 V32 a3.5 3.5 0 0 1 7 0 V48 l9 2 v12" fill="#f6d3b8" stroke="#1f2a33" stroke-width="2" stroke-linejoin="round"/></svg>`,
+  turnMarkers: `<svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+    <g ${S}><circle cx="15" cy="42" r="11" fill="#d7c2ee"/><circle cx="32" cy="24" r="11" fill="#a9d0ea"/><circle cx="49" cy="42" r="11" fill="#f7d77e"/></g>
+    <g font-family="Arial,sans-serif" font-weight="700" font-size="13" text-anchor="middle" fill="#1f2a33">
+    <text x="15" y="46.5">1</text><text x="32" y="28.5">2</text><text x="49" y="46.5">3</text></g></svg>`
+};
+
+/* Ikony stref (24×24, kolor dziedziczony z obramowania strefy) */
+const ZONE_ICONS = {
+  quiet:  '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M15 3a8.5 8.5 0 1 0 6 14A9 9 0 0 1 15 3z"/></svg>',
+  info:   '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M7 14h3M7 17h6"/></svg>',
+  work:   '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M4 20l4-1L19 8l-3-3L5 16z"/><path d="M14 7l3 3"/></svg>',
+  collab: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M2.5 4h11v8H8l-3 3v-3H2.5z"/><path d="M15.5 8h6v8h-2v3l-3-3h-5v-2"/></svg>',
+  path:   '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M7 8l5-5 5 5M7 16l5 5 5-5"/></svg>',
+  people: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M2.5 20c.5-4 3-6 5.5-6s5 2 5.5 6M10.5 20c.5-4 3-6 5.5-6s5 2 5.5 6"/></svg>',
+  hand:   '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M9 21V6a2 2 0 0 1 4 0v7l5 1.5c1.5.5 2 1.5 1.7 3L19 21"/></svg>',
+  okIcon: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M7 12.5l3.2 3.2L17 9"/></svg>',
+  lookIcon:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>'
+};
+
+/* =====================================================================
+   2. DANE GRY — tu zmieniasz treści
+   ===================================================================== */
+
+/* ✏️ POSTACIE: imiona, podpisy potrzeb, wypowiedzi i wygląd portretów.
+   look: kolory skóry (skin), włosów (hair), ubrania (shirt), tła (bg)
+         oraz fryzura (hairStyle: 'long' | 'short' | 'bun' | 'curly'), okulary (glasses).
+   Postaciom celowo nie przypisujemy diagnoz — opisujemy potrzeby. */
+const CHARACTERS = [
+  { id: 'lena', name: 'Lena', need: 'spokojniejsze miejsce',
+    quote: 'Czasem potrzebuję mniej hałasu i spokojnego miejsca. Chcę móc odpocząć, a potem wrócić do wspólnych zajęć.',
+    look: { skin: '#f2c9a5', hair: '#6b4226', shirt: '#7fb3d5', bg: '#e3f0fb', hairStyle: 'long', glasses: false } },
+  { id: 'olek', name: 'Olek', need: 'czytelne informacje',
+    quote: 'Łatwiej mi zacząć, gdy wiem, co będziemy robić i gdzie znajdują się potrzebne rzeczy. Pomagają mi obrazki i oznaczenia.',
+    look: { skin: '#c98e62', hair: '#2d2a26', shirt: '#f2c14e', bg: '#fff4cf', hairStyle: 'short', glasses: true } },
+  { id: 'iga', name: 'Iga', need: 'wygodne miejsce pracy i dojście',
+    quote: 'Potrzebuję wygodnego stołu i uporządkowanego otoczenia. Chcę móc swobodnie podejść do swojego miejsca.',
+    look: { skin: '#f6d3b8', hair: '#a0522d', shirt: '#6fbf7f', bg: '#e4f4e6', hairStyle: 'bun', glasses: false } },
+  { id: 'tomek', name: 'Tomek', need: 'różne sposoby komunikacji',
+    quote: 'Czasem wolę wskazać obrazek niż mówić. Podczas wspólnej pracy pomaga mi jasna kolejność zabierania głosu.',
+    look: { skin: '#8d5a3b', hair: '#3b2a1e', shirt: '#b48fd8', bg: '#f1e8fa', hairStyle: 'curly', glasses: false } }
+];
+
+/* ✏️ WYPOSAŻENIE: nazwy, opisy (pokazywane po przycisku „i”) i ilustracje.
+   Każdy element występuje w jednym egzemplarzu i jest dla wszystkich w klasie. */
+const ITEMS = [
+  { id: 'acousticScreen',  name: 'Osłona akustyczna',          description: 'Pomaga wydzielić spokojniejsze miejsce.', art: ITEM_ART.acousticScreen },
+  { id: 'headphones',      name: 'Słuchawki wyciszające',      description: 'Można z nich skorzystać, gdy potrzeba mniej dźwięków.', art: ITEM_ART.headphones },
+  { id: 'daySchedule',     name: 'Obrazkowy plan dnia',        description: 'Pokazuje kolejność aktywności.', art: ITEM_ART.daySchedule },
+  { id: 'pictureLabels',   name: 'Oznaczenia obrazkowe',       description: 'Pomagają znaleźć materiały i zrozumieć organizację sali.', art: ITEM_ART.pictureLabels },
+  { id: 'adjustableTable', name: 'Stół z regulacją wysokości', description: 'Pozwala dostosować miejsce pracy.', art: ITEM_ART.adjustableTable },
+  { id: 'organizer',       name: 'Organizer na materiały',     description: 'Pomaga uporządkować rzeczy przy miejscu pracy.', art: ITEM_ART.organizer },
+  { id: 'pointingBoard',   name: 'Tablica do wskazywania',     description: 'Pozwala przekazywać pomysły i potrzeby przez wskazywanie symboli.', art: ITEM_ART.pointingBoard },
+  { id: 'turnMarkers',     name: 'Znaczniki kolejności',       description: 'Pomagają ustalić kolejność podczas rozmowy i wspólnego działania.', art: ITEM_ART.turnMarkers }
+];
+
+/* ✏️ STREFY SALI: nazwy, skróty (na wąskich ekranach), ikony i położenie w siatce 5×2. */
+const ZONES = [
+  { id: 'quiet',  name: 'Spokojny kącik',    shortName: 'Kącik',      icon: 'quiet',  grid: { column: '1 / 3', row: '1' } },
+  { id: 'info',   name: 'Strefa informacji', shortName: 'Informacje', icon: 'info',   grid: { column: '1 / 3', row: '2' } },
+  { id: 'path',   name: 'Przejście', label: 'Przejście — zostaw wolne', shortName: 'Przejście', icon: 'path', grid: { column: '3', row: '1 / 3' }, isPath: true },
+  { id: 'work',   name: 'Strefa pracy',      shortName: 'Praca',      icon: 'work',   grid: { column: '4 / 6', row: '1' } },
+  { id: 'collab', name: 'Strefa współpracy', shortName: 'Współ\u00ADpraca', icon: 'collab', grid: { column: '4 / 6', row: '2' } }
+];
+
+/* Pola w sali. col/row = położenie w siatce (służy też do poruszania się strzałkami). */
+const PLACEMENT_SLOTS = [
+  { id: 'Q1', zone: 'quiet',  col: 1, row: 1 }, { id: 'Q2', zone: 'quiet',  col: 2, row: 1 },
+  { id: 'E1', zone: 'info',   col: 1, row: 2 }, { id: 'E2', zone: 'info',   col: 2, row: 2 },
+  { id: 'P1', zone: 'path',   col: 3, row: 1 }, { id: 'P2', zone: 'path',   col: 3, row: 2 },
+  { id: 'W1', zone: 'work',   col: 4, row: 1 }, { id: 'W2', zone: 'work',   col: 5, row: 1 },
+  { id: 'C1', zone: 'collab', col: 4, row: 2 }, { id: 'C2', zone: 'collab', col: 5, row: 2 }
+];
+
+/* ✏️ REGUŁY ROZMIESZCZENIA: dopuszczalne pola dla każdego elementu.
+   W obrębie strefy elementy można zamieniać miejscami — oba pola są poprawne. */
+const PLACEMENT_RULES = {
+  acousticScreen:  ['Q1', 'Q2'],
+  headphones:      ['Q1', 'Q2'],
+  daySchedule:     ['E1', 'E2'],
+  pictureLabels:   ['E1', 'E2'],
+  adjustableTable: ['W1', 'W2'],
+  organizer:       ['W1', 'W2'],
+  pointingBoard:   ['C1', 'C2'],
+  turnMarkers:     ['C1', 'C2']
+};
+
+/* ✏️ REGUŁY POTRZEB: potrzeba jest uwzględniona, gdy wszystkie wymienione
+   elementy stoją na dozwolonych polach (PLACEMENT_RULES), a jeśli
+   pathMustBeClear = true — także gdy oba pola przejścia są wolne.
+   hint = pytanie naprowadzające pokazywane przy niespełnionej potrzebie.
+   explanation = krótkie wyjaśnienie sensu decyzji przy spełnionej potrzebie. */
+const NEED_RULES = [
+  { characterId: 'lena',  items: ['acousticScreen', 'headphones'],   pathMustBeClear: false, hint: 'Co pomoże stworzyć spokojniejsze miejsce?',
+    explanation: 'Osłona i dostępne słuchawki pomagają przygotować spokojniejszy kącik.' },
+  { characterId: 'olek',  items: ['daySchedule', 'pictureLabels'],   pathMustBeClear: false, hint: 'Czy informacje są tam, gdzie łatwo je znaleźć?',
+    explanation: 'Plan dnia i oznaczenia ułatwiają orientację w aktywnościach i wyposażeniu sali.' },
+  { characterId: 'iga',   items: ['adjustableTable', 'organizer'],   pathMustBeClear: true,  hint: 'Czy miejsce pracy jest przygotowane, a przejście wolne?',
+    explanation: 'Przygotowano regulowany stół, uporządkowano materiały i pozostawiono wolne przejście.' },
+  { characterId: 'tomek', items: ['pointingBoard', 'turnMarkers'],   pathMustBeClear: false, hint: 'Co pomoże przekazywać pomysły podczas wspólnej pracy?',
+    explanation: 'Tablica do wskazywania i znaczniki kolejności wspierają różne sposoby udziału we wspólnej pracy.' }
+];
+
+/* ✏️ KARTY REFLEKSJI */
+const REFLECTION_CARDS = [
+  { id: 'calm',     text: 'spokojniejsze miejsce', icon: 'quiet' },
+  { id: 'info',     text: 'czytelne informacje',   icon: 'info' },
+  { id: 'path',     text: 'swobodne przejście',    icon: 'path' },
+  { id: 'comfort',  text: 'wygodne wyposażenie',   icon: 'work' },
+  { id: 'pointing', text: 'możliwość wskazywania', icon: 'hand' },
+  { id: 'rules',    text: 'wspólne ustalanie zasad', icon: 'people' }
+];
+
+/* ✏️ WYGLĄD PORTRETÓW — rysowany z danych look w CHARACTERS.
+   Tu można zastąpić portret rysunkiem ucznia (zwróć np. '<img src="..." alt="">'). */
+function portraitSVG(c, extraClass) {
+  const L = c.look;
+  const hairBack = L.hairStyle === 'long'
+    ? `<path d="M27 46 Q26 17 50 17 Q74 17 73 46 L75 78 Q63 72 61 62 L39 62 Q37 72 25 78 Z" fill="${L.hair}"/>` : '';
+  const hairFront = {
+    long:  `<path d="M29 42 Q32 19 50 19 Q69 19 71 42 Q60 30 46 30 Q36 31 29 42Z" fill="${L.hair}"/>`,
+    short: `<path d="M28 43 Q27 19 50 18 Q73 19 72 43 Q67 29 50 28 Q35 29 28 43Z" fill="${L.hair}"/>`,
+    bun:   `<circle cx="50" cy="14" r="9" fill="${L.hair}"/><path d="M28 43 Q28 20 50 20 Q72 20 72 43 Q64 30 50 30 Q36 30 28 43Z" fill="${L.hair}"/>`,
+    curly: `<g fill="${L.hair}"><circle cx="31" cy="36" r="9"/><circle cx="37" cy="25" r="10"/><circle cx="50" cy="20" r="10"/><circle cx="63" cy="25" r="10"/><circle cx="69" cy="36" r="9"/></g>`
+  }[L.hairStyle] || '';
+  const glasses = L.glasses
+    ? '<g fill="none" stroke="#1f2a33" stroke-width="2"><circle cx="42" cy="46" r="6"/><circle cx="58" cy="46" r="6"/><path d="M48 46h4"/></g>' : '';
+  return `<svg viewBox="0 0 100 100" class="portrait ${extraClass || ''}" aria-hidden="true" focusable="false">
+    <circle cx="50" cy="50" r="47" fill="${L.bg}" stroke="#1f2a33" stroke-width="2.5"/>
+    ${hairBack}
+    <path d="M21 91 Q24 69 50 67 Q76 69 79 91 Q50 103 21 91Z" fill="${L.shirt}" stroke="#1f2a33" stroke-width="2"/>
+    <rect x="44" y="58" width="12" height="11" fill="${L.skin}"/>
+    <ellipse cx="50" cy="45" rx="20" ry="22" fill="${L.skin}" stroke="#1f2a33" stroke-width="2"/>
+    ${hairFront}
+    <circle cx="42" cy="46" r="2.6" fill="#1f2a33"/><circle cx="58" cy="46" r="2.6" fill="#1f2a33"/>
+    <circle cx="37" cy="54" r="3" fill="#e8908a" opacity=".45"/><circle cx="63" cy="54" r="3" fill="#e8908a" opacity=".45"/>
+    <path d="M43 56 Q50 61.5 57 56" fill="none" stroke="#1f2a33" stroke-width="2.2" stroke-linecap="round"/>
+    ${glasses}</svg>`;
+}
+
+const START_ILLUSTRATION = `<svg viewBox="0 0 320 214" role="img" aria-label="Ilustracja: klasa widziana z góry. Po lewej spokojny kącik i strefa informacji, środkiem przejście od drzwi do tablicy, po prawej stół do pracy i okrągły stół do współpracy.">
+  <rect x="10" y="22" width="300" height="164" rx="6" fill="#fffdf8" stroke="#5b6770" stroke-width="6"/>
+  <rect x="118" y="6" width="84" height="16" rx="3" fill="#2f5d46"/><text x="160" y="18" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="#fff" font-weight="700">TABLICA</text>
+  <rect x="30" y="15" width="64" height="10" fill="#cfe8f7" stroke="#5b6770" stroke-width="3"/>
+  <rect x="138" y="183" width="44" height="14" rx="2" fill="#7e5228"/>
+  <rect x="21" y="33" width="106" height="68" rx="8" fill="#e3f0fb" stroke="#3b6e99" stroke-width="2.5"/>
+  <path d="M32 44 l12 -4 v40 l-12 4z M44 40 l16 4 v40 l-16 -4z" fill="#9cc3e4" stroke="#1f2a33" stroke-width="1.5"/>
+  <ellipse cx="96" cy="70" rx="18" ry="14" fill="#b9d6ee" stroke="#1f2a33" stroke-width="1.5"/>
+  <rect x="21" y="109" width="106" height="68" rx="8" fill="#fff4cf" stroke="#8a6810" stroke-width="2.5"/>
+  <rect x="34" y="118" width="22" height="48" rx="3" fill="#fff" stroke="#1f2a33" stroke-width="1.5"/>
+  <circle cx="45" cy="128" r="4" fill="#f2c14e"/><rect x="40" y="137" width="10" height="8" fill="#7fb3d5"/><circle cx="45" cy="156" r="4" fill="#e07a5f"/>
+  <rect x="70" y="124" width="44" height="40" rx="3" fill="#f3e3c9" stroke="#1f2a33" stroke-width="1.5"/><line x1="70" y1="144" x2="114" y2="144" stroke="#1f2a33" stroke-width="1.5"/>
+  <rect x="135" y="33" width="50" height="144" rx="8" fill="#f4f1ea" stroke="#6f6552" stroke-width="2.5" stroke-dasharray="7 5"/>
+  <path d="M160 52v104M150 62l10-10 10 10M150 146l10 10 10-10" fill="none" stroke="#6f6552" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="193" y="33" width="106" height="68" rx="8" fill="#e4f4e6" stroke="#3d7a4a" stroke-width="2.5"/>
+  <rect x="206" y="50" width="56" height="30" rx="3" fill="#c49a6c" stroke="#1f2a33" stroke-width="1.5"/><rect x="268" y="52" width="20" height="16" rx="2" fill="#6fbf7f" stroke="#1f2a33" stroke-width="1.5"/>
+  <rect x="193" y="109" width="106" height="68" rx="8" fill="#f1e8fa" stroke="#6e4c94" stroke-width="2.5"/>
+  <circle cx="246" cy="143" r="18" fill="#d9c6ef" stroke="#1f2a33" stroke-width="1.5"/>
+  <g fill="#fff" stroke="#1f2a33" stroke-width="1.5"><circle cx="246" cy="117" r="6"/><circle cx="246" cy="169" r="6"/><circle cx="220" cy="143" r="6"/><circle cx="272" cy="143" r="6"/></g>
+</svg>`;
+
+const SUCCESS_ART = `<svg viewBox="0 0 84 84" aria-hidden="true" focusable="false">
+  <circle cx="42" cy="42" r="38" fill="#fff" stroke="#2c6a3b" stroke-width="4"/>
+  <path d="M24 43l12 12 24-26" fill="none" stroke="#2c6a3b" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+/* =====================================================================
+   3. STAN GRY
+   ---------------------------------------------------------------------
+   Jedno źródło prawdy o położeniu przedmiotów: state.placement
+   (identyfikator elementu → identyfikator pola albo null = na półce).
+   Półka i plansza są tylko widokami tego obiektu.
+   ===================================================================== */
+const SETTINGS_KEY = 'klasaDlaKazdego.settings';
+const ITEM_BY_ID = Object.fromEntries(ITEMS.map(i => [i.id, i]));
+const SLOT_BY_ID = Object.fromEntries(PLACEMENT_SLOTS.map(s => [s.id, s]));
+const ZONE_BY_ID = Object.fromEntries(ZONES.map(z => [z.id, z]));
+const CHAR_BY_ID = Object.fromEntries(CHARACTERS.map(c => [c.id, c]));
+const DEFAULT_STATUS = 'Wybierz element z półki wyposażenia.';
+
+function emptyPlacement() { return Object.fromEntries(ITEMS.map(i => [i.id, null])); }
+
+const state = {
+  screen: 'start',
+  placement: emptyPlacement(),
+  selectedItemId: null,
+  selectionTrigger: null,   // element, z którego wybrano przedmiot (do przywracania fokusu)
+  result: null,             // ostatni wynik sprawdzania lub null
+  changedNotice: false,     // „Układ sali został zmieniony…”
+  checkWarning: false,      // „Najpierw ustaw wybrany element…”
+  completed: false,         // sukces — zmiany wstrzymane do decyzji
+  status: DEFAULT_STATUS,
+  viewedSlotId: null,       // ostatnio oglądane pole (tylko do opisu pod planszą; NIE jest wyborem)
+  reflection: new Set(),
+  settings: { largeText: false, highContrast: false, reducedMotion: false }
+};
+
+/* =====================================================================
+   4. LOGIKA (czyste funkcje — nie dotykają strony)
+   ===================================================================== */
+const lowerFirst = s => s.charAt(0).toLowerCase() + s.slice(1);
+
+function getItemInSlot(slotId, placement) {
+  placement = placement || state.placement;
+  return Object.keys(placement).find(id => placement[id] === slotId) || null;
+}
+function zoneOfSlot(slotId) { return ZONE_BY_ID[SLOT_BY_ID[slotId].zone]; }
+function placeText(slotId) { return `${lowerFirst(zoneOfSlot(slotId).name)}, pole ${slotId}`; }
+
+/** Ocena dowolnego układu. Zwraca stan każdej potrzeby, stan przejścia i sukces. */
+function evaluateRoom(placement) {
+  const pathItems = Object.keys(placement).filter(id => placement[id] && SLOT_BY_ID[placement[id]].zone === 'path');
+  const pathClear = pathItems.length === 0;
+  const needs = NEED_RULES.map(rule => {
+    const itemsOk = rule.items.every(id => PLACEMENT_RULES[id].includes(placement[id]));
+    return { characterId: rule.characterId, met: itemsOk && (!rule.pathMustBeClear || pathClear),
+             hint: rule.hint, explanation: rule.explanation };
+  });
+  return { needs, pathClear, pathItems, metCount: needs.filter(n => n.met).length,
+           allMet: pathClear && needs.every(n => n.met) };
+}
+
+/* =====================================================================
+   5. AKCJE GRACZA
+   ===================================================================== */
+const $ = sel => document.querySelector(sel);
+const liveEl = $('#live');
+let liveTimer = null;
+function announce(msg) {
+  liveEl.textContent = '';
+  clearTimeout(liveTimer);
+  liveTimer = setTimeout(() => { liveEl.textContent = msg; }, 60);
+}
+function setStatus(msg, speak) { state.status = msg; if (speak !== false) announce(msg); }
+
+const LOCKED_MSG = 'Klasa jest gotowa. Aby coś zmienić, wybierz „Jeszcze zmieniamy”.';
+function announceLocked() { setStatus(LOCKED_MSG); render(); }
+
+/** Rzeczywista zmiana rozmieszczenia: unieważnia poprzedni wynik. */
+function layoutChanged() {
+  if (state.result) { state.result = null; state.changedNotice = true; }
+}
+
+function selectItem(itemId, trigger) {
+  if (state.completed) return announceLocked();
+  state.selectedItemId = itemId;
+  state.selectionTrigger = trigger || null;
+  const item = ITEM_BY_ID[itemId];
+  const slot = state.placement[itemId];
+  setStatus(slot
+    ? `Wybrano: ${lowerFirst(item.name)} (teraz: ${placeText(slot)}). Wskaż nowe miejsce w sali, odłóż element na półkę albo anuluj wybór.`
+    : `Wybrano: ${lowerFirst(item.name)}. Wskaż miejsce w sali.`);
+  render();
+}
+
+function handleSlot(slotId, trigger) {
+  state.viewedSlotId = slotId;     // dotknięcie pola na telefonie też pokazuje jego pełną nazwę
+  if (state.completed) return announceLocked();
+  if (state.selectedItemId) return placeItem(state.selectedItemId, slotId);
+  const occupant = getItemInSlot(slotId);
+  if (occupant) return selectItem(occupant, trigger);
+  setStatus(`Pole ${slotId} jest wolne. Najpierw wybierz element z półki wyposażenia.`);
+  render();
+}
+
+function placeItem(itemId, slotId) {
+  if (state.completed) return announceLocked();
+  const item = ITEM_BY_ID[itemId];
+  const prev = state.placement[itemId];
+  state.selectedItemId = null;
+  state.selectionTrigger = null;
+  state.checkWarning = false;
+  if (prev === slotId) {                       // to samo miejsce — bez zmiany układu
+    setStatus(`${item.name} zostaje w tym samym miejscu (${placeText(slotId)}).`);
+    return render();
+  }
+  const occupant = getItemInSlot(slotId);
+  if (occupant) state.placement[occupant] = null;  // poprzedni przedmiot wraca na półkę
+  state.placement[itemId] = slotId;                // stare położenie zmienia się dopiero teraz
+  layoutChanged();
+  let msg = `Umieszczono: ${lowerFirst(item.name)} — ${placeText(slotId)}.`;
+  if (occupant) msg += ` ${ITEM_BY_ID[occupant].name} wraca na półkę.`;
+  setStatus(msg);
+  state.viewedSlotId = slotId;
+  render();
+}
+
+function returnToShelf() {
+  const id = state.selectedItemId;
+  if (state.completed || !id || !state.placement[id]) return;
+  state.placement[id] = null;
+  state.selectedItemId = null;
+  state.selectionTrigger = null;
+  state.checkWarning = false;
+  layoutChanged();
+  setStatus(`${ITEM_BY_ID[id].name} wraca na półkę.`);
+  render();
+  shelfEls[id].btn.focus();
+}
+
+function cancelSelection() {
+  const id = state.selectedItemId;
+  if (!id) return;
+  const trigger = state.selectionTrigger;
+  state.selectedItemId = null;
+  state.selectionTrigger = null;
+  state.checkWarning = false;
+  setStatus('Anulowano wybór. Układ sali się nie zmienił.');
+  render();                                   // wynik sprawdzania zostaje bez zmian
+  const target = (trigger && document.contains(trigger) && !trigger.closest('[hidden]')) ? trigger : shelfEls[id].btn;
+  target.focus();
+}
+
+function checkRoom() {
+  if (state.selectedItemId) {                 // kontrola także wewnątrz funkcji
+    state.checkWarning = true;
+    setStatus('Najpierw ustaw wybrany element albo anuluj wybór.');
+    render();
+    return null;
+  }
+  const res = evaluateRoom(state.placement);
+  state.result = res;
+  state.changedNotice = false;
+  state.checkWarning = false;
+  state.completed = res.allMet;
+  if (res.allMet) {
+    setStatus('Ta klasa daje miejsce każdemu. Wybierz „Jeszcze zmieniamy” albo „Kończymy”.', false);
+    announce('Ta klasa daje miejsce każdemu. Przygotowaliście spokojny kącik, czytelne informacje, wygodne miejsce pracy i różne sposoby komunikowania się.');
+  } else {
+    setStatus(`Sprawdzono klasę. Uwzględnione potrzeby: ${res.metCount} z ${NEED_RULES.length}. Przeczytajcie karty poniżej i wprowadźcie poprawki.`, false);
+    announce(`Sprawdzono klasę. Uwzględnione potrzeby: ${res.metCount} z ${NEED_RULES.length}. ` +
+      (res.pathClear ? 'Przejście jest wolne.' : 'Na przejściu stoi przedmiot.'));
+  }
+  render();
+  (res.allMet ? $('#success-title') : $('#results-title')).focus();
+  return res;
+}
+
+function keepEditing() {
+  state.completed = false;
+  setStatus('Możecie dalej zmieniać układ sali.');
+  render();
+  $('#btn-check').focus();
+}
+
+function resetGame() {
+  state.placement = emptyPlacement();
+  state.selectedItemId = null;
+  state.selectionTrigger = null;
+  state.result = null;
+  state.changedNotice = false;
+  state.checkWarning = false;
+  state.completed = false;
+  state.status = DEFAULT_STATUS;
+  state.reflection.clear();
+  state.viewedSlotId = null;
+  render();
+}
+
+/* =====================================================================
+   6. BUDOWANIE WIDOKU (raz) I ODŚWIEŻANIE (render)
+   ===================================================================== */
+const shelfEls = {};
+const slotEls = {};
+let renderedResult = undefined;
+
+function buildPeople() {
+  const list = $('#people-list');
+  CHARACTERS.forEach(c => {
+    const li = document.createElement('li');
+    li.className = 'person';
+    li.innerHTML = `<button type="button" class="person-btn" aria-label="${c.name} — przeczytaj wypowiedź">${portraitSVG(c)}<span>${c.name}</span></button>
+      <p class="person-need">${c.need}</p>`;
+    li.querySelector('button').addEventListener('click', e => openPerson(c, e.currentTarget));
+    list.appendChild(li);
+  });
+}
+
+function buildShelf() {
+  const shelf = $('#shelf');
+  ITEMS.forEach(item => {
+    const li = document.createElement('li');
+    li.className = 'item-card';
+    li.innerHTML = `<button type="button" class="item-select" aria-pressed="false">
+        ${item.art}<span class="item-name">${item.name}</span>
+        <span class="item-loc"></span><span class="item-sel">Wybrano</span></button>
+      <button type="button" class="item-info" aria-label="Informacja: ${item.name}">i</button>`;
+    const btn = li.querySelector('.item-select');
+    btn.addEventListener('click', () => selectItem(item.id, btn));
+    li.querySelector('.item-info').addEventListener('click', e => openItemInfo(item, e.currentTarget));
+    shelfEls[item.id] = { root: li, btn, loc: li.querySelector('.item-loc') };
+    shelf.appendChild(li);
+  });
+}
+
+function buildRoom() {
+  const grid = $('#room-grid');
+  ZONES.forEach(z => {
+    const zoneEl = document.createElement('div');
+    zoneEl.className = `zone zone--${z.id}`;
+    zoneEl.style.gridColumn = z.grid.column;
+    zoneEl.style.gridRow = z.grid.row;
+    zoneEl.setAttribute('role', 'group');
+    zoneEl.setAttribute('aria-label', z.label || z.name);
+    zoneEl.innerHTML = `<div class="zone-head" aria-hidden="true">${ZONE_ICONS[z.icon]}
+        <span class="zone-name-full">${z.label || z.name}</span><span class="zone-name-short">${z.shortName}</span></div>
+      <div class="zone-slots"></div>`;
+    const box = zoneEl.querySelector('.zone-slots');
+    PLACEMENT_SLOTS.filter(s => s.zone === z.id).forEach(s => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'slot';
+      b.dataset.slot = s.id;
+      b.innerHTML = `<span class="slot-flag" aria-hidden="true">Wybrany</span><span class="slot-code" aria-hidden="true">${s.id}</span>
+        <span class="slot-art" aria-hidden="true"></span><span class="slot-name" aria-hidden="true"></span>`;
+      b.addEventListener('click', () => handleSlot(s.id, b));
+      b.addEventListener('focus', () => updatePlaceInfo(s.id));
+      b.addEventListener('mouseenter', () => updatePlaceInfo(s.id));
+      b.addEventListener('keydown', e => moveInGrid(e, s));
+      slotEls[s.id] = { btn: b, art: b.querySelector('.slot-art'), name: b.querySelector('.slot-name'), shown: undefined };
+      box.appendChild(b);
+    });
+    grid.appendChild(zoneEl);
+  });
+}
+
+function buildReflection() {
+  const list = $('#reflection-list');
+  REFLECTION_CARDS.forEach(card => {
+    const li = document.createElement('li');
+    li.innerHTML = `<button type="button" class="ref-card" aria-pressed="false">${ZONE_ICONS[card.icon]}
+      <span>${card.text}<span class="ref-state">Niezaznaczone</span></span></button>`;
+    const b = li.querySelector('button');
+    b.addEventListener('click', () => {
+      if (state.reflection.has(card.id)) state.reflection.delete(card.id); else state.reflection.add(card.id);
+      renderReflection();
+    });
+    card.el = b;
+    list.appendChild(li);
+  });
+}
+
+function moveInGrid(e, s) {
+  const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+  if (!d) return;
+  const t = PLACEMENT_SLOTS.find(x => x.col === s.col + d[0] && x.row === s.row + d[1]);
+  e.preventDefault();
+  if (t) slotEls[t.id].btn.focus();
+}
+
+/** Zapamiętuje oglądane pole i odświeża opis. Nie zmienia wyboru ani rozmieszczenia. */
+function updatePlaceInfo(slotId) {
+  state.viewedSlotId = slotId;
+  renderPlaceInfo();
+}
+/** Opis zawsze czytany z aktualnego state.placement. */
+function renderPlaceInfo() {
+  const el = $('#place-info');
+  const slotId = state.viewedSlotId;
+  if (!slotId) { el.textContent = 'Wskaż pole, aby zobaczyć tu jego pełną nazwę.'; return; }
+  const z = zoneOfSlot(slotId);
+  const occ = getItemInSlot(slotId);
+  el.textContent = `Pole ${slotId}: ${z.label || z.name} — ${occ ? ITEM_BY_ID[occ].name : 'wolne'}.`;
+}
+
+/* Wysokość przyklejonego paska stanu → scroll-padding, aby aktywny przycisk
+   nie chował się pod paskiem podczas poruszania się klawiszem Tab. */
+function updateStickyOffset() {
+  const bar = $('#status-bar');
+  const sticky = getComputedStyle(bar).position === 'sticky' && state.screen === 'game';
+  document.documentElement.style.setProperty('--sticky-h', sticky ? (bar.offsetHeight + 12) + 'px' : '0px');
+}
+window.addEventListener('resize', updateStickyOffset);
+document.addEventListener('focusin', e => {
+  if (e.target.closest('dialog') || e.target === document.body) return;
+  // korekta w następnej klatce — po własnym przewinięciu przeglądarki
+  requestAnimationFrame(() => keepFocusVisible(e.target));
+});
+function keepFocusVisible(target) {
+  if (document.activeElement !== target) return;
+  const bar = $('#status-bar');
+  const r = target.getBoundingClientRect();
+  const sticky = state.screen === 'game' && !bar.contains(target) && getComputedStyle(bar).position === 'sticky';
+  const bb = bar.getBoundingClientRect();
+  const stuck = sticky && bb.top <= 1;               // pasek faktycznie przyklejony u góry
+  const topLimit = stuck ? bb.bottom : 0;
+  if (stuck && r.top < topLimit + 4) window.scrollBy(0, r.top - topLimit - 12);   // pod paskiem
+  else if (r.bottom > window.innerHeight) window.scrollBy(0, r.bottom - window.innerHeight + 12); // ucięty u dołu
+}
+
+function render() {
+  const sel = state.selectedItemId;
+  const locked = state.completed;
+
+  ITEMS.forEach(item => {
+    const e = shelfEls[item.id];
+    const slot = state.placement[item.id];
+    e.btn.setAttribute('aria-pressed', sel === item.id ? 'true' : 'false');
+    e.btn.setAttribute('aria-disabled', locked ? 'true' : 'false');
+    e.loc.textContent = slot ? `W sali: ${lowerFirst(zoneOfSlot(slot).name)} (${slot})` : 'Na półce';
+    e.root.classList.toggle('is-placed', !!slot);
+    e.root.classList.toggle('is-selected', sel === item.id);
+  });
+
+  PLACEMENT_SLOTS.forEach(s => {
+    const e = slotEls[s.id];
+    const occ = getItemInSlot(s.id);
+    const item = occ && ITEM_BY_ID[occ];
+    if (e.shown !== occ) { e.art.innerHTML = item ? item.art : ''; e.shown = occ; }
+    e.name.textContent = item ? item.name : 'wolne';
+    e.btn.classList.toggle('is-empty', !item);
+    e.btn.classList.toggle('is-source', !!sel && occ === sel);
+    const z = ZONE_BY_ID[s.zone];
+    let label = `${z.label || z.name}, pole ${s.id}: ${item ? item.name : 'wolne'}`;
+    if (sel && occ === sel) label += ', wybrany do przeniesienia';
+    e.btn.setAttribute('aria-label', label);
+    e.btn.setAttribute('aria-disabled', locked ? 'true' : 'false');
+  });
+  $('#room-grid').classList.toggle('is-targeting', !!sel);
+  document.body.classList.toggle('is-locked', locked);
+
+  $('#status-text').textContent = state.status;
+  $('#status-bar').classList.toggle('has-selection', !!sel);
+  $('#status-bar').classList.toggle('is-locked', locked);
+  $('#btn-jump').hidden = !sel;
+  $('#btn-return').hidden = !(sel && state.placement[sel]);
+  $('#btn-cancel').hidden = !sel;
+
+  const placedCount = ITEMS.filter(i => state.placement[i.id]).length;
+  $('#counter').textContent = `W sali: ${placedCount} z ${ITEMS.length} elementów. Na półce: ${ITEMS.length - placedCount}.`;
+
+  $('#btn-check').setAttribute('aria-disabled', sel ? 'true' : 'false');
+  $('#check-warning').hidden = !state.checkWarning;
+  $('#changed-notice').hidden = !state.changedNotice;
+  $('#success').hidden = !locked;
+  $('#results').hidden = !state.result;
+  renderPlaceInfo();
+  updateStickyOffset();
+  if (state.result !== renderedResult) { renderResults(); renderedResult = state.result; }
+  renderReflection();
+}
+
+function renderResults() {
+  const list = $('#result-list');
+  const pathBox = $('#path-result');
+  list.innerHTML = '';
+  pathBox.innerHTML = '';
+  const r = state.result;
+  if (!r) return;
+  r.needs.forEach(n => {
+    const c = CHAR_BY_ID[n.characterId];
+    const li = document.createElement('li');
+    li.className = 'result-card ' + (n.met ? 'met' : 'unmet');
+    li.innerHTML = `${portraitSVG(c)}<div><div class="result-name">${c.name} — ${c.need}</div>
+      <div class="result-status">${n.met ? ZONE_ICONS.okIcon : ZONE_ICONS.lookIcon}<span>${n.met ? 'Potrzeba uwzględniona' : 'Przyjrzyjmy się jeszcze'}</span></div>
+      <p class="${n.met ? 'result-explain' : 'result-hint'}">${n.met ? n.explanation : n.hint}</p></div>`;
+    list.appendChild(li);
+  });
+  const pathText = r.pathClear ? 'Przejście jest wolne' : 'Na przejściu stoi przedmiot. Czy można ustawić go inaczej?';
+  pathBox.innerHTML = `<div class="result-card ${r.pathClear ? 'met' : 'unmet'}">${ZONE_ICONS.path.replace('<svg', '<svg class="portrait" style="width:40px;height:40px"')}
+    <div><div class="result-name">Przejście</div><div class="result-status">${r.pathClear ? ZONE_ICONS.okIcon : ZONE_ICONS.lookIcon}<span>${pathText}</span></div></div></div>`;
+}
+
+function renderReflection() {
+  REFLECTION_CARDS.forEach(card => {
+    if (!card.el) return;
+    const on = state.reflection.has(card.id);
+    card.el.setAttribute('aria-pressed', on ? 'true' : 'false');
+    card.el.querySelector('.ref-state').textContent = on ? '✓ Zaznaczone' : 'Niezaznaczone';
+  });
+}
+
+/* =====================================================================
+   7. EKRANY, OKNA DIALOGOWE I USTAWIENIA
+   ===================================================================== */
+function showScreen(name) {
+  state.screen = name;
+  ['start', 'game', 'reflection'].forEach(n => { $('#screen-' + n).hidden = n !== name; });
+  updateStickyOffset();
+  window.scrollTo(0, 0);
+  const heading = { start: '#start-title', game: '#game-title', reflection: '#reflection-title' }[name];
+  $(heading).focus();
+}
+
+const dialogOpeners = {};
+function openDialog(dlg, opener) {
+  dialogOpeners[dlg.id] = opener || document.activeElement;
+  dlg.showModal();
+}
+document.querySelectorAll('dialog').forEach(dlg => {
+  dlg.addEventListener('close', () => {
+    const el = dialogOpeners[dlg.id];
+    if (el && document.contains(el) && !el.closest('[hidden]')) el.focus();
+    else { const h = $('#screen-' + state.screen + ' h1'); if (h) h.focus(); }
+  });
+  dlg.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => dlg.close()));
+  dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); }); // kliknięcie tła
+});
+document.querySelectorAll('[data-open]').forEach(b =>
+  b.addEventListener('click', () => openDialog(document.getElementById(b.dataset.open), b)));
+
+function openPerson(c, opener) {
+  $('#person-portrait').innerHTML = portraitSVG(c);
+  $('#person-title').textContent = c.name;
+  $('#person-need').textContent = 'Potrzeba: ' + c.need;
+  $('#person-quote').textContent = '„' + c.quote + '”';
+  openDialog($('#dlg-person'), opener);
+}
+function openItemInfo(item, opener) {
+  $('#item-art').innerHTML = item.art;
+  $('#item-title').textContent = item.name;
+  $('#item-desc').textContent = item.description;
+  const slot = state.placement[item.id];
+  $('#item-where').textContent = slot ? `W sali: ${placeText(slot)}.` : 'Teraz: na półce.';
+  openDialog($('#dlg-item'), opener);
+}
+
+function applySettings() {
+  const s = state.settings, root = document.documentElement;
+  root.classList.toggle('large-text', s.largeText);
+  root.classList.toggle('high-contrast', s.highContrast);
+  root.classList.toggle('reduce-motion', s.reducedMotion);
+  $('#set-large').checked = s.largeText;
+  $('#set-contrast').checked = s.highContrast;
+  $('#set-motion').checked = s.reducedMotion;
+}
+function saveSettings() {
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(state.settings)); } catch (e) { /* brak dostępu — trudno */ }
+  if (window.KMM) KMM.write(state.settings);        // wspólne ustawienia zestawu
+}
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (raw) Object.assign(state.settings, JSON.parse(raw));
+  } catch (e) { /* ustawienia domyślne */ }
+  const shared = window.KMM && KMM.read();          // wspólne ustawienia zestawu mają pierwszeństwo
+  if (shared) Object.assign(state.settings, shared);
+}
+[['#set-large', 'largeText'], ['#set-contrast', 'highContrast'], ['#set-motion', 'reducedMotion']].forEach(([sel, key]) => {
+  $(sel).addEventListener('change', e => { state.settings[key] = e.target.checked; applySettings(); saveSettings(); });
+});
+
+/* Przyciski główne */
+$('#btn-start').addEventListener('click', () => {
+  showScreen('game');
+  announce('Plan sali. ' + state.status);
+});
+$('#btn-jump').addEventListener('click', () => {
+  const free = PLACEMENT_SLOTS.find(s => !getItemInSlot(s.id) && s.zone !== 'path') || PLACEMENT_SLOTS[0];
+  slotEls[free.id].btn.focus();
+  slotEls[free.id].btn.scrollIntoView({ block: 'center', behavior: state.settings.reducedMotion ? 'auto' : 'smooth' });
+});
+$('#btn-return').addEventListener('click', returnToShelf);
+$('#btn-cancel').addEventListener('click', cancelSelection);
+$('#btn-check').addEventListener('click', checkRoom);
+$('#btn-keep').addEventListener('click', keepEditing);
+$('#btn-finish').addEventListener('click', () => showScreen('reflection'));
+$('#btn-again').addEventListener('click', () => {
+  resetGame();
+  showScreen('game');
+  setStatus('Nowa gra. ' + DEFAULT_STATUS);
+  render();
+});
+$('#btn-home').addEventListener('click', () => { resetGame(); showScreen('start'); });
+
+/* Esc na ekranie gry anuluje wybór (okna dialogowe obsługują Esc same) */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && state.screen === 'game' && !document.querySelector('dialog[open]') && state.selectedItemId) {
+    e.preventDefault();
+    cancelSelection();
+  }
+});
+
+/* Start */
+$('#start-illustration').innerHTML = START_ILLUSTRATION;
+$('#success-art').innerHTML = SUCCESS_ART;
+loadSettings();
+applySettings();
+if (window.KMM) KMM.onChange(function () { loadSettings(); applySettings(); });
+buildPeople();
+buildShelf();
+buildRoom();
+buildReflection();
+render();
+
+/* Punkt zaczepienia do testów automatycznych (tylko odczyt danych i ocena układu) */
+window.KlasaDlaKazdego = Object.freeze({
+  CHARACTERS, ITEMS, ZONES, PLACEMENT_SLOTS, PLACEMENT_RULES, NEED_RULES, evaluateRoom,
+  getState: () => JSON.parse(JSON.stringify({
+    placement: state.placement, selectedItemId: state.selectedItemId, result: state.result,
+    changedNotice: state.changedNotice, completed: state.completed, screen: state.screen
+  }))
+});
+})();
+</script>
+</body>
+</html>
