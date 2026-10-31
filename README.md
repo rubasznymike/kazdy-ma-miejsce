@@ -2,7 +2,7 @@
 
 Zestaw sześciu gier edukacyjnych o współpracy, różnych potrzebach i wspólnym uczestnictwie.
 
-**Autor:** Michał Siwkowski
+**Autor:** Michał Siwkowski · **Strona:** https://rubasznymike.github.io/kazdy-ma-miejsce/
 
 | Nr | Gra | Plik | W skrócie |
 |---|---|---|---|
@@ -13,78 +13,76 @@ Zestaw sześciu gier edukacyjnych o współpracy, różnych potrzebach i wspóln
 | 5 | Wspólny piknik | `wspolny-piknik.html` | Planujecie miejsce, aktywności i wyposażenie, tak aby każdy mógł dołączyć. |
 | 6 | Detektywi barier | `detektywi-barier.html` | Szukacie przeszkód na ilustracjach i wybieracie zmiany, które pomagają. |
 
-`index.html` to menu zestawu. Każda gra ma u góry przycisk **„Wszystkie gry”**, który wraca do menu.
+Pozostałe pliki:
+
+| Plik | Do czego służy |
+|---|---|
+| `index.html` | Menu zestawu: gry, postacie, sposób grania, wspólne ustawienia. |
+| `nauczyciel.html` | Przewodnik dla nauczyciela: cele, lekcja 45 minut, pytania do rozmowy, dostosowania, karty do druku. |
+| `manifest.webmanifest`, `sw.js`, `ikony/` | Tryb offline i dodawanie zestawu do ekranu głównego telefonu lub tabletu. |
+| `podglad.png` | Obrazek wyświetlany po wklejeniu linku (Teams, Messenger, e-mail). |
+| `LICENSE.md` | Licencja: treści CC BY-SA 4.0, kod MIT. |
+| `.nojekyll` | Informuje GitHub Pages, że pliki mają być udostępnione bez przetwarzania. |
 
 ---
 
 ## Uruchomienie na komputerze
 
 1. Rozpakuj `kazdy-ma-miejsce.zip`.
-2. Otwórz plik `index.html` w przeglądarce (dwuklik).
-3. Wybierz grę.
+2. Otwórz `index.html` w przeglądarce (dwuklik).
 
-Nie trzeba instalować programów, mieć konta ani połączenia z internetem. Wszystkie pliki muszą być w **jednym folderze**, bo linki między menu i grami są względne (`./index.html`, `./co-powiesz.html` itd.).
-
-Gry działają w aktualnych przeglądarkach: Chrome, Edge, Firefox i Safari.
+Nie trzeba instalować programów, konta ani internetu. Wszystkie pliki muszą być w **jednym folderze** (z podfolderem `ikony`), bo linki są względne.
 
 ## Publikacja na GitHub Pages
 
-1. Na GitHubie utwórz nowe, **publiczne** repozytorium, np. `kazdy-ma-miejsce`.
-2. Wybierz **Add file → Upload files** i przeciągnij **zawartość** folderu: `index.html`, sześć plików gier, `README.md` i `.nojekyll`. Pliki mają leżeć bezpośrednio w repozytorium, a nie w podfolderze.
-   - Plik `.nojekyll` jest ukryty (nazwa zaczyna się od kropki). Jeśli go nie widać, można go pominąć — strona zadziała również bez niego.
-3. Zatwierdź zmiany przyciskiem **Commit changes**.
-4. Wejdź w **Settings → Pages**. W części **Build and deployment** ustaw:
-   - **Source:** *Deploy from a branch*,
-   - **Branch:** `main`, folder `/ (root)`,
-   - kliknij **Save**.
-5. Po około minucie strona będzie dostępna pod adresem:
-   `https://<twoja-nazwa-użytkownika>.github.io/kazdy-ma-miejsce/`
+1. Utwórz **publiczne** repozytorium, np. `kazdy-ma-miejsce`.
+2. **Add file → Upload files** — przeciągnij **zawartość** folderu (razem z podfolderem `ikony`) i zatwierdź **Commit changes**.
+3. **Settings → Pages → Build and deployment**: *Deploy from a branch*, gałąź `main`, folder `/ (root)`, **Save**.
+4. Po chwili strona działa pod adresem `https://<login>.github.io/kazdy-ma-miejsce/`.
 
-Adres zawiera nazwę repozytorium. Zestaw używa wyłącznie ścieżek względnych, więc działa pod takim adresem bez dodatkowej konfiguracji.
+Jeśli repozytorium ma inną nazwę lub inny właściciel, zmień adres w znacznikach `og:url` i `og:image` (podgląd linku) na początku każdego pliku HTML. Gry działają bez tej zmiany — dotyczy ona tylko obrazka w podglądzie linku.
 
-Jeśli repozytorium będzie miało inną nazwę, zmieni się tylko końcówka adresu.
+## Wspólne cechy wszystkich gier
 
-## Wspólne ustawienia dostępności
-
-W menu i w każdej grze są trzy ustawienia:
-
-- **Większy tekst**
-- **Wysoki kontrast**
-- **Ograniczone animacje**
-
-Ustawienie wybrane w menu działa we wszystkich grach. Zmiana w jednej grze działa w menu i w pozostałych grach.
-
-Ustawienia są zapamiętywane tylko w tej przeglądarce, na tym urządzeniu (pamięć `localStorage`, wspólny klucz `kazdyMaMiejsce.ustawienia`). Jeśli przeglądarka blokuje zapamiętywanie, na przykład w trybie prywatnym z ostrymi ustawieniami, gry działają normalnie, a ustawienia obowiązują do zamknięcia strony.
-
-Dodatkowe ustawienia pojedynczych gier zostają bez zmian, na przykład „Wspólny podgląd wskazówek” w „Moście współpracy”.
-
-## Prywatność
-
-Gry nie łączą się z internetem, nie zbierają danych, nie używają plików cookie ani zewnętrznych bibliotek. Pamiętane są wyłącznie ustawienia dostępności.
+- **Ustawienia dostępności** — większy tekst, wysoki kontrast, ograniczone animacje. Wybór w menu działa we wszystkich grach i odwrotnie (pamięć przeglądarki, klucz `kazdyMaMiejsce.ustawienia`). Bez dostępu do pamięci gry działają normalnie, tylko bez zapamiętywania.
+- **Wspólne postacie** — Ada, Olek, Lena, Tomek, Kuba i Iga wyglądają tak samo i mają te same potrzeby w każdej grze. Wygląd i opisy są w module `KMM.CAST` (ten sam fragment na początku każdego pliku).
+- **Czytanie na głos** — przycisk „Posłuchaj” przy wypowiedziach. Korzysta z syntezy mowy przeglądarki; jeśli przeglądarka jej nie ma, przycisk się nie pojawia.
+- **Przycisk „Wszystkie gry”** — w pasku każdej gry; zatrzymuje dźwięk i czytanie, wraca do menu.
+- **Tryb offline** — po pierwszym otwarciu strony z internetu menu, przewodnik i wszystkie gry działają bez sieci. Zestaw można też dodać do ekranu głównego.
+- **Bez danych** — gry nie łączą się z internetem, nie zbierają danych i nie używają plików cookie.
 
 ## Edycja treści
 
-Każda gra to jeden plik HTML z kodem, stylem i ilustracjami w środku. Miejsca do edycji są oznaczone w kodzie komentarzami z ikoną ✏️, m.in.:
+Miejsca do edycji są oznaczone w kodzie komentarzami z ikoną ✏️:
 
-- **Menu:** lista `GAMES` w `index.html` — kolejność kafelków, opisy, nazwy plików.
-- **Co powiesz?:** struktura `SCENARIOS` — sytuacje, wypowiedzi, zakończenia, wyjaśnienia. Pola `audioSrc` pozwalają dodać nagrania uczniów jako `data:audio/...`. Nagranie powinno odpowiadać aktualnemu tekstowi wypowiedzi.
+- **Menu:** lista `GAMES` i `CAST_GAMES` w `index.html`.
+- **Przewodnik:** lista `GUIDES` i `CARDS` w `nauczyciel.html`.
+- **Postacie:** `CAST` we wspólnym fragmencie (zmiana musi trafić do wszystkich plików — fragment jest identyczny).
+- **Co powiesz?:** `SCENARIOS` — sytuacje, wypowiedzi, zakończenia, wyjaśnienia; pola `audioSrc` na nagrania uczniów (`data:audio/...`).
 - **Klasa dla każdego:** `CHARACTERS`, `ITEMS`, `ZONES`, `PLACEMENT_RULES`, `NEED_RULES`.
-- **Most współpracy:** tablica `ROUNDS` w części „DANE GRY”.
-- **Każdy ma swoją drogę:** sekcja „DANE MAP”. Autotesty logiki można uruchomić w konsoli przeglądarki poleceniem `KMSD.runSelfTests()`.
+- **Most współpracy:** `ROUNDS` w części „DANE GRY”.
+- **Każdy ma swoją drogę:** „DANE MAP”; autotesty w konsoli: `KMSD.runSelfTests()`.
+- **Czytanie na głos:** wywołania `KMM.readAloud('…')` na końcu każdej gry wskazują, które teksty mają przycisk „Posłuchaj”.
 
-Po zmianie nazwy pliku gry zaktualizuj ją także w liście `GAMES` w `index.html`.
+Po dodaniu nowego pliku lub zmianie nazwy dopisz go do listy `FILES` w `sw.js` i zwiększ numer wersji w `CACHE` (np. `v1` → `v2`).
 
-## Co sprawdzono przed publikacją
+## Co sprawdzono
 
-Testy automatyczne w przeglądarce Chromium:
+Testy automatyczne w przeglądarce Chromium (lokalnie i spod adresu z podkatalogiem, jak na GitHub Pages):
 
-- menu → gra → „Wszystkie gry” → menu dla każdej gry, lokalnie (`file://`) i spod adresu z podkatalogiem jak na GitHub Pages;
-- wspólne ustawienia w obie strony, także przy powrocie przyciskiem „Wstecz”;
-- działanie przy zablokowanej pamięci przeglądarki;
+- przejścia menu → gra → menu i przewodnik → gra, uruchamianie wszystkich gier;
+- wspólne ustawienia w obie strony, także po przycisku „Wstecz”, oraz działanie bez pamięci przeglądarki;
 - obsługa klawiaturą i widoczny fokus;
 - szerokości 390, 768 i 1366 px, ze zwykłym i większym tekstem;
-- zatrzymywanie dźwięku i czytania na głos przy wyjściu z gry;
-- brak połączeń z internetem;
+- spójne portrety postaci we wszystkich grach;
+- czytanie na głos i jego przerywanie;
+- działanie bez internetu po pierwszym otwarciu;
+- wydruk przewodnika i kart;
+- audyt dostępności axe-core (WCAG 2.2 AA i dobre praktyki) — bez zgłoszeń;
 - wbudowane autotesty gier.
 
-Nie były wykonane testy z czytnikami ekranu ani na fizycznych urządzeniach dotykowych.
+Nie były wykonane testy z czytnikami ekranu, na fizycznych urządzeniach dotykowych ani z prawdziwymi głosami syntezy mowy.
+
+## Licencja
+
+© 2026 Michał Siwkowski. Treści i ilustracje: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.pl). Kod: MIT. Szczegóły w [LICENSE.md](LICENSE.md).

@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="Przewodnik dla nauczyciela do zestawu gier „Każdy ma miejsce”: cele, przebieg lekcji, pytania do rozmowy, dostosowania i karty do druku. Autor: Michał Siwkowski.">
+<meta name="author" content="Michał Siwkowski">
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#2b5f9e">
+<link rel="apple-touch-icon" href="./ikony/apple-touch-icon.png">
+<!-- Podgląd linku (Teams, Messenger, e-mail, media społecznościowe). ✏️ Adres zmień, jeśli repozytorium będzie miało inną nazwę. -->
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pl_PL">
+<meta property="og:site_name" content="Każdy ma miejsce">
+<meta property="og:title" content="Dla nauczyciela — Każdy ma miejsce">
+<meta property="og:description" content="Przewodnik dla nauczyciela do zestawu gier „Każdy ma miejsce”: cele, przebieg lekcji, pytania do rozmowy, dostosowania i karty do druku. Autor: Michał Siwkowski.">
+<meta property="og:url" content="https://rubasznymike.github.io/kazdy-ma-miejsce/nauczyciel.html">
+<meta property="og:image" content="https://rubasznymike.github.io/kazdy-ma-miejsce/podglad.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Każdy ma miejsce — sześć gier o współpracy. Portrety sześciu postaci zestawu.">
+<meta name="twitter:card" content="summary_large_image">
+<title>Dla nauczyciela — Każdy ma miejsce</title>
+<!-- ===== ZESTAW „KAŻDY MA MIEJSCE”: wspólne ustawienia i powrót do menu =====
+     Ten sam fragment znajduje się w menu (index.html) i w każdej grze.
+     ✏️ Wspólny klucz ustawień: 'kazdyMaMiejsce.ustawienia'
+        { largeText: true/false, highContrast: true/false, reducedMotion: true/false }
+     Gry nadal zapisują też swoje dawne klucze i dodatkowe ustawienia — nic nie ginie.
+     Gdy przeglądarka blokuje localStorage, wszystko działa, tylko bez zapamiętywania. -->
+<style id="kmm-style">
+.kmm-nav{box-sizing:border-box;max-width:1320px;margin:0 auto;padding:8px 16px 0;display:flex;flex-wrap:wrap;gap:8px}
+.kmm-home{box-sizing:border-box;display:inline-flex;align-items:center;gap:8px;min-height:48px;min-width:48px;padding:.4rem 1rem;
+  border:2px solid #1f2a33;border-radius:12px;background:#fff;color:#1f2a33;font-family:inherit;font-weight:700;font-size:max(18px,1rem);
+  line-height:1.2;text-decoration:none}
+.kmm-home:hover{background:#eef3f8;text-decoration:underline}
+.kmm-home:focus{outline:none}
+.kmm-home:focus-visible{outline:4px solid #b4400a;outline-offset:3px;box-shadow:0 0 0 7px #fff}
+.kmm-home svg{width:22px;height:22px;flex:none;display:block}
+html.high-contrast .kmm-home,html.hc .kmm-home{border:3px solid #000;color:#000;background:#fff}
+html.high-contrast .kmm-home:focus-visible,html.hc .kmm-home:focus-visible{outline-color:#c00000}
+@media print{.kmm-nav{display:none}}
+.kmm-speak{box-sizing:border-box;display:inline-flex;align-items:center;gap:6px;min-height:48px;min-width:48px;margin:.35rem 0;padding:.3rem .8rem;
+  border:2px solid #2b5f9e;border-radius:12px;background:#fff;color:#1b4373;font-family:inherit;font-weight:700;font-size:max(16px,.9rem);line-height:1.2;cursor:pointer;vertical-align:middle;max-width:100%;text-align:left}
+.kmm-speak:hover{background:#e8f0fb}
+.kmm-speak[aria-pressed="true"]{background:#1b4373;color:#fff}
+.kmm-speak:focus{outline:none}
+.kmm-speak:focus-visible{outline:4px solid #b4400a;outline-offset:3px;box-shadow:0 0 0 7px #fff}
+.kmm-speak svg{width:22px;height:22px;flex:none}
+.kmm-speak[hidden]{display:none}
+html.high-contrast .kmm-speak,html.hc .kmm-speak{border:3px solid #000;color:#000}
+html.high-contrast .kmm-speak[aria-pressed="true"],html.hc .kmm-speak[aria-pressed="true"]{background:#000;color:#fff}
+@media print{.kmm-speak{display:none}}
+.kmm-sr{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+</style>
+<script>
+window.KMM = (function () {
+  'use strict';
+  var KEY = 'kazdyMaMiejsce.ustawienia';
+  var NAMES = ['largeText', 'highContrast', 'reducedMotion'];
+  /** Odczyt wspólnych ustawień. Zwraca obiekt tylko z zapisanymi polami albo null. */
+  function read() {
+    try {
+      var raw = window.localStorage.getItem(KEY);
+      if (!raw) return null;
+      var p = JSON.parse(raw), o = {}, n = 0;
+      if (!p || typeof p !== 'object') return null;
+      NAMES.forEach(function (k) { if (typeof p[k] === 'boolean') { o[k] = p[k]; n++; } });
+      return n ? o : null;
+    } catch (e) { return null; }
+  }
+  /** Zapis wspólnych ustawień (tylko trzy wspólne pola). Zwraca false, gdy pamięć jest niedostępna. */
+  function write(s) {
+    try {
+      var o = read() || {};
+      NAMES.forEach(function (k) { if (s && typeof s[k] === 'boolean') o[k] = s[k]; });
+      window.localStorage.setItem(KEY, JSON.stringify(o));
+      return true;
+    } catch (e) { return false; }
+  }
+  var listeners = [];
+  function onChange(fn) { listeners.push(fn); }
+  function notify() { listeners.forEach(function (fn) { try { fn(read()); } catch (e) {} }); }
+  // Każde wyświetlenie strony (także „Wstecz”, gdy przeglądarka odtwarza stare pola formularzy)
+  // i zmiana w innej karcie: ponownie zastosuj aktualne wspólne ustawienia.
+  window.addEventListener('pageshow', function () { notify(); });
+  window.addEventListener('storage', function (e) { if (e.key === KEY) notify(); });
+  /** Zatrzymuje nagrania i syntezę mowy przy wyjściu z gry. */
+  function stopMedia() {
+    try { Array.prototype.forEach.call(document.querySelectorAll('audio,video'), function (m) { m.pause(); }); } catch (e) {}
+    try { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch (e) {}
+    if (speakingBtn) { label(speakingBtn, false); speakingBtn = null; }
+  }
+  window.addEventListener('pagehide', stopMedia);
+  // Tryb offline: po pierwszym otwarciu strony z internetu gry działają także bez sieci (tylko http/https, nie z pliku)
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('./sw.js').catch(function () {}); });
+  }
+  document.addEventListener('click', function (e) {
+    var a = e.target && e.target.closest ? e.target.closest('.kmm-home') : null;
+    if (!a) return;
+    stopMedia();
+    try { window.sessionStorage.setItem('kazdyMaMiejsce.powrot', a.getAttribute('data-game') || ''); } catch (err) {}
+  });
+  /* =====================================================================
+     ✏️ WSPÓLNE POSTACIE ZESTAWU — jedna osoba = jedno imię, wygląd i potrzeba
+     we wszystkich grach. Zmiana tutaj (w każdym pliku ten sam fragment)
+     zmienia portret we wszystkich grach.
+     look: skin (skóra), hair (włosy), shirt (ubranie), bg (tło),
+           hairStyle: 'long' | 'short' | 'bun' | 'curly' | 'bob', glasses: true/false
+     ===================================================================== */
+  var CAST = {
+    ada:   { name: 'Ada',   need: 'droga bez stopni — porusza się na wózku',
+             look: { skin: '#c98e62', hair: '#2d2a26', hairStyle: 'bun',   shirt: '#f2c14e', bg: '#fff4cf', glasses: false } },
+    olek:  { name: 'Olek',  need: 'czytelne informacje: obrazki, oznaczenia, kolejne kroki',
+             look: { skin: '#e8b98f', hair: '#3b2a1e', hairStyle: 'short', shirt: '#7fb3d5', bg: '#e3f0fb', glasses: true } },
+    lena:  { name: 'Lena',  need: 'spokojniejsze miejsce i mniej hałasu',
+             look: { skin: '#f6d3b8', hair: '#a0522d', hairStyle: 'long',  shirt: '#b48fd8', bg: '#f1e8fa', glasses: false } },
+    tomek: { name: 'Tomek', need: 'wskazywanie obrazków i różne sposoby udziału',
+             look: { skin: '#8d5a3b', hair: '#241a12', hairStyle: 'curly', shirt: '#f4a582', bg: '#fbeee6', glasses: false } },
+    kuba:  { name: 'Kuba',  need: 'czas na zastanowienie się i odpowiedź',
+             look: { skin: '#f2c9a5', hair: '#c8873a', hairStyle: 'short', shirt: '#6fbf7f', bg: '#e4f4e6', glasses: false } },
+    iga:   { name: 'Iga',   need: 'wygodne miejsce pracy i swobodne dojście',
+             look: { skin: '#d9a77c', hair: '#6b4226', hairStyle: 'bob',   shirt: '#5fb3a6', bg: '#dff3f0', glasses: false } }
+  };
+  /** Portret SVG wspólnej postaci (lub dowolnego obiektu look). Zwraca null dla nieznanej postaci. */
+  function portrait(idOrLook, cls) {
+    var L = typeof idOrLook === 'string' ? (CAST[idOrLook] && CAST[idOrLook].look) : idOrLook;
+    if (!L) return null;
+    var back = L.hairStyle === 'long' ? '<path d="M27 46 Q26 17 50 17 Q74 17 73 46 L75 78 Q63 72 61 62 L39 62 Q37 72 25 78 Z" fill="' + L.hair + '"/>'
+      : L.hairStyle === 'bob' ? '<path d="M27 46 Q26 17 50 17 Q74 17 73 46 L73 62 Q66 64 62 58 L38 58 Q34 64 27 62 Z" fill="' + L.hair + '"/>' : '';
+    var front = {
+      long:  '<path d="M29 42 Q32 19 50 19 Q69 19 71 42 Q60 30 46 30 Q36 31 29 42Z" fill="' + L.hair + '"/>',
+      bob:   '<path d="M29 42 Q32 19 50 19 Q69 19 71 42 Q62 33 50 32 Q37 32 29 42Z" fill="' + L.hair + '"/>',
+      short: '<path d="M28 43 Q27 19 50 18 Q73 19 72 43 Q67 29 50 28 Q35 29 28 43Z" fill="' + L.hair + '"/>',
+      bun:   '<circle cx="50" cy="14" r="9" fill="' + L.hair + '"/><path d="M28 43 Q28 20 50 20 Q72 20 72 43 Q64 30 50 30 Q36 30 28 43Z" fill="' + L.hair + '"/>',
+      curly: '<g fill="' + L.hair + '"><circle cx="31" cy="36" r="9"/><circle cx="37" cy="25" r="10"/><circle cx="50" cy="20" r="10"/><circle cx="63" cy="25" r="10"/><circle cx="69" cy="36" r="9"/></g>'
+    }[L.hairStyle] || '';
+    var glasses = L.glasses ? '<g fill="none" stroke="#1f2a33" stroke-width="2"><circle cx="42" cy="46" r="6"/><circle cx="58" cy="46" r="6"/><path d="M48 46h4"/></g>' : '';
+    return '<svg viewBox="0 0 100 100" class="' + (cls || '') + '" aria-hidden="true" focusable="false">' +
+      '<circle cx="50" cy="50" r="47" fill="' + L.bg + '" stroke="#1f2a33" stroke-width="2.5"/>' + back +
+      '<path d="M21 91 Q24 69 50 67 Q76 69 79 91 Q50 103 21 91Z" fill="' + L.shirt + '" stroke="#1f2a33" stroke-width="2"/>' +
+      '<rect x="44" y="58" width="12" height="11" fill="' + L.skin + '"/>' +
+      '<ellipse cx="50" cy="45" rx="20" ry="22" fill="' + L.skin + '" stroke="#1f2a33" stroke-width="2"/>' + front +
+      '<circle cx="42" cy="46" r="2.6" fill="#1f2a33"/><circle cx="58" cy="46" r="2.6" fill="#1f2a33"/>' +
+      '<path d="M43 56 Q50 61.5 57 56" fill="none" stroke="#1f2a33" stroke-width="2.2" stroke-linecap="round"/>' + glasses + '</svg>';
+  }
+  /* =====================================================================
+     CZYTANIE NA GŁOS — wbudowana mowa przeglądarki (działa bez internetu,
+     jeśli system ma głos polski). Przycisk „Posłuchaj” pojawia się tylko,
+     gdy przeglądarka obsługuje syntezę mowy.
+     ✏️ Które teksty można odsłuchać — wywołanie KMM.readAloud('selektory') w każdej grze.
+     ===================================================================== */
+  var canSpeak = 'speechSynthesis' in window && typeof window.SpeechSynthesisUtterance === 'function';
+  var speakingBtn = null;
+  var SPEAK_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>';
+  function label(btn, on) { btn.querySelector('span').textContent = on ? 'Zatrzymaj' : 'Posłuchaj'; btn.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+  function stopSpeaking() { if (!canSpeak) return; try { window.speechSynthesis.cancel(); } catch (e) {} if (speakingBtn) { label(speakingBtn, false); speakingBtn = null; } }
+  function speak(text, btn) {
+    if (!canSpeak || !text) return;
+    var again = speakingBtn === btn;
+    stopSpeaking();
+    if (again) return;                       // drugie naciśnięcie = zatrzymaj
+    var u = new SpeechSynthesisUtterance(text);
+    u.lang = 'pl-PL'; u.rate = 0.9;
+    try { var v = window.speechSynthesis.getVoices().filter(function (x) { return /^pl/i.test(x.lang); })[0]; if (v) u.voice = v; } catch (e) {}
+    u.onend = u.onerror = function () { if (speakingBtn === btn) { label(btn, false); speakingBtn = null; } };
+    speakingBtn = btn; if (btn) label(btn, true);
+    window.speechSynthesis.speak(u);
+  }
+  function cleanText(el) { return (el.textContent || '').replace(/\s+/g, ' ').replace(/^[„"]|[”"]$/g, '').trim(); }
+  /** Dodaje przycisk „Posłuchaj” za każdym elementem pasującym do selektora (także dodanym później). */
+  function readAloud(selector, textFn) {
+    var getText = function (el) { return textFn ? String(textFn(el) || '').replace(/\s+/g, ' ').trim() : cleanText(el); };
+    if (!canSpeak) return;
+    function scan() {
+      Array.prototype.forEach.call(document.querySelectorAll(selector), function (el) {
+        var btn = el.__kmmSpeak;
+        if (!btn || !btn.isConnected) {
+          btn = document.createElement('button');
+          btn.type = 'button'; btn.className = 'kmm-speak';
+          btn.innerHTML = SPEAK_ICON + '<span>Posłuchaj</span>';
+          btn.setAttribute('aria-pressed', 'false');
+          btn.addEventListener('click', function (e) { e.stopPropagation(); speak(getText(el), btn); });
+          el.insertAdjacentElement('afterend', btn);
+          el.__kmmSpeak = btn;
+        }
+        var t = getText(el);
+        btn.hidden = !t;
+        btn.setAttribute('aria-label', 'Posłuchaj: ' + t.slice(0, 80));
+      });
+    }
+    var pending = false;
+    new MutationObserver(function () { if (pending) return; pending = true; requestAnimationFrame(function () { pending = false; scan(); }); })
+      .observe(document.body, { childList: true, subtree: true, characterData: true });
+    scan();
+  }
+  // Każde inne działanie (przycisk, link, zamknięcie okna) przerywa czytanie
+  document.addEventListener('click', function (e) {
+    var t = e.target && e.target.closest ? e.target.closest('button,a,[role="button"]') : null;
+    if (t && !t.classList.contains('kmm-speak')) stopSpeaking();
+  }, true);
+  document.addEventListener('close', stopSpeaking, true);
+  return { KEY: KEY, read: read, write: write, onChange: onChange, stopMedia: stopMedia, CAST: CAST, portrait: portrait, readAloud: readAloud, speak: speak, stopSpeaking: stopSpeaking };
+})();
+</script>
+<!-- ===== koniec wspólnego fragmentu ===== -->
+<script>
+(function () { var s = window.KMM && KMM.read(); if (!s) return; var r = document.documentElement;
+  if (s.largeText) r.classList.add('large-text'); if (s.highContrast) r.classList.add('high-contrast'); if (s.reducedMotion) r.classList.add('reduce-motion'); })();
+</script>
+<style>
+:root{--bg:#f5f3ee;--surface:#fff;--text:#1f2a33;--muted:#46545e;--line:#8b979f;--accent:#2b5f9e;--accent-strong:#1b4373;--soft:#e8f0fb;--hover:#eef3f8;--focus:#b4400a}
+html{font-size:112.5%}
+html.large-text{font-size:137.5%}
+html.high-contrast{--bg:#fff;--surface:#fff;--text:#000;--muted:#000;--line:#000;--accent:#0038a8;--accent-strong:#001f5c;--soft:#dfe8ff;--hover:#f0f0f0;--focus:#c00000}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-size:1rem;line-height:1.6;color:var(--text);background:var(--bg)}
+h1{font-size:clamp(1.8rem,5.5vw,2.6rem);line-height:1.15;margin:0}
+h2{font-size:1.45rem;line-height:1.25;margin:0 0 .6rem}
+h3{font-size:1.2rem;line-height:1.3;margin:0 0 .3rem}
+h4{font-size:1.02rem;margin:.9rem 0 .2rem}
+p{margin:.45rem 0}
+ul,ol{padding-left:1.35rem;margin:.3rem 0}
+li{margin:.15rem 0}
+a{color:var(--accent-strong)}
+:focus{outline:none}
+:focus-visible{outline:4px solid var(--focus);outline-offset:3px;box-shadow:0 0 0 7px #fff}
+.wrap{max-width:1040px;margin:0 auto;padding:16px}
+.topnav{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding-top:8px}
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:48px;min-width:48px;padding:.45rem 1rem;border:2px solid var(--text);border-radius:12px;background:var(--surface);color:var(--text);font:inherit;font-weight:700;text-decoration:none;cursor:pointer}
+.btn:hover{background:var(--hover)}
+.btn svg{width:22px;height:22px}
+.panel{background:var(--surface);border:2px solid var(--line);border-radius:20px;padding:clamp(16px,4vw,30px);margin:16px 0}
+html.high-contrast .panel{border-width:3px}
+.lead{font-size:1.08rem}
+.toc{display:flex;flex-wrap:wrap;gap:8px;list-style:none;padding:0;margin:.6rem 0 0}
+.toc a{display:inline-flex;align-items:center;min-height:48px;padding:.3rem .9rem;border:2px solid var(--line);border-radius:999px;background:var(--bg);font-weight:650;text-decoration:none;color:var(--text)}
+.toc a:hover{border-color:var(--accent)}
+.grid2{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr))}
+.box{background:var(--bg);border:2px solid var(--line);border-radius:14px;padding:12px 16px}
+.game{border-top:10px solid var(--c,#2b5f9e)}
+html.high-contrast .game{border-top-color:#000}
+.game-head{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;justify-content:space-between}
+.meta{display:flex;flex-wrap:wrap;gap:6px;list-style:none;padding:0;margin:.3rem 0 .4rem}
+.meta li{border:2px solid var(--line);border-radius:999px;padding:0 10px;font-size:max(16px,.88rem);font-weight:650;background:var(--bg)}
+.lesson{width:100%;border-collapse:collapse;margin-top:.4rem}
+.lesson th,.lesson td{border:2px solid var(--line);padding:.5rem .7rem;text-align:left;vertical-align:top}
+.lesson th{background:var(--soft)}
+.note{background:var(--soft);border-left:6px solid var(--accent);padding:.6rem .9rem;border-radius:8px}
+.cast{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(min(100%,290px),1fr));list-style:none;padding:0;margin:.5rem 0 0}
+.cast li{display:flex;gap:10px;align-items:center;border:2px solid var(--line);border-radius:14px;padding:8px 12px;background:var(--bg)}
+.cast svg{width:56px;height:56px;flex:none}
+
+/* Karty do druku */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,210px),1fr));gap:10px;list-style:none;padding:0;margin:.6rem 0 0}
+.cards li{border:3px dashed var(--text);border-radius:14px;min-height:130px;padding:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px;font-weight:750;font-size:1.1rem;background:#fff;break-inside:avoid}
+.cards svg{width:52px;height:52px;color:var(--accent)}
+.starters li{border-style:solid;min-height:110px;font-size:1.15rem}
+.print-only{display:none}
+footer{color:var(--muted);font-size:max(16px,.9rem);padding:4px 4px 24px}
+@media (max-width:599px){.wrap{padding:12px}.lesson th,.lesson td{padding:.4rem}}
+
+@media print{
+  @page{margin:12mm}
+  html{font-size:11pt}
+  body{background:#fff}
+  .topnav,.no-print,.kmm-speak,.toc{display:none !important}
+  .starters-title{break-before:page}
+  .panel{border:0;padding:0;margin:0 0 8mm}
+  .game{border-top:4px solid #000;padding-top:4mm}
+  .print-only{display:block}
+  #karty{break-before:page}
+  .cards{grid-template-columns:repeat(3,1fr);gap:4mm}
+  .cards li{min-height:42mm;border-color:#000}
+  .cards svg{color:#000}
+  a{color:#000;text-decoration:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="topnav" aria-label="Nawigacja">
+    <a class="kmm-home" href="./index.html" data-game="nauczyciel.html"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg><span>Wszystkie gry</span></a>
+    <button type="button" class="btn" id="btn-print"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/></svg>Drukuj przewodnik</button>
+  </nav>
+
+  <header class="panel">
+    <h1>Dla nauczyciela</h1>
+    <p class="lead"><strong>Każdy ma miejsce</strong> to sześć krótkich gier o współpracy, różnych potrzebach i wspólnym uczestnictwie. Ten przewodnik pomaga wpleść je w lekcję wychowawczą, zajęcia rewalidacyjne, świetlicę lub lekcję języka polskiego.</p>
+    <p>Autor zestawu: Michał Siwkowski</p>
+    <ul class="toc" aria-label="Spis treści">
+      <li><a href="#dla-kogo">Dla kogo</a></li>
+      <li><a href="#zasady">Zasady prowadzenia</a></li>
+      <li><a href="#lekcja">Lekcja 45 minut</a></li>
+      <li><a href="#gry">Sześć gier</a></li>
+      <li><a href="#postacie">Postacie</a></li>
+      <li><a href="#dostosowania">Dostosowania</a></li>
+      <li><a href="#karty">Karty do druku</a></li>
+    </ul>
+  </header>
+
+  <main>
+    <section class="panel" id="dla-kogo" aria-labelledby="dk-title">
+      <h2 id="dk-title">Dla kogo i w jakich warunkach</h2>
+      <div class="grid2">
+        <div class="box"><h3>Uczniowie</h3><p>Szkoła podstawowa, w tym klasy i szkoły specjalne oraz grupy zróżnicowane. Teksty są krótkie, a każdą wypowiedź można odsłuchać przyciskiem „Posłuchaj”.</p></div>
+        <div class="box"><h3>Sprzęt</h3><p>Tablica interaktywna, rzutnik, komputer lub tablet. Gry działają w przeglądarce, także bez internetu po pobraniu paczki albo po pierwszym otwarciu strony.</p></div>
+        <div class="box"><h3>Forma pracy</h3><p>Cała klasa przy tablicy, pary przy jednym urządzeniu albo praca indywidualna. Jedna osoba obsługuje ekran, pozostałe podpowiadają i decydują razem.</p></div>
+        <div class="box"><h3>Czas</h3><p>Jedna gra zajmuje orientacyjnie 10–25 minut. Nie ma limitu czasu — grę można przerwać przyciskiem „Przerwa” i wrócić do niej w tym samym miejscu.</p></div>
+      </div>
+    </section>
+
+    <section class="panel" id="zasady" aria-labelledby="z-title">
+      <h2 id="z-title">Zasady prowadzenia</h2>
+      <ul>
+        <li><strong>Nie ma złych odpowiedzi.</strong> Gry nie przyznają punktów i nie oceniają. Każdy wybór pokazuje skutek i pozwala spróbować inaczej.</li>
+        <li><strong>Mówimy o potrzebach, nie o diagnozach.</strong> Postacie opisują, co im pomaga — tak samo rozmawiamy o osobach w klasie.</li>
+        <li><strong>Różne sposoby odpowiadania.</strong> Uczniowie mogą odpowiedzieć słowem, gestem, wskazaniem obrazka, kartą lub zapisem.</li>
+        <li><strong>Czas na odpowiedź.</strong> Po pytaniu odczekaj kilka sekund. Można wrócić do pytania później.</li>
+        <li><strong>Prawdziwe rozwiązania ustalamy razem.</strong> Gry to uproszczone sytuacje. W klasie pytamy osoby, których coś dotyczy, co im naprawdę pomaga.</li>
+        <li><strong>Bezpieczna rozmowa.</strong> Nikt nie musi mówić o sobie. Można mówić o postaciach z gry.</li>
+      </ul>
+    </section>
+
+    <section class="panel" id="lekcja" aria-labelledby="l-title">
+      <h2 id="l-title">Przykładowa lekcja (45 minut)</h2>
+      <table class="lesson">
+        <caption class="no-print" style="text-align:left;padding-bottom:.4rem">Czasy są orientacyjne — dopasuj je do grupy.</caption>
+        <thead><tr><th scope="col">Czas</th><th scope="col">Etap</th><th scope="col">Co robimy</th></tr></thead>
+        <tbody>
+          <tr><td>5 min</td><td>Wprowadzenie</td><td>Pytanie na start: „Co sprawia, że czujesz się w grupie dobrze?”. Pokaż menu zestawu i postacie.</td></tr>
+          <tr><td>20 min</td><td>Gra</td><td>Wybierz jedną grę. Grajcie przy tablicy albo w parach. Zatrzymuj się przy decyzjach i pytaj: „Dlaczego tak wybieramy?”.</td></tr>
+          <tr><td>15 min</td><td>Rozmowa</td><td>Pytania do rozmowy z opisu gry. Uczniowie wybierają karty „Co nam pomaga?” i dobierają je do sytuacji z gry albo z klasy.</td></tr>
+          <tr><td>5 min</td><td>Podsumowanie</td><td>Każdy kończy jedno zdanie z kart „Ja…” — słowem, gestem lub wskazaniem. Wspólnie wybieracie jedną zmianę do wprowadzenia w klasie.</td></tr>
+        </tbody>
+      </table>
+      <p class="note">Cykl zajęć: sześć gier można prowadzić na sześciu kolejnych spotkaniach. Dobra kolejność: Most współpracy → Co powiesz? → Klasa dla każdego → Każdy ma swoją drogę → Wspólny piknik → Detektywi barier.</p>
+    </section>
+
+    <section class="panel" id="gry" aria-labelledby="g-title">
+      <h2 id="g-title">Sześć gier</h2>
+      <div id="game-guides"></div>
+    </section>
+
+    <section class="panel" id="postacie" aria-labelledby="p-title">
+      <h2 id="p-title">Postacie zestawu</h2>
+      <p>Te same osoby występują w kilku grach i zawsze mają te same potrzeby. Dzięki temu uczniowie mogą je rozpoznawać i porównywać sytuacje.</p>
+      <ul class="cast" id="cast"></ul>
+    </section>
+
+    <section class="panel" id="dostosowania" aria-labelledby="d-title">
+      <h2 id="d-title">Dostosowania w grach</h2>
+      <ul>
+        <li><strong>Większy tekst, wysoki kontrast, ograniczone animacje</strong> — w menu lub w ustawieniach każdej gry. Wybór działa we wszystkich grach.</li>
+        <li><strong>Czytanie na głos</strong> — przycisk „Posłuchaj” przy wypowiedziach. Korzysta z głosu wbudowanego w system (najlepiej, gdy jest zainstalowany głos polski).</li>
+        <li><strong>Klawiatura</strong> — <kbd>Tab</kbd> przechodzi dalej, <kbd>Enter</kbd> lub <kbd>Spacja</kbd> wybiera, <kbd>Esc</kbd> zamyka okno. W grach z planszą działają strzałki.</li>
+        <li><strong>Przerwa</strong> — zatrzymuje grę bez utraty postępu.</li>
+        <li><strong>Bez presji</strong> — brak limitu czasu, punktów, rankingu i przegranej.</li>
+      </ul>
+      <h3>Pomysły na dodatkowe wsparcie</h3>
+      <ul>
+        <li>Wydrukuj karty „Co nam pomaga?” i pozwól odpowiadać przez wskazanie.</li>
+        <li>Przed grą przećwicz z uczniem przyciski na zrzucie ekranu albo w trybie przerwy.</li>
+        <li>Przy pracy w parach ustalcie role: jedna osoba klika, druga czyta lub słucha i podpowiada. Potem zamiana.</li>
+        <li>Ogranicz liczbę bodźców: większy tekst, ograniczone animacje i jedna gra na zajęcia.</li>
+      </ul>
+    </section>
+
+    <section class="panel" id="karty" aria-labelledby="k-title">
+      <h2 id="k-title">Karty do druku</h2>
+      <p class="no-print">Przycisk „Drukuj przewodnik” drukuje cały przewodnik — karty zaczynają się na nowej stronie. Wytnij je wzdłuż przerywanych linii.</p>
+      <h3>Co nam pomaga?</h3>
+      <ul class="cards" id="help-cards"></ul>
+      <h3 class="starters-title" style="margin-top:1rem">Dokończ zdanie</h3>
+      <ul class="cards starters">
+        <li>Pomaga mi, gdy…</li>
+        <li>Mogę pomóc, gdy…</li>
+        <li>Potrzebuję chwili, żeby…</li>
+        <li>Wolę pokazać niż powiedzieć…</li>
+        <li>Mówię „nie”, gdy…</li>
+        <li>W naszej klasie możemy zmienić…</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p><strong>Każdy ma miejsce</strong> — zestaw gier edukacyjnych. Autor: Michał Siwkowski. <a href="https://github.com/rubasznymike/kazdy-ma-miejsce/blob/main/LICENSE.md">Licencja</a></p>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  /* ✏️ OPISY GIER DLA NAUCZYCIELA */
+  var GUIDES = [
+    { file: 'most-wspolpracy.html', title: 'Most współpracy', color: '#2b5f9e', time: '15–25 min', form: 'najlepiej w parach',
+      goal: 'Uczniowie łączą dwie różne informacje, aby osiągnąć wspólny cel. Ćwiczą przekazywanie wskazówek, upewnianie się i wspólne decyzje.',
+      how: ['Osoba A zna kolory, osoba B — kształty. Razem budują pięć mostów (od 2 do 6 elementów).', 'Każdy element powstaje w trzech krokach: kolor, kształt, wspólna decyzja.', 'Panel „Możemy pokazać” daje gotowe komunikaty: „Potrzebuję chwili”, „Sprawdźmy razem”, „Mam pomysł”.', 'Po moście uczniowie zamieniają się rolami.'],
+      questions: ['Jak przekazaliście sobie wskazówki?', 'Co pomogło wam się upewnić, że dobrze się rozumiecie?', 'Co zrobicie podobnie podczas następnego zadania w parze?'],
+      adapt: 'Przy jednej osobie lub trudności z rolami włącz „Wspólny podgląd wskazówek” w ustawieniach gry.' },
+    { file: 'klasa-dla-kazdego.html', title: 'Klasa dla każdego', color: '#3d7a4a', time: '15–20 min', form: 'cała klasa lub pary',
+      goal: 'Uczniowie dostosowują przestrzeń do potrzeb czterech osób i zauważają, że wyposażenie służy wszystkim.',
+      how: ['Poznajcie Lenę, Olka, Igę i Tomka — każdy mówi, co mu pomaga.', 'Rozmieśćcie osiem elementów wyposażenia w strefach sali. Przejście ma zostać wolne.', 'Sprawdźcie klasę i poprawiajcie układ — wynik pokazuje, które potrzeby są uwzględnione.'],
+      questions: ['Która zmiana może pomóc także innym osobom w klasie?', 'Co w naszej sali już pomaga, a co można zmienić?', 'Dlaczego przejście powinno zostać wolne?'],
+      adapt: 'Uczniowie mogą wskazywać pola na tablicy, a nauczyciel lub kolega przenosi elementy.' },
+    { file: 'co-powiesz.html', title: 'Co powiesz?', color: '#8a6810', time: '15–25 min', form: 'cała klasa lub pary',
+      goal: 'Uczniowie sprawdzają, jak słowa wpływają na rozmowę. Ćwiczą pytanie zamiast zgadywania, szacunek dla odmowy i dbanie o własne granice.',
+      how: ['Osiem szkolnych sytuacji. W każdej wybieracie jedną z trzech wypowiedzi.', 'Gra pokazuje odpowiedź rozmówcy i skutek. Wyjaśnienie jest pod przyciskiem „Dlaczego ta rozmowa tak się potoczyła?”.', 'Możecie sprawdzić inne odpowiedzi w tej samej sytuacji.'],
+      questions: ['Która wypowiedź pomogła obu osobom? Dlaczego?', 'Jak można powiedzieć „nie” i nadal być życzliwym?', 'Co możesz zrobić, gdy twoje słowa kogoś zraniły?'],
+      adapt: 'Odpowiedzi można odsłuchać. Przy klasie odegrajcie wybrane rozmowy w parach.' },
+    { file: 'kazdy-ma-swoja-droge.html', title: 'Każdy ma swoją drogę', color: '#6e4c94', time: '15–20 min', form: 'pary lub indywidualnie',
+      goal: 'Uczniowie szukają zmian w otoczeniu, dzięki którym różne osoby dotrą do wspólnego celu — nie zawsze tą samą drogą.',
+      how: ['Trzy plansze. Ada, Olek i Lena idą na wspólne spotkanie.', 'Do dyspozycji są: podjazd, oznaczenie i wyciszenie — każde jeden raz.', 'Sprawdźcie drogi i obejrzyjcie trasę każdej osoby.'],
+      questions: ['Co utrudniało drogę każdej osobie?', 'Czy wszyscy muszą iść tą samą drogą?', 'Gdzie w naszej szkole przydałby się podjazd, oznaczenie albo cichsze miejsce?'],
+      adapt: 'Plansza działa ze strzałkami. Przycisk „Posłuchaj” czyta wypowiedzi postaci.' },
+    { file: 'wspolny-piknik.html', title: 'Wspólny piknik', color: '#a14a2a', time: '20–25 min', form: 'pary lub małe grupy',
+      goal: 'Uczniowie planują wydarzenie, w którym każdy może uczestniczyć: wybierają miejsce, aktywności i wyposażenie.',
+      how: ['Poznajcie potrzeby Ady, Leny, Olka i Tomka.', 'Wybierzcie jedno miejsce, dwie aktywności i do czterech rzeczy do koszyka.', 'Sprawdźcie plan — gra pokazuje kompletność i potrzeby uczestników.'],
+      questions: ['Co pomogło zaplanować wydarzenie dla wszystkich?', 'Jakie były różne sposoby udziału w aktywnościach?', 'Co uwzględnimy, planując nasze klasowe wydarzenie?'],
+      adapt: 'Na telefonie i tablecie pasek u dołu ekranu pokazuje stan planu i przycisk „Sprawdź plan”.' },
+    { file: 'detektywi-barier.html', title: 'Detektywi barier', color: '#1d6670', time: '15–20 min', form: 'cała klasa lub pary',
+      goal: 'Uczniowie wyszukują przeszkody w przejściu, komunikacji i zasadach oraz wybierają zmiany, które naprawdę pomagają.',
+      how: ['Trzy sceny, w każdej trzy elementy do zbadania.', 'Dla każdego elementu są dwie propozycje zmiany — gra pokazuje, co się wydarzyło.', 'Po trzech zmianach przechodzicie do kolejnej sceny.'],
+      questions: ['Która zmiana pomogła najbardziej i komu?', 'Dlaczego niektóre zmiany nie wystarczyły?', 'Jaką barierę możemy usunąć w naszej szkole?'],
+      adapt: 'Elementy można wybierać na ilustracji albo z listy pod nią.' }
+  ];
+  var box = document.getElementById('game-guides');
+  GUIDES.forEach(function (g, i) {
+    var a = document.createElement('article');
+    a.className = 'box game'; a.style.setProperty('--c', g.color); a.style.marginTop = i ? '14px' : '0';
+    a.setAttribute('aria-labelledby', 'gg' + i);
+    a.innerHTML =
+      '<div class="game-head"><h3 id="gg' + i + '">' + (i + 1) + '. ' + esc(g.title) + '</h3>' +
+      '<a class="btn no-print" href="./' + esc(g.file) + '">Otwórz grę<span class="kmm-sr"> ' + esc(g.title) + '</span></a></div>' +
+      '<ul class="meta"><li>' + esc(g.time) + '</li><li>' + esc(g.form) + '</li></ul>' +
+      '<p><strong>Cel:</strong> ' + esc(g.goal) + '</p>' +
+      '<h4>Przebieg</h4><ul>' + g.how.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>' +
+      '<h4>Pytania do rozmowy</h4><ul>' + g.questions.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>' +
+      '<h4>Dostosowanie</h4><p>' + esc(g.adapt) + '</p>';
+    box.appendChild(a);
+  });
+
+  var cast = document.getElementById('cast');
+  if (window.KMM && KMM.CAST) Object.keys(KMM.CAST).forEach(function (id) {
+    var c = KMM.CAST[id], li = document.createElement('li');
+    li.innerHTML = KMM.portrait(id) + '<span><strong>' + esc(c.name) + '</strong> — ' + esc(c.need) + '</span>';
+    cast.appendChild(li);
+  });
+
+  /* ✏️ KARTY „CO NAM POMAGA?” */
+  var S = 'fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"';
+  var CARDS = [
+    ['zapytaj, zamiast zgadywać', '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17h.01"/>'],
+    ['daj czas', '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/>'],
+    ['uszanuj odmowę', '<path d="M7 11V6a2 2 0 0 1 4 0v5M11 10V4a2 2 0 0 1 4 0v6M15 10V6a2 2 0 0 1 4 0v8a7 7 0 0 1-14 0v-3a2 2 0 0 1 2-2"/>'],
+    ['zaproponuj wybór', '<path d="M12 21v-7M12 14L5 7M12 14l7-7M5 7V3M5 7H1M19 7V3M19 7h4"/>'],
+    ['pozwól powiedzieć lub wskazać', '<path d="M9 21V7a2 2 0 0 1 4 0v6l5 1.5c1.5.5 2 1.5 1.7 3L19 21"/>'],
+    ['wolne przejście', '<path d="M12 3v18M7 8l5-5 5 5M7 16l5 5 5-5"/>'],
+    ['czytelne oznaczenia', '<path d="M12 3v18M5 6h12l3 3-3 3H5z"/>'],
+    ['spokojne miejsce', '<path d="M15 3a8.5 8.5 0 1 0 6 14A9 9 0 0 1 15 3z"/>'],
+    ['jasna kolejność', '<circle cx="5" cy="12" r="3"/><circle cx="12" cy="12" r="3"/><circle cx="19" cy="12" r="3"/>'],
+    ['różne role w zadaniu', '<circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M2.5 20c.5-4 3-6 5.5-6s5 2 5.5 6M10.5 20c.5-4 3-6 5.5-6s5 2 5.5 6"/>'],
+    ['dbam o swoje granice', '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 12h6"/>'],
+    ['możemy to zmienić', '<path d="M4 4v6h6M20 20v-6h-6"/><path d="M20 10A8 8 0 0 0 6 5L4 10M4 14a8 8 0 0 0 14 5l2-5"/>']
+  ];
+  document.getElementById('help-cards').innerHTML = CARDS.map(function (c) {
+    return '<li><svg viewBox="0 0 24 24" aria-hidden="true" ' + S + '>' + c[1] + '</svg>' + esc(c[0]) + '</li>';
+  }).join('');
+
+  document.getElementById('btn-print').addEventListener('click', function () { window.print(); });
+})();
+</script>
+</body>
+</html>

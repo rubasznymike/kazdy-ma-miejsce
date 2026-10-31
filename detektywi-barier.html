@@ -6,6 +6,21 @@
 <title>Detektywi barier</title>
 <meta name="description" content="Detektywi barier — znajdź na ilustracjach przeszkody w przejściu, komunikacji i zasadach oraz wybierz zmiany, które ułatwiają wspólny udział. Część zestawu „Każdy ma miejsce”.">
 <meta name="author" content="Michał Siwkowski">
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#2b5f9e">
+<link rel="apple-touch-icon" href="./ikony/apple-touch-icon.png">
+<!-- Podgląd linku (Teams, Messenger, e-mail, media społecznościowe). ✏️ Adres zmień, jeśli repozytorium będzie miało inną nazwę. -->
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pl_PL">
+<meta property="og:site_name" content="Każdy ma miejsce">
+<meta property="og:title" content="Detektywi barier">
+<meta property="og:description" content="Detektywi barier — znajdź na ilustracjach przeszkody w przejściu, komunikacji i zasadach oraz wybierz zmiany, które ułatwiają wspólny udział. Część zestawu „Każdy ma miejsce”.">
+<meta property="og:url" content="https://rubasznymike.github.io/kazdy-ma-miejsce/detektywi-barier.html">
+<meta property="og:image" content="https://rubasznymike.github.io/kazdy-ma-miejsce/podglad.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Każdy ma miejsce — sześć gier o współpracy. Portrety sześciu postaci zestawu.">
+<meta name="twitter:card" content="summary_large_image">
 <style>
 :root{
   --bg:#f5f3ee; --surface:#ffffff; --surface-2:#eef3f2; --ink:#1c2430; --ink-soft:#3f4a58;
@@ -79,6 +94,8 @@ html.high-contrast .btn-primary{background:#00306b; color:#fff; border-color:#00
 .characters{list-style:none; margin:0; padding:0; display:grid; gap:.6rem; grid-template-columns:minmax(0,1fr)}
 @media (min-width:700px){.characters{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .char{display:flex; gap:.7rem; align-items:flex-start; background:var(--surface); border:2px solid var(--line-soft); border-radius:12px; padding:.6rem .75rem}
+.avatar.has-portrait{border:0; background:transparent !important; width:56px; height:56px}
+.avatar svg{width:100%; height:100%; display:block}
 .avatar{flex:none; width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1.2rem; border:2px solid var(--ink); color:#1c2430}
 .char-name{font-weight:800; display:block}
 .char q{quotes:"„" "”"}
@@ -186,6 +203,30 @@ svg text{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
 html.high-contrast .kmm-home,html.hc .kmm-home{border:3px solid #000;color:#000;background:#fff}
 html.high-contrast .kmm-home:focus-visible,html.hc .kmm-home:focus-visible{outline-color:#c00000}
 @media print{.kmm-nav{display:none}}
+.kmm-speak{box-sizing:border-box;display:inline-flex;align-items:center;gap:6px;min-height:48px;min-width:48px;margin:.35rem 0;padding:.3rem .8rem;
+  border:2px solid #2b5f9e;border-radius:12px;background:#fff;color:#1b4373;font-family:inherit;font-weight:700;font-size:max(16px,.9rem);line-height:1.2;cursor:pointer;vertical-align:middle;max-width:100%;text-align:left}
+.kmm-speak:hover{background:#e8f0fb}
+.kmm-speak[aria-pressed="true"]{background:#1b4373;color:#fff}
+.kmm-speak:focus{outline:none}
+.kmm-speak:focus-visible{outline:4px solid #b4400a;outline-offset:3px;box-shadow:0 0 0 7px #fff}
+.kmm-speak svg{width:22px;height:22px;flex:none}
+.kmm-speak[hidden]{display:none}
+html.high-contrast .kmm-speak,html.hc .kmm-speak{border:3px solid #000;color:#000}
+html.high-contrast .kmm-speak[aria-pressed="true"],html.hc .kmm-speak[aria-pressed="true"]{background:#000;color:#fff}
+@media print{.kmm-speak{display:none}}
+.kmm-sr{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+</style>
+<style id="kmm-bar">
+/* „Posłuchaj” pod wypowiedzią postaci, w granicach karty */
+.char>span{min-width:0}
+.char q+.kmm-speak{display:flex;width:max-content;margin-top:.4rem}
+.topbar-inner .kmm-inbar{margin-right:auto}
+@media (max-width:599px){
+  .topbar-inner .brand{flex:1 1 auto}
+  .topbar-inner .kmm-inbar{margin-right:0;padding:.35rem .7rem}
+  .topbar-inner .tools{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%}
+  .topbar-inner .tools .btn{padding:.3rem .2rem;justify-content:center;flex-direction:column;gap:.1rem;line-height:1.15}
+}
 </style>
 <script>
 window.KMM = (function () {
@@ -223,22 +264,124 @@ window.KMM = (function () {
   function stopMedia() {
     try { Array.prototype.forEach.call(document.querySelectorAll('audio,video'), function (m) { m.pause(); }); } catch (e) {}
     try { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch (e) {}
+    if (speakingBtn) { label(speakingBtn, false); speakingBtn = null; }
   }
   window.addEventListener('pagehide', stopMedia);
+  // Tryb offline: po pierwszym otwarciu strony z internetu gry działają także bez sieci (tylko http/https, nie z pliku)
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('./sw.js').catch(function () {}); });
+  }
   document.addEventListener('click', function (e) {
     var a = e.target && e.target.closest ? e.target.closest('.kmm-home') : null;
     if (!a) return;
     stopMedia();
     try { window.sessionStorage.setItem('kazdyMaMiejsce.powrot', a.getAttribute('data-game') || ''); } catch (err) {}
   });
-  return { KEY: KEY, read: read, write: write, onChange: onChange, stopMedia: stopMedia };
+  /* =====================================================================
+     ✏️ WSPÓLNE POSTACIE ZESTAWU — jedna osoba = jedno imię, wygląd i potrzeba
+     we wszystkich grach. Zmiana tutaj (w każdym pliku ten sam fragment)
+     zmienia portret we wszystkich grach.
+     look: skin (skóra), hair (włosy), shirt (ubranie), bg (tło),
+           hairStyle: 'long' | 'short' | 'bun' | 'curly' | 'bob', glasses: true/false
+     ===================================================================== */
+  var CAST = {
+    ada:   { name: 'Ada',   need: 'droga bez stopni — porusza się na wózku',
+             look: { skin: '#c98e62', hair: '#2d2a26', hairStyle: 'bun',   shirt: '#f2c14e', bg: '#fff4cf', glasses: false } },
+    olek:  { name: 'Olek',  need: 'czytelne informacje: obrazki, oznaczenia, kolejne kroki',
+             look: { skin: '#e8b98f', hair: '#3b2a1e', hairStyle: 'short', shirt: '#7fb3d5', bg: '#e3f0fb', glasses: true } },
+    lena:  { name: 'Lena',  need: 'spokojniejsze miejsce i mniej hałasu',
+             look: { skin: '#f6d3b8', hair: '#a0522d', hairStyle: 'long',  shirt: '#b48fd8', bg: '#f1e8fa', glasses: false } },
+    tomek: { name: 'Tomek', need: 'wskazywanie obrazków i różne sposoby udziału',
+             look: { skin: '#8d5a3b', hair: '#241a12', hairStyle: 'curly', shirt: '#f4a582', bg: '#fbeee6', glasses: false } },
+    kuba:  { name: 'Kuba',  need: 'czas na zastanowienie się i odpowiedź',
+             look: { skin: '#f2c9a5', hair: '#c8873a', hairStyle: 'short', shirt: '#6fbf7f', bg: '#e4f4e6', glasses: false } },
+    iga:   { name: 'Iga',   need: 'wygodne miejsce pracy i swobodne dojście',
+             look: { skin: '#d9a77c', hair: '#6b4226', hairStyle: 'bob',   shirt: '#5fb3a6', bg: '#dff3f0', glasses: false } }
+  };
+  /** Portret SVG wspólnej postaci (lub dowolnego obiektu look). Zwraca null dla nieznanej postaci. */
+  function portrait(idOrLook, cls) {
+    var L = typeof idOrLook === 'string' ? (CAST[idOrLook] && CAST[idOrLook].look) : idOrLook;
+    if (!L) return null;
+    var back = L.hairStyle === 'long' ? '<path d="M27 46 Q26 17 50 17 Q74 17 73 46 L75 78 Q63 72 61 62 L39 62 Q37 72 25 78 Z" fill="' + L.hair + '"/>'
+      : L.hairStyle === 'bob' ? '<path d="M27 46 Q26 17 50 17 Q74 17 73 46 L73 62 Q66 64 62 58 L38 58 Q34 64 27 62 Z" fill="' + L.hair + '"/>' : '';
+    var front = {
+      long:  '<path d="M29 42 Q32 19 50 19 Q69 19 71 42 Q60 30 46 30 Q36 31 29 42Z" fill="' + L.hair + '"/>',
+      bob:   '<path d="M29 42 Q32 19 50 19 Q69 19 71 42 Q62 33 50 32 Q37 32 29 42Z" fill="' + L.hair + '"/>',
+      short: '<path d="M28 43 Q27 19 50 18 Q73 19 72 43 Q67 29 50 28 Q35 29 28 43Z" fill="' + L.hair + '"/>',
+      bun:   '<circle cx="50" cy="14" r="9" fill="' + L.hair + '"/><path d="M28 43 Q28 20 50 20 Q72 20 72 43 Q64 30 50 30 Q36 30 28 43Z" fill="' + L.hair + '"/>',
+      curly: '<g fill="' + L.hair + '"><circle cx="31" cy="36" r="9"/><circle cx="37" cy="25" r="10"/><circle cx="50" cy="20" r="10"/><circle cx="63" cy="25" r="10"/><circle cx="69" cy="36" r="9"/></g>'
+    }[L.hairStyle] || '';
+    var glasses = L.glasses ? '<g fill="none" stroke="#1f2a33" stroke-width="2"><circle cx="42" cy="46" r="6"/><circle cx="58" cy="46" r="6"/><path d="M48 46h4"/></g>' : '';
+    return '<svg viewBox="0 0 100 100" class="' + (cls || '') + '" aria-hidden="true" focusable="false">' +
+      '<circle cx="50" cy="50" r="47" fill="' + L.bg + '" stroke="#1f2a33" stroke-width="2.5"/>' + back +
+      '<path d="M21 91 Q24 69 50 67 Q76 69 79 91 Q50 103 21 91Z" fill="' + L.shirt + '" stroke="#1f2a33" stroke-width="2"/>' +
+      '<rect x="44" y="58" width="12" height="11" fill="' + L.skin + '"/>' +
+      '<ellipse cx="50" cy="45" rx="20" ry="22" fill="' + L.skin + '" stroke="#1f2a33" stroke-width="2"/>' + front +
+      '<circle cx="42" cy="46" r="2.6" fill="#1f2a33"/><circle cx="58" cy="46" r="2.6" fill="#1f2a33"/>' +
+      '<path d="M43 56 Q50 61.5 57 56" fill="none" stroke="#1f2a33" stroke-width="2.2" stroke-linecap="round"/>' + glasses + '</svg>';
+  }
+  /* =====================================================================
+     CZYTANIE NA GŁOS — wbudowana mowa przeglądarki (działa bez internetu,
+     jeśli system ma głos polski). Przycisk „Posłuchaj” pojawia się tylko,
+     gdy przeglądarka obsługuje syntezę mowy.
+     ✏️ Które teksty można odsłuchać — wywołanie KMM.readAloud('selektory') w każdej grze.
+     ===================================================================== */
+  var canSpeak = 'speechSynthesis' in window && typeof window.SpeechSynthesisUtterance === 'function';
+  var speakingBtn = null;
+  var SPEAK_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>';
+  function label(btn, on) { btn.querySelector('span').textContent = on ? 'Zatrzymaj' : 'Posłuchaj'; btn.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+  function stopSpeaking() { if (!canSpeak) return; try { window.speechSynthesis.cancel(); } catch (e) {} if (speakingBtn) { label(speakingBtn, false); speakingBtn = null; } }
+  function speak(text, btn) {
+    if (!canSpeak || !text) return;
+    var again = speakingBtn === btn;
+    stopSpeaking();
+    if (again) return;                       // drugie naciśnięcie = zatrzymaj
+    var u = new SpeechSynthesisUtterance(text);
+    u.lang = 'pl-PL'; u.rate = 0.9;
+    try { var v = window.speechSynthesis.getVoices().filter(function (x) { return /^pl/i.test(x.lang); })[0]; if (v) u.voice = v; } catch (e) {}
+    u.onend = u.onerror = function () { if (speakingBtn === btn) { label(btn, false); speakingBtn = null; } };
+    speakingBtn = btn; if (btn) label(btn, true);
+    window.speechSynthesis.speak(u);
+  }
+  function cleanText(el) { return (el.textContent || '').replace(/\s+/g, ' ').replace(/^[„"]|[”"]$/g, '').trim(); }
+  /** Dodaje przycisk „Posłuchaj” za każdym elementem pasującym do selektora (także dodanym później). */
+  function readAloud(selector, textFn) {
+    var getText = function (el) { return textFn ? String(textFn(el) || '').replace(/\s+/g, ' ').trim() : cleanText(el); };
+    if (!canSpeak) return;
+    function scan() {
+      Array.prototype.forEach.call(document.querySelectorAll(selector), function (el) {
+        var btn = el.__kmmSpeak;
+        if (!btn || !btn.isConnected) {
+          btn = document.createElement('button');
+          btn.type = 'button'; btn.className = 'kmm-speak';
+          btn.innerHTML = SPEAK_ICON + '<span>Posłuchaj</span>';
+          btn.setAttribute('aria-pressed', 'false');
+          btn.addEventListener('click', function (e) { e.stopPropagation(); speak(getText(el), btn); });
+          el.insertAdjacentElement('afterend', btn);
+          el.__kmmSpeak = btn;
+        }
+        var t = getText(el);
+        btn.hidden = !t;
+        btn.setAttribute('aria-label', 'Posłuchaj: ' + t.slice(0, 80));
+      });
+    }
+    var pending = false;
+    new MutationObserver(function () { if (pending) return; pending = true; requestAnimationFrame(function () { pending = false; scan(); }); })
+      .observe(document.body, { childList: true, subtree: true, characterData: true });
+    scan();
+  }
+  // Każde inne działanie (przycisk, link, zamknięcie okna) przerywa czytanie
+  document.addEventListener('click', function (e) {
+    var t = e.target && e.target.closest ? e.target.closest('button,a,[role="button"]') : null;
+    if (t && !t.classList.contains('kmm-speak')) stopSpeaking();
+  }, true);
+  document.addEventListener('close', stopSpeaking, true);
+  return { KEY: KEY, read: read, write: write, onChange: onChange, stopMedia: stopMedia, CAST: CAST, portrait: portrait, readAloud: readAloud, speak: speak, stopSpeaking: stopSpeaking };
 })();
 </script>
 <!-- ===== koniec wspólnego fragmentu ===== -->
 </head>
 <body>
-<!-- ✏️ Zestaw „Każdy ma miejsce”: powrót do menu (ścieżka względna — działa lokalnie i na GitHub Pages) -->
-<nav class="kmm-nav" aria-label="Zestaw gier Każdy ma miejsce"><a class="kmm-home" href="./index.html" data-game="detektywi-barier.html"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg><span>Wszystkie gry</span></a></nav>
 
 <header class="topbar">
   <div class="topbar-inner">
@@ -246,10 +389,11 @@ window.KMM = (function () {
       <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="17" cy="17" r="11" fill="#dcefef" stroke="#1c2430" stroke-width="3"/><path d="M25 25 L35 35" stroke="#1c2430" stroke-width="5" stroke-linecap="round"/><path d="M12 17 l4 4 l7-8" fill="none" stroke="#1d6670" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <span>Detektywi barier</span>
     </div>
+    <a class="kmm-home kmm-inbar" href="./index.html" data-game="detektywi-barier.html"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg><span>Wszystkie gry</span></a>
     <nav class="tools" aria-label="Narzędzia gry">
       <button type="button" class="btn" data-action="open-dialog" data-dialog="dlg-help" aria-haspopup="dialog">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.2 9.3a2.9 2.9 0 1 1 4 2.7c-.8.4-1.2 1-1.2 1.8v.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.3" r="1.3" fill="currentColor"/></svg>
-        Pomoc</button>
+        Jak grać?</button>
       <button type="button" class="btn" data-action="open-dialog" data-dialog="dlg-settings" aria-haspopup="dialog">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="7" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="10" cy="17" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
         Ustawienia</button>
@@ -268,8 +412,7 @@ window.KMM = (function () {
 
 <dialog id="dlg-help" aria-labelledby="dlg-help-title">
   <div class="dlg">
-    <div class="dlg-head"><h2 id="dlg-help-title">Pomoc</h2></div>
-    <h3>Jak gramy?</h3>
+    <div class="dlg-head"><h2 id="dlg-help-title">Jak grać?</h2></div>
     <ol>
       <li>Przeczytaj sytuację i wypowiedzi postaci.</li>
       <li>Wybierz element na ilustracji albo z listy pod ilustracją.</li>
@@ -282,7 +425,7 @@ window.KMM = (function () {
     <h3>Klawiatura</h3>
     <p><kbd>Tab</kbd> – przejście do kolejnego przycisku. <kbd>Enter</kbd> lub <kbd>Spacja</kbd> – wybór. <kbd>Esc</kbd> – zamknięcie okna.</p>
     <p class="note"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 10.5v6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="7.3" r="1.4" fill="currentColor"/></svg><span>To uproszczone sytuacje. W prawdziwej grupie pytamy jej uczestników, co im pomaga.</span></p>
-    <div class="btn-row"><button type="button" class="btn btn-primary" data-action="close-dialog">Zamknij pomoc</button></div>
+    <div class="btn-row"><button type="button" class="btn btn-primary" data-action="close-dialog">Zamknij</button></div>
   </div>
 </dialog>
 
@@ -291,7 +434,7 @@ window.KMM = (function () {
     <div class="dlg-head"><h2 id="dlg-settings-title">Ustawienia</h2></div>
     <label class="setting"><input type="checkbox" id="set-large-text" data-setting="largeText"><span>Większy tekst<small>Powiększa wszystkie napisy w grze.</small></span></label>
     <label class="setting"><input type="checkbox" id="set-high-contrast" data-setting="highContrast"><span>Wysoki kontrast<small>Białe tło, czarny tekst i grubsze obramowania.</small></span></label>
-    <label class="setting"><input type="checkbox" id="set-reduce-motion" data-setting="reduceMotion"><span>Ograniczenie animacji<small>Zmiany pojawiają się bez płynnego przejścia.</small></span></label>
+    <label class="setting"><input type="checkbox" id="set-reduce-motion" data-setting="reduceMotion"><span>Ograniczone animacje<small>Zmiany pojawiają się bez płynnego przejścia.</small></span></label>
     <p id="settings-storage-note" class="note" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 10.5v6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="7.3" r="1.4" fill="currentColor"/></svg><span>Ustawienia działają teraz, ale przeglądarka nie pozwala ich zapamiętać na później.</span></p>
     <div class="btn-row"><button type="button" class="btn btn-primary" data-action="close-dialog">Zamknij ustawienia</button></div>
   </div>
@@ -326,7 +469,7 @@ var GAME_DATA = {
   note: "To uproszczone sytuacje. W prawdziwej grupie pytamy jej uczestników, co im pomaga.",
   sceneSummaryMessage: "Te zmiany ułatwiają udział osobom z tej sceny.",
   endMessage: "Przyjrzeliśmy się przejściu, komunikacji i zasadom. Każda z tych rzeczy może ułatwiać wspólne uczestnictwo.",
-  characterColors: { ada:"#f2c14e", olek:"#7fb3d5", lena:"#c3a6e0", maja:"#f4a582", ben:"#9ccc8c" },
+  characterColors: { ada:"#f2c14e", olek:"#7fb3d5", lena:"#b48fd8", tomek:"#f4a582", kuba:"#6fbf7f" },   // ✏️ kolory ubrań = wspólna obsada zestawu (KMM.CAST)
   scenes: [
     {
       id: "droga",
@@ -388,8 +531,8 @@ var GAME_DATA = {
       situation: "Grupa przygotowuje plakat. Każda osoba chce wnieść swój pomysł.",
       characters: [
         { id:"olek", name:"Olek", text:"Łatwiej mi działać, gdy widzę kolejne kroki." },
-        { id:"maja", name:"Maja", text:"Chcę przekazać pomysł przez wskazanie obrazka albo zapisanie słowa." },
-        { id:"ben",  name:"Ben",  text:"Potrzebuję chwili, żeby zastanowić się nad odpowiedzią." }
+        { id:"tomek", name:"Tomek", text:"Chcę przekazać pomysł przez wskazanie obrazka albo zapisanie słowa." },
+        { id:"kuba", name:"Kuba", text:"Potrzebuję chwili, żeby zastanowić się nad odpowiedzią." }
       ],
       barriers: [
         {
@@ -407,7 +550,7 @@ var GAME_DATA = {
           ]
         },
         {
-          id:"tworzymy-pomysly", label:"Zgłaszanie pomysłów", characterId:"maja",
+          id:"tworzymy-pomysly", label:"Zgłaszanie pomysłów", characterId:"tomek",
           description:"Pomysły można zgłaszać tylko w jeden sposób: mówiąc na forum grupy.",
           hotspot:{ x:48, y:45 },
           altBefore:"Na ścianie wisi kartka: pomysły zgłaszamy tylko mówiąc.",
@@ -415,23 +558,23 @@ var GAME_DATA = {
           applied:"Pomysł można powiedzieć, zapisać lub wskazać symbolem.",
           options:[
             { id:"tworzymy-pomysly-sposoby", text:"Pozwólmy mówić, pisać lub wskazywać symbole.", effective:true,
-              explanation:"Maja może przekazać pomysł w wybrany sposób." },
-            { id:"tworzymy-pomysly-ciszej", text:"Zaproponujmy Mai, żeby powiedziała pomysł ciszej.", effective:false,
-              explanation:"To nadal wymaga mówienia. Maja chce skorzystać z obrazka albo zapisu." }
+              explanation:"Tomek może przekazać pomysł w wybrany sposób." },
+            { id:"tworzymy-pomysly-ciszej", text:"Zaproponujmy Tomkowi, żeby powiedział pomysł ciszej.", effective:false,
+              explanation:"To nadal wymaga mówienia. Tomek chce skorzystać z obrazka albo zapisu." }
           ]
         },
         {
-          id:"tworzymy-czas", label:"Czas na odpowiedź", characterId:"ben",
+          id:"tworzymy-czas", label:"Czas na odpowiedź", characterId:"kuba",
           description:"Prowadzący zadaje pytanie i od razu przechodzi do kolejnej osoby.",
           hotspot:{ x:81, y:45 },
-          altBefore:"Strzałka pokazuje, że prowadzący od razu przechodzi od Bena do kolejnej osoby.",
-          altAfter:"Przy Benie stoi karta: Chwila do namysłu. Można wrócić do pytania.",
+          altBefore:"Strzałka pokazuje, że prowadzący od razu przechodzi od Kuby do kolejnej osoby.",
+          altAfter:"Przy Kubie stoi karta: Chwila do namysłu. Można wrócić do pytania.",
           applied:"Jest chwila do namysłu i można wrócić do pytania.",
           options:[
             { id:"tworzymy-czas-chwila", text:"Dajmy chwilę do namysłu i możliwość powrotu do pytania.", effective:true,
-              explanation:"Ben ma czas przygotować odpowiedź i może wrócić do rozmowy." },
-            { id:"tworzymy-czas-inna-osoba", text:"Od razu poprośmy inną osobę, żeby odpowiedziała za Bena.", effective:false,
-              explanation:"Szybciej otrzymamy odpowiedź, ale Ben nie zyska czasu na własny udział." }
+              explanation:"Kuba ma czas przygotować odpowiedź i może wrócić do rozmowy." },
+            { id:"tworzymy-czas-inna-osoba", text:"Od razu poprośmy inną osobę, żeby odpowiedziała za Kubę.", effective:false,
+              explanation:"Szybciej otrzymamy odpowiedź, ale Kuba nie zyska czasu na własny udział." }
           ]
         }
       ]
@@ -442,7 +585,7 @@ var GAME_DATA = {
       situation: "Klasa przygotowuje zabawę z zagadkami i gestami. Przyjrzyjmy się jej zasadom.",
       characters: [
         { id:"ada",  name:"Ada",  text:"Chcę brać udział w zabawie na siedząco." },
-        { id:"ben",  name:"Ben",  text:"Lubię próbować ponownie. Potrzebuję czasu na wykonanie zadania." },
+        { id:"kuba", name:"Kuba", text:"Lubię próbować ponownie. Potrzebuję czasu na wykonanie zadania." },
         { id:"olek", name:"Olek", text:"Chcę wiedzieć wcześniej, kiedy zmieniają się zasady." }
       ],
       barriers: [
@@ -461,7 +604,7 @@ var GAME_DATA = {
           ]
         },
         {
-          id:"zabawa-runda", label:"Zasada rundy", characterId:"ben",
+          id:"zabawa-runda", label:"Zasada rundy", characterId:"kuba",
           description:"Zasada rundy brzmi: „Najwolniejsza osoba odpada”.",
           hotspot:{ x:50, y:6.5 },
           altBefore:"Karta z zasadą: najwolniejsza osoba odpada.",
@@ -469,9 +612,9 @@ var GAME_DATA = {
           applied:"Gramy bez odpadania, z możliwością ponownej próby.",
           options:[
             { id:"zabawa-runda-ponownie", text:"Zagrajmy bez odpadania, z możliwością ponownej próby.", effective:true,
-              explanation:"Ben może wykonać zadanie we własnym tempie i nadal uczestniczyć." },
+              explanation:"Kuba może wykonać zadanie we własnym tempie i nadal uczestniczyć." },
             { id:"zabawa-runda-nagroda", text:"Zostawmy odpadanie i nagradzajmy najszybszą osobę.", effective:false,
-              explanation:"Nagroda nie usuwa zasady, przez którą Ben może stracić możliwość dalszej zabawy." }
+              explanation:"Nagroda nie usuwa zasady, przez którą Kuba może stracić możliwość dalszej zabawy." }
           ]
         },
         {
@@ -653,9 +796,9 @@ var ILLUSTRATIONS = {
       s += '<rect x="640" y="90" width="130" height="210" rx="6" fill="#9a6b43" class="ol"/><rect x="652" y="102" width="106" height="80" rx="4" fill="#cfe3ea" class="ol"/><circle cx="752" cy="210" r="7" fill="#f2d16b" class="ol"/>';
       // route
       s += '<path d="M150 450 C 320 450, 520 420, 690 318" fill="none" stroke="#6b7685" stroke-width="4" stroke-dasharray="10 12"/>';
-      s += standing(250, 420, {name:"Lena", shirt:C.lena, hair:"#7a4b2a"});
-      s += standing(165, 438, {name:"Olek", shirt:C.olek, hair:"#2a1f17"});
-      s += wheelchair(70, 440, {name:"Ada", shirt:C.ada, hair:"#5b3a21"});
+      s += standing(250, 420, {name:"Lena", shirt:C.lena, hair:"#a0522d", skin:"#f6d3b8"});
+      s += standing(165, 438, {name:"Olek", shirt:C.olek, hair:"#3b2a1e", skin:"#e8b98f"});
+      s += wheelchair(70, 440, {name:"Ada", shirt:C.ada, hair:"#2d2a26", skin:"#c98e62"});
       return s;
     },
     barriers: {
@@ -697,9 +840,9 @@ var ILLUSTRATIONS = {
   tworzymy: {
     base: function(){
       var s = '<rect class="wall" x="0" y="0" width="800" height="310"/><rect class="floor" x="0" y="310" width="800" height="170"/><path class="floorline" d="M0 310 H800"/>';
-      s += standing(320, 372, {name:"Olek", shirt:C.olek, hair:"#2a1f17"});
-      s += standing(450, 372, {name:"Maja", shirt:C.maja, hair:"#1e1410"});
-      s += standing(580, 372, {name:"Ben",  shirt:C.ben,  hair:"#6b4a2f"});
+      s += standing(320, 372, {name:"Olek", shirt:C.olek, hair:"#3b2a1e", skin:"#e8b98f"});
+      s += standing(450, 372, {name:"Tomek", shirt:C.tomek, hair:"#241a12", skin:"#8d5a3b"});
+      s += standing(580, 372, {name:"Kuba", shirt:C.kuba, hair:"#c8873a", skin:"#f2c9a5"});
       s += standing(712, 372, {shirt:"#d9d0c1", hair:"#3c2b1e"}) + nameTag(712,380,"Inna osoba");
       // table in front
       s += '<rect x="240" y="300" width="420" height="26" rx="6" fill="#9a6b43" class="ol"/><rect x="262" y="326" width="16" height="120" fill="#6f4a2c"/><rect x="622" y="326" width="16" height="120" fill="#6f4a2c"/>';
@@ -773,8 +916,8 @@ var ILLUSTRATIONS = {
       var s = '<rect class="wall" x="0" y="0" width="800" height="300"/><rect class="floor" x="0" y="300" width="800" height="180"/><path class="floorline" d="M0 300 H800"/>';
       s += '<rect x="22" y="10" width="756" height="182" rx="10" fill="#b9c7a5" class="ol"/>';
       s += '<ellipse cx="400" cy="440" rx="330" ry="26" fill="#cbbd9f"/>';
-      s += standing(330, 432, {name:"Ben", shirt:C.ben, hair:"#6b4a2f", armsUp:true});
-      s += standing(470, 432, {name:"Olek", shirt:C.olek, hair:"#2a1f17", armsUp:true});
+      s += standing(330, 432, {name:"Kuba", shirt:C.kuba, hair:"#c8873a", skin:"#f2c9a5", armsUp:true});
+      s += standing(470, 432, {name:"Olek", shirt:C.olek, hair:"#3b2a1e", skin:"#e8b98f", armsUp:true});
       s += standing(610, 432, {shirt:"#d9d0c1", hair:"#3c2b1e", armsUp:true});
       return s;
     },
@@ -784,7 +927,7 @@ var ILLUSTRATIONS = {
           var s = '<g transform="translate(0 20)">'+card(36,26,236,142,"#ffffff");
           s += '<circle cx="66" cy="62" r="10" fill="#1c2430"/><rect x="58" y="74" width="16" height="30" rx="5" fill="#1c2430"/><path d="M60 104 v28 M72 104 v28" stroke="#1c2430" stroke-width="6"/>';
           s += T(96,72,"Gesty:",{size:19,anchor:"start"})+T(96,98,"wszyscy",{size:19,anchor:"start",weight:600})+T(96,124,"na stojąco",{size:19,anchor:"start",weight:600})+'</g>';
-          s += wheelchair(160, 440, {name:"Ada", shirt:C.ada, hair:"#5b3a21"});
+          s += wheelchair(160, 440, {name:"Ada", shirt:C.ada, hair:"#2d2a26", skin:"#c98e62"});
           return s;
         },
         after: function(){
@@ -792,7 +935,7 @@ var ILLUSTRATIONS = {
           s += '<circle cx="60" cy="58" r="9" fill="#1c2430"/><rect x="53" y="69" width="14" height="26" rx="4" fill="#1c2430"/><path d="M55 95 v24 M65 95 v24" stroke="#1c2430" stroke-width="5"/>';
           s += '<circle cx="92" cy="72" r="9" fill="#1c2430"/><rect x="85" y="83" width="14" height="22" rx="4" fill="#1c2430"/><path d="M90 105 h16 v16" fill="none" stroke="#1c2430" stroke-width="5"/><circle cx="92" cy="114" r="10" fill="none" stroke="#1c2430" stroke-width="3"/>';
           s += T(118,66,"Gesty:",{size:19,anchor:"start"})+T(118,92,"na siedząco",{size:19,anchor:"start",weight:600})+T(118,118,"lub stojąco",{size:19,anchor:"start",weight:600})+'</g>';
-          s += wheelchair(160, 440, {name:"Ada", shirt:C.ada, hair:"#5b3a21", armsUp:true});
+          s += wheelchair(160, 440, {name:"Ada", shirt:C.ada, hair:"#2d2a26", skin:"#c98e62", armsUp:true});
           s += checkBadge(154,218,"Każdy uczestniczy");
           return s;
         }
@@ -955,8 +1098,8 @@ function renderStart(){
         '<div class="btn-row"><button type="button" class="btn btn-primary btn-big" data-action="start">' + 'Rozpocznij' + ICON.next + '</button></div>' +
       '</div>' +
       '<div class="card">' +
-        '<h2>Jak gramy?</h2>' +
-        '<ol class="steps"><li>Przeczytaj sytuację i posłuchaj postaci.</li><li>Obejrzyj ilustrację i wybierz element.</li><li>Wybierz zmianę i sprawdź, co się stanie.</li></ol>' +
+        '<h2>Jak grać?</h2>' +
+        '<ol class="steps"><li>Przeczytaj lub posłuchaj, co mówią postacie.</li><li>Obejrzyj ilustrację i wybierz element.</li><li>Wybierz zmianę i sprawdź, co się stanie.</li></ol>' +
         '<ul class="rules"><li>Nie ma limitu czasu ani punktów.</li><li>Możesz próbować wiele razy.</li><li>Możesz grać samodzielnie albo we dwoje przy jednym ekranie. Porozmawiajcie i wybierzcie razem.</li></ul>' +
         '<p class="note">' + ICON.info + '<span>' + esc(DATA.note) + '</span></p>' +
       '</div>' +
@@ -980,7 +1123,8 @@ function renderScene(){
 
   var chars = scene.characters.map(function(c){
     var color = (DATA.characterColors && DATA.characterColors[c.id]) || "#dddddd";
-    return '<li class="char"><span class="avatar" aria-hidden="true" style="background:' + color + '">' + esc(c.name.charAt(0)) + '</span><span><span class="char-name">' + esc(c.name) + '</span><q>' + esc(c.text) + '</q></span></li>';
+    var face = window.KMM && KMM.portrait(c.id);   // portret ze wspólnej obsady zestawu
+    return '<li class="char"><span class="avatar' + (face ? ' has-portrait' : '') + '" aria-hidden="true" style="background:' + color + '">' + (face || esc(c.name.charAt(0))) + '</span><span><span class="char-name">' + esc(c.name) + '</span><q>' + esc(c.text) + '</q></span></li>';
   }).join("");
 
   var list = scene.barriers.map(function(b, i){
@@ -1268,7 +1412,7 @@ function init(){
       settings[k] = inp.checked;
       applySettings();
       saveSettings();
-      var names = { largeText:"Większy tekst", highContrast:"Wysoki kontrast", reduceMotion:"Ograniczenie animacji" };
+      var names = { largeText:"Większy tekst", highContrast:"Wysoki kontrast", reduceMotion:"Ograniczone animacje" };
       announce(names[k] + ": " + (inp.checked ? "włączone" : "wyłączone") + ".");
     });
   });
@@ -1325,5 +1469,7 @@ window.DetektywiBarier = Object.freeze({
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
 })();
 </script>
+<!-- ✏️ Czytanie na głos: teksty z przyciskiem „Posłuchaj” (zestaw „Każdy ma miejsce”) -->
+<script>if (window.KMM) KMM.readAloud('.char q, .scene-head .lead, #feedback p:not(.applied)');</script>
 </body>
 </html>

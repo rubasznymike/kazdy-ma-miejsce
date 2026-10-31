@@ -1,0 +1,16 @@
+{
+  "name": "Każdy ma miejsce",
+  "short_name": "Każdy ma miejsce",
+  "description": "Sześć gier o współpracy, różnych potrzebach i wspólnym uczestnictwie. Autor: Michał Siwkowski.",
+  "lang": "pl",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f3ee",
+  "theme_color": "#2b5f9e",
+  "icons": [
+    { "src": "./ikony/ikona-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "./ikony/ikona-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "./ikony/ikona-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

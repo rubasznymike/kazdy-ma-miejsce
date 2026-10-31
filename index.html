@@ -6,6 +6,21 @@
 <meta name="color-scheme" content="light">
 <meta name="description" content="Każdy ma miejsce — sześć bezpłatnych gier edukacyjnych o współpracy, różnych potrzebach i wspólnym uczestnictwie. Działają w przeglądarce, także bez internetu. Autor: Michał Siwkowski.">
 <meta name="author" content="Michał Siwkowski">
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#2b5f9e">
+<link rel="apple-touch-icon" href="./ikony/apple-touch-icon.png">
+<!-- Podgląd linku (Teams, Messenger, e-mail, media społecznościowe). ✏️ Adres zmień, jeśli repozytorium będzie miało inną nazwę. -->
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pl_PL">
+<meta property="og:site_name" content="Każdy ma miejsce">
+<meta property="og:title" content="Każdy ma miejsce">
+<meta property="og:description" content="Każdy ma miejsce — sześć bezpłatnych gier edukacyjnych o współpracy, różnych potrzebach i wspólnym uczestnictwie. Działają w przeglądarce, także bez internetu. Autor: Michał Siwkowski.">
+<meta property="og:url" content="https://rubasznymike.github.io/kazdy-ma-miejsce/">
+<meta property="og:image" content="https://rubasznymike.github.io/kazdy-ma-miejsce/podglad.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Każdy ma miejsce — sześć gier o współpracy. Portrety sześciu postaci zestawu.">
+<meta name="twitter:card" content="summary_large_image">
 <title>Każdy ma miejsce</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232b5f9e'/%3E%3Ccircle cx='22' cy='26' r='7' fill='%23fff'/%3E%3Ccircle cx='42' cy='26' r='7' fill='%23fff'/%3E%3Cpath d='M10 50c2-8 7-12 12-12s10 4 12 12M30 50c2-8 7-12 12-12s10 4 12 12' fill='none' stroke='%23fff' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
 <!-- ===== ZESTAW „KAŻDY MA MIEJSCE”: wspólne ustawienia i powrót do menu =====
@@ -26,6 +41,18 @@
 html.high-contrast .kmm-home,html.hc .kmm-home{border:3px solid #000;color:#000;background:#fff}
 html.high-contrast .kmm-home:focus-visible,html.hc .kmm-home:focus-visible{outline-color:#c00000}
 @media print{.kmm-nav{display:none}}
+.kmm-speak{box-sizing:border-box;display:inline-flex;align-items:center;gap:6px;min-height:48px;min-width:48px;margin:.35rem 0;padding:.3rem .8rem;
+  border:2px solid #2b5f9e;border-radius:12px;background:#fff;color:#1b4373;font-family:inherit;font-weight:700;font-size:max(16px,.9rem);line-height:1.2;cursor:pointer;vertical-align:middle;max-width:100%;text-align:left}
+.kmm-speak:hover{background:#e8f0fb}
+.kmm-speak[aria-pressed="true"]{background:#1b4373;color:#fff}
+.kmm-speak:focus{outline:none}
+.kmm-speak:focus-visible{outline:4px solid #b4400a;outline-offset:3px;box-shadow:0 0 0 7px #fff}
+.kmm-speak svg{width:22px;height:22px;flex:none}
+.kmm-speak[hidden]{display:none}
+html.high-contrast .kmm-speak,html.hc .kmm-speak{border:3px solid #000;color:#000}
+html.high-contrast .kmm-speak[aria-pressed="true"],html.hc .kmm-speak[aria-pressed="true"]{background:#000;color:#fff}
+@media print{.kmm-speak{display:none}}
+.kmm-sr{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 </style>
 <script>
 window.KMM = (function () {
@@ -63,15 +90,119 @@ window.KMM = (function () {
   function stopMedia() {
     try { Array.prototype.forEach.call(document.querySelectorAll('audio,video'), function (m) { m.pause(); }); } catch (e) {}
     try { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch (e) {}
+    if (speakingBtn) { label(speakingBtn, false); speakingBtn = null; }
   }
   window.addEventListener('pagehide', stopMedia);
+  // Tryb offline: po pierwszym otwarciu strony z internetu gry działają także bez sieci (tylko http/https, nie z pliku)
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('./sw.js').catch(function () {}); });
+  }
   document.addEventListener('click', function (e) {
     var a = e.target && e.target.closest ? e.target.closest('.kmm-home') : null;
     if (!a) return;
     stopMedia();
     try { window.sessionStorage.setItem('kazdyMaMiejsce.powrot', a.getAttribute('data-game') || ''); } catch (err) {}
   });
-  return { KEY: KEY, read: read, write: write, onChange: onChange, stopMedia: stopMedia };
+  /* =====================================================================
+     ✏️ WSPÓLNE POSTACIE ZESTAWU — jedna osoba = jedno imię, wygląd i potrzeba
+     we wszystkich grach. Zmiana tutaj (w każdym pliku ten sam fragment)
+     zmienia portret we wszystkich grach.
+     look: skin (skóra), hair (włosy), shirt (ubranie), bg (tło),
+           hairStyle: 'long' | 'short' | 'bun' | 'curly' | 'bob', glasses: true/false
+     ===================================================================== */
+  var CAST = {
+    ada:   { name: 'Ada',   need: 'droga bez stopni — porusza się na wózku',
+             look: { skin: '#c98e62', hair: '#2d2a26', hairStyle: 'bun',   shirt: '#f2c14e', bg: '#fff4cf', glasses: false } },
+    olek:  { name: 'Olek',  need: 'czytelne informacje: obrazki, oznaczenia, kolejne kroki',
+             look: { skin: '#e8b98f', hair: '#3b2a1e', hairStyle: 'short', shirt: '#7fb3d5', bg: '#e3f0fb', glasses: true } },
+    lena:  { name: 'Lena',  need: 'spokojniejsze miejsce i mniej hałasu',
+             look: { skin: '#f6d3b8', hair: '#a0522d', hairStyle: 'long',  shirt: '#b48fd8', bg: '#f1e8fa', glasses: false } },
+    tomek: { name: 'Tomek', need: 'wskazywanie obrazków i różne sposoby udziału',
+             look: { skin: '#8d5a3b', hair: '#241a12', hairStyle: 'curly', shirt: '#f4a582', bg: '#fbeee6', glasses: false } },
+    kuba:  { name: 'Kuba',  need: 'czas na zastanowienie się i odpowiedź',
+             look: { skin: '#f2c9a5', hair: '#c8873a', hairStyle: 'short', shirt: '#6fbf7f', bg: '#e4f4e6', glasses: false } },
+    iga:   { name: 'Iga',   need: 'wygodne miejsce pracy i swobodne dojście',
+             look: { skin: '#d9a77c', hair: '#6b4226', hairStyle: 'bob',   shirt: '#5fb3a6', bg: '#dff3f0', glasses: false } }
+  };
+  /** Portret SVG wspólnej postaci (lub dowolnego obiektu look). Zwraca null dla nieznanej postaci. */
+  function portrait(idOrLook, cls) {
+    var L = typeof idOrLook === 'string' ? (CAST[idOrLook] && CAST[idOrLook].look) : idOrLook;
+    if (!L) return null;
+    var back = L.hairStyle === 'long' ? '<path d="M27 46 Q26 17 50 17 Q74 17 73 46 L75 78 Q63 72 61 62 L39 62 Q37 72 25 78 Z" fill="' + L.hair + '"/>'
+      : L.hairStyle === 'bob' ? '<path d="M27 46 Q26 17 50 17 Q74 17 73 46 L73 62 Q66 64 62 58 L38 58 Q34 64 27 62 Z" fill="' + L.hair + '"/>' : '';
+    var front = {
+      long:  '<path d="M29 42 Q32 19 50 19 Q69 19 71 42 Q60 30 46 30 Q36 31 29 42Z" fill="' + L.hair + '"/>',
+      bob:   '<path d="M29 42 Q32 19 50 19 Q69 19 71 42 Q62 33 50 32 Q37 32 29 42Z" fill="' + L.hair + '"/>',
+      short: '<path d="M28 43 Q27 19 50 18 Q73 19 72 43 Q67 29 50 28 Q35 29 28 43Z" fill="' + L.hair + '"/>',
+      bun:   '<circle cx="50" cy="14" r="9" fill="' + L.hair + '"/><path d="M28 43 Q28 20 50 20 Q72 20 72 43 Q64 30 50 30 Q36 30 28 43Z" fill="' + L.hair + '"/>',
+      curly: '<g fill="' + L.hair + '"><circle cx="31" cy="36" r="9"/><circle cx="37" cy="25" r="10"/><circle cx="50" cy="20" r="10"/><circle cx="63" cy="25" r="10"/><circle cx="69" cy="36" r="9"/></g>'
+    }[L.hairStyle] || '';
+    var glasses = L.glasses ? '<g fill="none" stroke="#1f2a33" stroke-width="2"><circle cx="42" cy="46" r="6"/><circle cx="58" cy="46" r="6"/><path d="M48 46h4"/></g>' : '';
+    return '<svg viewBox="0 0 100 100" class="' + (cls || '') + '" aria-hidden="true" focusable="false">' +
+      '<circle cx="50" cy="50" r="47" fill="' + L.bg + '" stroke="#1f2a33" stroke-width="2.5"/>' + back +
+      '<path d="M21 91 Q24 69 50 67 Q76 69 79 91 Q50 103 21 91Z" fill="' + L.shirt + '" stroke="#1f2a33" stroke-width="2"/>' +
+      '<rect x="44" y="58" width="12" height="11" fill="' + L.skin + '"/>' +
+      '<ellipse cx="50" cy="45" rx="20" ry="22" fill="' + L.skin + '" stroke="#1f2a33" stroke-width="2"/>' + front +
+      '<circle cx="42" cy="46" r="2.6" fill="#1f2a33"/><circle cx="58" cy="46" r="2.6" fill="#1f2a33"/>' +
+      '<path d="M43 56 Q50 61.5 57 56" fill="none" stroke="#1f2a33" stroke-width="2.2" stroke-linecap="round"/>' + glasses + '</svg>';
+  }
+  /* =====================================================================
+     CZYTANIE NA GŁOS — wbudowana mowa przeglądarki (działa bez internetu,
+     jeśli system ma głos polski). Przycisk „Posłuchaj” pojawia się tylko,
+     gdy przeglądarka obsługuje syntezę mowy.
+     ✏️ Które teksty można odsłuchać — wywołanie KMM.readAloud('selektory') w każdej grze.
+     ===================================================================== */
+  var canSpeak = 'speechSynthesis' in window && typeof window.SpeechSynthesisUtterance === 'function';
+  var speakingBtn = null;
+  var SPEAK_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>';
+  function label(btn, on) { btn.querySelector('span').textContent = on ? 'Zatrzymaj' : 'Posłuchaj'; btn.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+  function stopSpeaking() { if (!canSpeak) return; try { window.speechSynthesis.cancel(); } catch (e) {} if (speakingBtn) { label(speakingBtn, false); speakingBtn = null; } }
+  function speak(text, btn) {
+    if (!canSpeak || !text) return;
+    var again = speakingBtn === btn;
+    stopSpeaking();
+    if (again) return;                       // drugie naciśnięcie = zatrzymaj
+    var u = new SpeechSynthesisUtterance(text);
+    u.lang = 'pl-PL'; u.rate = 0.9;
+    try { var v = window.speechSynthesis.getVoices().filter(function (x) { return /^pl/i.test(x.lang); })[0]; if (v) u.voice = v; } catch (e) {}
+    u.onend = u.onerror = function () { if (speakingBtn === btn) { label(btn, false); speakingBtn = null; } };
+    speakingBtn = btn; if (btn) label(btn, true);
+    window.speechSynthesis.speak(u);
+  }
+  function cleanText(el) { return (el.textContent || '').replace(/\s+/g, ' ').replace(/^[„"]|[”"]$/g, '').trim(); }
+  /** Dodaje przycisk „Posłuchaj” za każdym elementem pasującym do selektora (także dodanym później). */
+  function readAloud(selector, textFn) {
+    var getText = function (el) { return textFn ? String(textFn(el) || '').replace(/\s+/g, ' ').trim() : cleanText(el); };
+    if (!canSpeak) return;
+    function scan() {
+      Array.prototype.forEach.call(document.querySelectorAll(selector), function (el) {
+        var btn = el.__kmmSpeak;
+        if (!btn || !btn.isConnected) {
+          btn = document.createElement('button');
+          btn.type = 'button'; btn.className = 'kmm-speak';
+          btn.innerHTML = SPEAK_ICON + '<span>Posłuchaj</span>';
+          btn.setAttribute('aria-pressed', 'false');
+          btn.addEventListener('click', function (e) { e.stopPropagation(); speak(getText(el), btn); });
+          el.insertAdjacentElement('afterend', btn);
+          el.__kmmSpeak = btn;
+        }
+        var t = getText(el);
+        btn.hidden = !t;
+        btn.setAttribute('aria-label', 'Posłuchaj: ' + t.slice(0, 80));
+      });
+    }
+    var pending = false;
+    new MutationObserver(function () { if (pending) return; pending = true; requestAnimationFrame(function () { pending = false; scan(); }); })
+      .observe(document.body, { childList: true, subtree: true, characterData: true });
+    scan();
+  }
+  // Każde inne działanie (przycisk, link, zamknięcie okna) przerywa czytanie
+  document.addEventListener('click', function (e) {
+    var t = e.target && e.target.closest ? e.target.closest('button,a,[role="button"]') : null;
+    if (t && !t.classList.contains('kmm-speak')) stopSpeaking();
+  }, true);
+  document.addEventListener('close', stopSpeaking, true);
+  return { KEY: KEY, read: read, write: write, onChange: onChange, stopMedia: stopMedia, CAST: CAST, portrait: portrait, readAloud: readAloud, speak: speak, stopSpeaking: stopSpeaking };
 })();
 </script>
 <!-- ===== koniec wspólnego fragmentu ===== -->
@@ -118,6 +249,11 @@ html.high-contrast .panel{border-width:3px}
 .motto{font-weight:700;color:var(--accent-strong);font-size:1.15rem;margin:.4rem 0 .6rem}
 .lead{font-size:1.08rem}
 .author{font-weight:650;margin-top:.8rem}
+.hero-links{margin:.8rem 0 0}
+.hero-link{display:inline-flex;align-items:center;gap:10px;min-height:48px;padding:.5rem 1rem;border:2px solid var(--accent-strong);border-radius:12px;background:var(--soft);color:var(--accent-strong);font-weight:700;text-decoration:none}
+.hero-link:hover{text-decoration:underline}
+.hero-link svg{width:24px;height:24px;flex:none}
+html.high-contrast .hero-link{border:3px solid #000;color:#000;background:#fff}
 .hero-art svg{width:100%;height:auto;max-width:460px;display:block;margin:0 auto}
 
 /* Kafelki gier */
@@ -139,6 +275,15 @@ html.high-contrast .panel{border-width:3px}
 .tile-go svg{width:20px;height:20px}
 html.high-contrast .tile{border:3px solid #000;border-top:10px solid #000}
 html.high-contrast .tile-icon{background:#fff;border-color:#000}
+
+/* Postacie */
+.cast{list-style:none;padding:0;margin:0;display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr))}
+.cast li{display:flex;gap:12px;align-items:flex-start;border:2px solid var(--line);border-radius:16px;padding:12px;background:var(--bg)}
+.cast svg{width:72px;height:72px;flex:none}
+.cast h3{font-size:1.1rem}
+.cast p{margin:.15rem 0 0}
+.cast .games-in{font-size:max(16px,.85rem);color:var(--muted)}
+html.high-contrast .cast li{border-width:3px}
 
 /* Jak grać */
 .how{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));list-style:none;padding:0;margin:0}
@@ -174,6 +319,7 @@ html.reduce-motion *,html.reduce-motion *::before,html.reduce-motion *::after{an
       <p class="motto">Sześć gier o współpracy, różnych potrzebach i wspólnym uczestnictwie.</p>
       <p class="lead">Budujcie, planujcie, rozmawiajcie i szukajcie rozwiązań, dzięki którym każda osoba może dołączyć. Wybierz grę i zacznij — w dowolnej kolejności.</p>
       <p class="author">Autor: Michał Siwkowski</p>
+      <p class="hero-links"><a class="hero-link" href="./nauczyciel.html"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7l10-4 10 4-10 4z"/><path d="M6 9v5c0 1.7 2.7 3 6 3s6-1.3 6-3V9"/></svg>Dla nauczyciela: cele, przebieg lekcji, karty do druku</a></p>
     </div>
     <div class="hero-art">
       <svg viewBox="0 0 360 200" role="img" aria-label="Ilustracja: kilka różnych osób siedzi razem przy jednym stole.">
@@ -201,6 +347,12 @@ html.reduce-motion *,html.reduce-motion *::before,html.reduce-motion *::after{an
     <section class="panel" id="gry" tabindex="-1" aria-labelledby="gry-title">
       <h2 id="gry-title">Wybierz grę</h2>
       <ul class="games" id="games"></ul>
+    </section>
+
+    <section class="panel" aria-labelledby="cast-title">
+      <h2 id="cast-title">Poznaj postacie</h2>
+      <p>Te same osoby spotkacie w kilku grach. Każda ma swoje potrzeby — i każda ma miejsce.</p>
+      <ul class="cast" id="cast"></ul>
     </section>
 
     <section class="panel" aria-labelledby="how-title">
@@ -232,8 +384,8 @@ html.reduce-motion *,html.reduce-motion *::before,html.reduce-motion *::after{an
   </main>
 
   <footer>
-    <p><strong>Każdy ma miejsce</strong> — zestaw gier edukacyjnych. Autor: Michał Siwkowski.</p>
-    <p>Gry działają w przeglądarce, także bez internetu. Nie zbierają danych. Ustawienia są zapamiętywane tylko na tym urządzeniu.</p>
+    <p><strong>Każdy ma miejsce</strong> — zestaw gier edukacyjnych. Autor: Michał Siwkowski. <a href="./nauczyciel.html">Dla nauczyciela</a> · <a href="https://github.com/rubasznymike/kazdy-ma-miejsce/blob/main/LICENSE.md">Licencja</a> (treści CC BY-SA 4.0, kod MIT)</p>
+    <p>Gry działają w przeglądarce, także bez internetu — po pierwszym otwarciu strony albo po pobraniu paczki. Zestaw można dodać do ekranu głównego telefonu lub tabletu. Gry nie zbierają danych; ustawienia są zapamiętywane tylko na tym urządzeniu.</p>
   </footer>
 </div>
 
@@ -290,6 +442,25 @@ html.reduce-motion *,html.reduce-motion *::before,html.reduce-motion *::after{an
         '<span class="tile-go" aria-hidden="true">Zagraj ' + ARROW + '</span>' +
       '</a>';
     list.appendChild(li);
+  });
+
+  /* ---------- Postacie (portrety ze wspólnej obsady KMM.CAST) ---------- */
+  // ✏️ W których grach występuje każda postać
+  var CAST_GAMES = {
+    ada:   ['Każdy ma swoją drogę', 'Wspólny piknik', 'Detektywi barier'],
+    olek:  ['Klasa dla każdego', 'Każdy ma swoją drogę', 'Wspólny piknik', 'Detektywi barier'],
+    lena:  ['Klasa dla każdego', 'Co powiesz?', 'Każdy ma swoją drogę', 'Wspólny piknik', 'Detektywi barier'],
+    tomek: ['Klasa dla każdego', 'Wspólny piknik', 'Detektywi barier'],
+    kuba:  ['Co powiesz?', 'Detektywi barier'],
+    iga:   ['Klasa dla każdego']
+  };
+  var castList = document.getElementById('cast');
+  if (window.KMM && KMM.CAST) Object.keys(CAST_GAMES).forEach(function (id) {
+    var c = KMM.CAST[id]; if (!c) return;
+    var li = document.createElement('li');
+    li.innerHTML = KMM.portrait(id) + '<div><h3>' + esc(c.name) + '</h3><p>Potrzeba: ' + esc(c.need) + '.</p>' +
+      '<p class="games-in">Występuje w: ' + CAST_GAMES[id].map(esc).join(', ') + '</p></div>';
+    castList.appendChild(li);
   });
 
   /* ---------- Wspólne ustawienia ---------- */

@@ -5,6 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Każdy ma swoją drogę — pomóż trzem osobom dotrzeć na wspólne spotkanie: dostosuj otoczenie i sprawdź drogi. Część zestawu „Każdy ma miejsce”.">
 <meta name="author" content="Michał Siwkowski">
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#2b5f9e">
+<link rel="apple-touch-icon" href="./ikony/apple-touch-icon.png">
+<!-- Podgląd linku (Teams, Messenger, e-mail, media społecznościowe). ✏️ Adres zmień, jeśli repozytorium będzie miało inną nazwę. -->
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pl_PL">
+<meta property="og:site_name" content="Każdy ma miejsce">
+<meta property="og:title" content="Każdy ma swoją drogę">
+<meta property="og:description" content="Każdy ma swoją drogę — pomóż trzem osobom dotrzeć na wspólne spotkanie: dostosuj otoczenie i sprawdź drogi. Część zestawu „Każdy ma miejsce”.">
+<meta property="og:url" content="https://rubasznymike.github.io/kazdy-ma-miejsce/kazdy-ma-swoja-droge.html">
+<meta property="og:image" content="https://rubasznymike.github.io/kazdy-ma-miejsce/podglad.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Każdy ma miejsce — sześć gier o współpracy. Portrety sześciu postaci zestawu.">
+<meta name="twitter:card" content="summary_large_image">
 <title>Każdy ma swoją drogę</title>
 <style>
 /* =========================================================
@@ -229,6 +244,29 @@ html.calm *,html.calm *::before,html.calm *::after{animation:none !important;tra
 html.high-contrast .kmm-home,html.hc .kmm-home{border:3px solid #000;color:#000;background:#fff}
 html.high-contrast .kmm-home:focus-visible,html.hc .kmm-home:focus-visible{outline-color:#c00000}
 @media print{.kmm-nav{display:none}}
+.kmm-speak{box-sizing:border-box;display:inline-flex;align-items:center;gap:6px;min-height:48px;min-width:48px;margin:.35rem 0;padding:.3rem .8rem;
+  border:2px solid #2b5f9e;border-radius:12px;background:#fff;color:#1b4373;font-family:inherit;font-weight:700;font-size:max(16px,.9rem);line-height:1.2;cursor:pointer;vertical-align:middle;max-width:100%;text-align:left}
+.kmm-speak:hover{background:#e8f0fb}
+.kmm-speak[aria-pressed="true"]{background:#1b4373;color:#fff}
+.kmm-speak:focus{outline:none}
+.kmm-speak:focus-visible{outline:4px solid #b4400a;outline-offset:3px;box-shadow:0 0 0 7px #fff}
+.kmm-speak svg{width:22px;height:22px;flex:none}
+.kmm-speak[hidden]{display:none}
+html.high-contrast .kmm-speak,html.hc .kmm-speak{border:3px solid #000;color:#000}
+html.high-contrast .kmm-speak[aria-pressed="true"],html.hc .kmm-speak[aria-pressed="true"]{background:#000;color:#fff}
+@media print{.kmm-speak{display:none}}
+.kmm-sr{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+</style>
+<style id="kmm-bar">
+/* „Wszystkie gry” w pasku gry; na telefonie: tytuł + link w 1. rzędzie, 3 przyciski w 2. rzędzie */
+.topbar .kmm-inbar{margin-right:auto}
+@media (max-width:599px){
+  .topbar{gap:.5rem}
+  .topbar .brand{flex:1 1 auto}
+  .topbar .kmm-inbar{margin-right:0;padding:.35rem .7rem}
+  .topbar nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%}
+  .topbar nav .btn{padding:.35em .25em}
+}
 </style>
 <script>
 window.KMM = (function () {
@@ -266,27 +304,130 @@ window.KMM = (function () {
   function stopMedia() {
     try { Array.prototype.forEach.call(document.querySelectorAll('audio,video'), function (m) { m.pause(); }); } catch (e) {}
     try { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch (e) {}
+    if (speakingBtn) { label(speakingBtn, false); speakingBtn = null; }
   }
   window.addEventListener('pagehide', stopMedia);
+  // Tryb offline: po pierwszym otwarciu strony z internetu gry działają także bez sieci (tylko http/https, nie z pliku)
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('./sw.js').catch(function () {}); });
+  }
   document.addEventListener('click', function (e) {
     var a = e.target && e.target.closest ? e.target.closest('.kmm-home') : null;
     if (!a) return;
     stopMedia();
     try { window.sessionStorage.setItem('kazdyMaMiejsce.powrot', a.getAttribute('data-game') || ''); } catch (err) {}
   });
-  return { KEY: KEY, read: read, write: write, onChange: onChange, stopMedia: stopMedia };
+  /* =====================================================================
+     ✏️ WSPÓLNE POSTACIE ZESTAWU — jedna osoba = jedno imię, wygląd i potrzeba
+     we wszystkich grach. Zmiana tutaj (w każdym pliku ten sam fragment)
+     zmienia portret we wszystkich grach.
+     look: skin (skóra), hair (włosy), shirt (ubranie), bg (tło),
+           hairStyle: 'long' | 'short' | 'bun' | 'curly' | 'bob', glasses: true/false
+     ===================================================================== */
+  var CAST = {
+    ada:   { name: 'Ada',   need: 'droga bez stopni — porusza się na wózku',
+             look: { skin: '#c98e62', hair: '#2d2a26', hairStyle: 'bun',   shirt: '#f2c14e', bg: '#fff4cf', glasses: false } },
+    olek:  { name: 'Olek',  need: 'czytelne informacje: obrazki, oznaczenia, kolejne kroki',
+             look: { skin: '#e8b98f', hair: '#3b2a1e', hairStyle: 'short', shirt: '#7fb3d5', bg: '#e3f0fb', glasses: true } },
+    lena:  { name: 'Lena',  need: 'spokojniejsze miejsce i mniej hałasu',
+             look: { skin: '#f6d3b8', hair: '#a0522d', hairStyle: 'long',  shirt: '#b48fd8', bg: '#f1e8fa', glasses: false } },
+    tomek: { name: 'Tomek', need: 'wskazywanie obrazków i różne sposoby udziału',
+             look: { skin: '#8d5a3b', hair: '#241a12', hairStyle: 'curly', shirt: '#f4a582', bg: '#fbeee6', glasses: false } },
+    kuba:  { name: 'Kuba',  need: 'czas na zastanowienie się i odpowiedź',
+             look: { skin: '#f2c9a5', hair: '#c8873a', hairStyle: 'short', shirt: '#6fbf7f', bg: '#e4f4e6', glasses: false } },
+    iga:   { name: 'Iga',   need: 'wygodne miejsce pracy i swobodne dojście',
+             look: { skin: '#d9a77c', hair: '#6b4226', hairStyle: 'bob',   shirt: '#5fb3a6', bg: '#dff3f0', glasses: false } }
+  };
+  /** Portret SVG wspólnej postaci (lub dowolnego obiektu look). Zwraca null dla nieznanej postaci. */
+  function portrait(idOrLook, cls) {
+    var L = typeof idOrLook === 'string' ? (CAST[idOrLook] && CAST[idOrLook].look) : idOrLook;
+    if (!L) return null;
+    var back = L.hairStyle === 'long' ? '<path d="M27 46 Q26 17 50 17 Q74 17 73 46 L75 78 Q63 72 61 62 L39 62 Q37 72 25 78 Z" fill="' + L.hair + '"/>'
+      : L.hairStyle === 'bob' ? '<path d="M27 46 Q26 17 50 17 Q74 17 73 46 L73 62 Q66 64 62 58 L38 58 Q34 64 27 62 Z" fill="' + L.hair + '"/>' : '';
+    var front = {
+      long:  '<path d="M29 42 Q32 19 50 19 Q69 19 71 42 Q60 30 46 30 Q36 31 29 42Z" fill="' + L.hair + '"/>',
+      bob:   '<path d="M29 42 Q32 19 50 19 Q69 19 71 42 Q62 33 50 32 Q37 32 29 42Z" fill="' + L.hair + '"/>',
+      short: '<path d="M28 43 Q27 19 50 18 Q73 19 72 43 Q67 29 50 28 Q35 29 28 43Z" fill="' + L.hair + '"/>',
+      bun:   '<circle cx="50" cy="14" r="9" fill="' + L.hair + '"/><path d="M28 43 Q28 20 50 20 Q72 20 72 43 Q64 30 50 30 Q36 30 28 43Z" fill="' + L.hair + '"/>',
+      curly: '<g fill="' + L.hair + '"><circle cx="31" cy="36" r="9"/><circle cx="37" cy="25" r="10"/><circle cx="50" cy="20" r="10"/><circle cx="63" cy="25" r="10"/><circle cx="69" cy="36" r="9"/></g>'
+    }[L.hairStyle] || '';
+    var glasses = L.glasses ? '<g fill="none" stroke="#1f2a33" stroke-width="2"><circle cx="42" cy="46" r="6"/><circle cx="58" cy="46" r="6"/><path d="M48 46h4"/></g>' : '';
+    return '<svg viewBox="0 0 100 100" class="' + (cls || '') + '" aria-hidden="true" focusable="false">' +
+      '<circle cx="50" cy="50" r="47" fill="' + L.bg + '" stroke="#1f2a33" stroke-width="2.5"/>' + back +
+      '<path d="M21 91 Q24 69 50 67 Q76 69 79 91 Q50 103 21 91Z" fill="' + L.shirt + '" stroke="#1f2a33" stroke-width="2"/>' +
+      '<rect x="44" y="58" width="12" height="11" fill="' + L.skin + '"/>' +
+      '<ellipse cx="50" cy="45" rx="20" ry="22" fill="' + L.skin + '" stroke="#1f2a33" stroke-width="2"/>' + front +
+      '<circle cx="42" cy="46" r="2.6" fill="#1f2a33"/><circle cx="58" cy="46" r="2.6" fill="#1f2a33"/>' +
+      '<path d="M43 56 Q50 61.5 57 56" fill="none" stroke="#1f2a33" stroke-width="2.2" stroke-linecap="round"/>' + glasses + '</svg>';
+  }
+  /* =====================================================================
+     CZYTANIE NA GŁOS — wbudowana mowa przeglądarki (działa bez internetu,
+     jeśli system ma głos polski). Przycisk „Posłuchaj” pojawia się tylko,
+     gdy przeglądarka obsługuje syntezę mowy.
+     ✏️ Które teksty można odsłuchać — wywołanie KMM.readAloud('selektory') w każdej grze.
+     ===================================================================== */
+  var canSpeak = 'speechSynthesis' in window && typeof window.SpeechSynthesisUtterance === 'function';
+  var speakingBtn = null;
+  var SPEAK_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>';
+  function label(btn, on) { btn.querySelector('span').textContent = on ? 'Zatrzymaj' : 'Posłuchaj'; btn.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+  function stopSpeaking() { if (!canSpeak) return; try { window.speechSynthesis.cancel(); } catch (e) {} if (speakingBtn) { label(speakingBtn, false); speakingBtn = null; } }
+  function speak(text, btn) {
+    if (!canSpeak || !text) return;
+    var again = speakingBtn === btn;
+    stopSpeaking();
+    if (again) return;                       // drugie naciśnięcie = zatrzymaj
+    var u = new SpeechSynthesisUtterance(text);
+    u.lang = 'pl-PL'; u.rate = 0.9;
+    try { var v = window.speechSynthesis.getVoices().filter(function (x) { return /^pl/i.test(x.lang); })[0]; if (v) u.voice = v; } catch (e) {}
+    u.onend = u.onerror = function () { if (speakingBtn === btn) { label(btn, false); speakingBtn = null; } };
+    speakingBtn = btn; if (btn) label(btn, true);
+    window.speechSynthesis.speak(u);
+  }
+  function cleanText(el) { return (el.textContent || '').replace(/\s+/g, ' ').replace(/^[„"]|[”"]$/g, '').trim(); }
+  /** Dodaje przycisk „Posłuchaj” za każdym elementem pasującym do selektora (także dodanym później). */
+  function readAloud(selector, textFn) {
+    var getText = function (el) { return textFn ? String(textFn(el) || '').replace(/\s+/g, ' ').trim() : cleanText(el); };
+    if (!canSpeak) return;
+    function scan() {
+      Array.prototype.forEach.call(document.querySelectorAll(selector), function (el) {
+        var btn = el.__kmmSpeak;
+        if (!btn || !btn.isConnected) {
+          btn = document.createElement('button');
+          btn.type = 'button'; btn.className = 'kmm-speak';
+          btn.innerHTML = SPEAK_ICON + '<span>Posłuchaj</span>';
+          btn.setAttribute('aria-pressed', 'false');
+          btn.addEventListener('click', function (e) { e.stopPropagation(); speak(getText(el), btn); });
+          el.insertAdjacentElement('afterend', btn);
+          el.__kmmSpeak = btn;
+        }
+        var t = getText(el);
+        btn.hidden = !t;
+        btn.setAttribute('aria-label', 'Posłuchaj: ' + t.slice(0, 80));
+      });
+    }
+    var pending = false;
+    new MutationObserver(function () { if (pending) return; pending = true; requestAnimationFrame(function () { pending = false; scan(); }); })
+      .observe(document.body, { childList: true, subtree: true, characterData: true });
+    scan();
+  }
+  // Każde inne działanie (przycisk, link, zamknięcie okna) przerywa czytanie
+  document.addEventListener('click', function (e) {
+    var t = e.target && e.target.closest ? e.target.closest('button,a,[role="button"]') : null;
+    if (t && !t.classList.contains('kmm-speak')) stopSpeaking();
+  }, true);
+  document.addEventListener('close', stopSpeaking, true);
+  return { KEY: KEY, read: read, write: write, onChange: onChange, stopMedia: stopMedia, CAST: CAST, portrait: portrait, readAloud: readAloud, speak: speak, stopSpeaking: stopSpeaking };
 })();
 </script>
 <!-- ===== koniec wspólnego fragmentu ===== -->
 </head>
 <body>
 <a class="skip" href="#main">Przejdź do treści</a>
-<!-- ✏️ Zestaw „Każdy ma miejsce”: powrót do menu (ścieżka względna — działa lokalnie i na GitHub Pages) -->
-<nav class="kmm-nav" aria-label="Zestaw gier Każdy ma miejsce"><a class="kmm-home" href="./index.html" data-game="kazdy-ma-swoja-droge.html"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg><span>Wszystkie gry</span></a></nav>
 
 
 <header class="topbar">
   <span class="brand">Każdy ma swoją drogę</span>
+  <a class="kmm-home kmm-inbar" href="./index.html" data-game="kazdy-ma-swoja-droge.html"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg><span>Wszystkie gry</span></a>
   <nav aria-label="Pomoc i ustawienia">
     <button class="btn" type="button" data-open="dlgHelp">Jak grać?</button>
     <button class="btn" type="button" data-open="dlgSettings">Ustawienia</button>
@@ -324,6 +465,7 @@ window.KMM = (function () {
 
   <!-- ============ EKRAN GRY ============ -->
   <section id="screenGame" class="screen" aria-labelledby="mapTitle" hidden>
+    <h1 class="kmm-sr">Każdy ma swoją drogę</h1>
     <div class="map-head">
       <div>
         <p class="progress"><span id="progressText">Plansza 1 z 3</span> <span class="dots" id="progressDots" aria-hidden="true"></span></p>
@@ -383,6 +525,7 @@ window.KMM = (function () {
 
   <!-- ============ PODSUMOWANIE ============ -->
   <section id="screenSummary" class="screen" aria-labelledby="summaryTitle" hidden>
+    <h1 class="kmm-sr">Każdy ma swoją drogę</h1>
     <div class="panel">
       <h2 id="summaryTitle" tabindex="-1">Różne drogi. Wspólne spotkanie.</h2>
       <p>Dostosowywaliście otoczenie do różnych potrzeb. Każda osoba mogła znaleźć drogę do wspólnego celu.</p>
@@ -410,8 +553,8 @@ window.KMM = (function () {
     <h3>Dostosowania</h3>
     <ul>
       <li><strong>Podjazd</strong> — ustawiasz na stopniu. Pomaga Adzie.</li>
-      <li><strong>Oznaczenie</strong> — ustawiasz w miejscu z nieczytelnym kierunkiem. Pomaga Benowi.</li>
-      <li><strong>Wyciszenie</strong> — ustawiasz w głośnym miejscu. Pomaga Celinie.</li>
+      <li><strong>Oznaczenie</strong> — ustawiasz w miejscu z nieczytelnym kierunkiem. Pomaga Olkowi.</li>
+      <li><strong>Wyciszenie</strong> — ustawiasz w głośnym miejscu. Pomaga Lenie.</li>
     </ul>
     <p>Kliknięcie dostosowanego pola (bez wybranego narzędzia) usuwa dostosowanie. Możesz je ustawić gdzie indziej.</p>
     <p>Każda osoba może iść inną drogą. Nie ma limitu czasu ani punktów.</p>
@@ -446,7 +589,7 @@ window.KMM = (function () {
     <div class="person-dlg"><span id="personPortrait"></span><h2 id="personTitle" style="margin:0;"></h2></div>
     <p class="quote" id="personQuote"></p>
     <div class="row">
-      <button class="btn" type="button" id="btnSpeak" hidden>Przeczytaj na głos</button>
+      <button class="btn" type="button" id="btnSpeak" hidden>Posłuchaj</button>
       <button class="btn primary" type="button" data-close>Zamknij</button>
     </div>
   </div>
@@ -470,13 +613,13 @@ const CHARACTERS = [
     question:'Czy można ominąć stopień albo dodać podjazd?',
     barrier:'H', tool:'ramp',
     look:{ bg:'#fde3cf', skin:'#e8b48a', hair:'#5a3825', shirt:'#c0601c', style:'bun' } },
-  { id:'ben', name:'Ben', genitive:'Bena', startSymbol:'B',
+  { id:'olek', name:'Olek', genitive:'Olka', startSymbol:'B',
     need:'Potrzebuje czytelnych wskazówek.',
     quote:'Potrzebuję czytelnych wskazówek. W niejasnym miejscu pomoże mi oznaczenie.',
     question:'Czy na dostępnej drodze są czytelne oznaczenia?',
     barrier:'I', tool:'sign',
     look:{ bg:'#dbe6f7', skin:'#8d5a3b', hair:'#1f1a17', shirt:'#2f5fa8', style:'short' } },
-  { id:'celina', name:'Celina', genitive:'Celiny', startSymbol:'C',
+  { id:'lena', name:'Lena', genitive:'Leny', startSymbol:'C',
     need:'Potrzebuje spokojniejszej drogi.',
     quote:'Potrzebuję spokojniejszej drogi. Głośne miejsce można wyciszyć albo ominąć.',
     question:'Czy można wybrać spokojniejszą trasę albo wyciszyć miejsce?',
@@ -488,7 +631,7 @@ const CHARACTERS = [
    2. DANE MAP
    NAUCZYCIEL / UCZNIOWIE: tutaj możecie zmienić lub dodać układy map.
    Każda mapa: 5 wierszy po 5 znaków. Dokładnie jedno A, B, C i G.
-     A — start Ady, B — start Bena, C — start Celiny, G — wspólny cel
+     A — start Ady, B — start Olka, C — start Leny, G — wspólny cel
      . — zwykła droga, # — ściana, H — stopień,
      I — nieczytelny kierunek, N — głośne miejsce
    Gra sama sprawdza poprawność map przy uruchomieniu (validateMap).
@@ -509,7 +652,7 @@ const MAPS = [
            ".####",
            "C####" ] },
   { title:'Można inaczej',
-    hint:'Nie wszyscy muszą iść tędy samą drogą. Poszukaj rozwiązania dla każdej osoby.',
+    hint:'Nie wszyscy muszą iść tą samą drogą. Poszukaj rozwiązania dla każdej osoby.',
     grid:[ "AHIN.",
            ".###.",
            "B###G",
@@ -526,8 +669,8 @@ const TILE_INFO = {
   'I': { name:'miejsce z nieczytelnym kierunkiem', missing:'Brakuje oznaczenia.', adapted:'miejsce z nieczytelnym kierunkiem, z czytelnym oznaczeniem', cls:'t-unclear' },
   'N': { name:'głośne miejsce', missing:'Brakuje wyciszenia.', adapted:'głośne miejsce z wyciszeniem', cls:'t-noisy' },
   'A': { name:'start Ady', cls:'t-start' },
-  'B': { name:'start Bena', cls:'t-start' },
-  'C': { name:'start Celiny', cls:'t-start' },
+  'B': { name:'start Olka', cls:'t-start' },
+  'C': { name:'start Leny', cls:'t-start' },
   'G': { name:'wspólny cel, miejsce spotkania', cls:'t-goal' }
 };
 
@@ -557,6 +700,9 @@ const SUMMARY_CARDS = ['droga bez stopni','czytelne oznaczenia','spokojniejsze m
    Każda funkcja zwraca kod SVG (viewBox 0 0 40 40 dla pól).
    ========================================================================= */
 function portraitSVG(ch, cls){
+  // Wspólna obsada zestawu (KMM.CAST) — ten sam wygląd postaci we wszystkich grach
+  const shared = window.KMM && KMM.portrait(ch.id, cls);
+  if(shared) return shared;
   const k = ch.look;
   let back = '', front = '', extra = '';
   if(k.style === 'bun'){
@@ -935,7 +1081,7 @@ function buildStartIllustration(){
   const fig = (ch, x, y) => `<g transform="translate(${x-26},${y-26})"><svg width="52" height="52" viewBox="0 0 100 100">${portraitSVG(ch,'').replace(/^<svg[^>]*>|<\/svg>$/g,'')}</svg></g>
     <text x="${x}" y="${y+44}" text-anchor="middle" font-size="17" font-weight="700" fill="var(--ink)" font-family="Verdana,sans-serif">${ch.name}</text>`;
   el.startIllustration.innerHTML = `
-  <svg viewBox="0 0 520 330" role="img" aria-label="Trzy osoby: Ada, Ben i Celina. Każda idzie inną drogą do wspólnego miejsca spotkania.">
+  <svg viewBox="0 0 520 330" role="img" aria-label="Trzy osoby: Ada, Olek i Lena. Każda idzie inną drogą do wspólnego miejsca spotkania.">
     <rect x="4" y="4" width="512" height="322" rx="22" fill="var(--surface)" stroke="var(--line)" stroke-width="3"/>
     <path d="M95 70 C200 40 300 60 410 160" stroke="#c0601c" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="2 18"/>
     <path d="M95 165 C220 165 300 165 410 165" stroke="#2f5fa8" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="18 12"/>
@@ -1290,11 +1436,11 @@ function runSelfTests(){
   const m2 = MAPS[1];
   const only = (tool, pos) => ({ ...emptyPlacements(), [tool]: pos });
   const r2 = evaluateAll(m2, only('ramp', { r:2, c:1 }));
-  t('BFS: na mapie 2 sam podjazd otwiera drogę tylko Adzie', r2.ada && !r2.ben && !r2.celina);
+  t('BFS: na mapie 2 sam podjazd otwiera drogę tylko Adzie', r2.ada && !r2.olek && !r2.lena);
   const m1 = MAPS[0];
   const r1 = evaluateAll(m1, only('ramp', { r:0, c:2 }));
-  t('BFS: podjazd pomaga tylko Adzie na mapie 1', r1.ada && !r1.ben && !r1.celina);
-  t('Reguły: Ben przechodzi przez stopień i głośne pole', canEnter(charById('ben'), m2, emptyPlacements(), 2, 1) && canEnter(charById('ben'), m2, emptyPlacements(), 2, 3));
+  t('BFS: podjazd pomaga tylko Adzie na mapie 1', r1.ada && !r1.olek && !r1.lena);
+  t('Reguły: Olek przechodzi przez stopień i głośne pole', canEnter(charById('olek'), m2, emptyPlacements(), 2, 1) && canEnter(charById('olek'), m2, emptyPlacements(), 2, 3));
   t('Reguły: ściana nieprzechodnia dla wszystkich', CHARACTERS.every(ch => !canEnter(ch, m1, emptyPlacements(), 1, 0)));
   t('Reguły: starty innych osób są przechodnie', canEnter(charById('ada'), m2, emptyPlacements(), 2, 0));
   // Przenoszenie i usuwanie
