@@ -303,6 +303,21 @@ html.high-contrast .kmm-home:focus-visible,html.hc .kmm-home:focus-visible{outli
 html.high-contrast .kmm-speak,html.hc .kmm-speak{border:3px solid #000;color:#000}
 html.high-contrast .kmm-speak[aria-pressed="true"],html.hc .kmm-speak[aria-pressed="true"]{background:#000;color:#fff}
 @media print{.kmm-speak{display:none}}
+.kmm-lang{box-sizing:border-box;display:inline-flex;align-items:center;gap:8px;min-height:48px;min-width:48px;padding:.4rem .9rem;
+  border:2px solid #1f2a33;border-radius:12px;background:#fff;color:#1f2a33;font-family:inherit;font-weight:700;font-size:max(18px,1rem);line-height:1.2;cursor:pointer}
+.kmm-lang:hover{background:#eef3f8}
+.kmm-lang:focus{outline:none}
+.kmm-lang:focus-visible{outline:4px solid #b4400a;outline-offset:3px;box-shadow:0 0 0 7px #fff}
+.kmm-lang svg{width:22px;height:22px;flex:none;display:block}
+.kmm-lang-short{display:none}
+@media (max-width:600px){.kmm-lang .kmm-lang-long{display:none}.kmm-lang .kmm-lang-short{display:inline}}
+.kmm-inbar:has(+ .kmm-lang){margin-right:0 !important}
+.kmm-inbar + .kmm-lang{margin-right:auto}
+html.high-contrast .kmm-lang,html.hc .kmm-lang{border:3px solid #000;color:#000;background:#fff}
+html.kmm-tr-pending body{visibility:hidden}
+html[lang="en"] q{quotes:"\201C" "\201D" "\2018" "\2019"}
+@media print{.kmm-lang{display:none}}
+
 .kmm-sr{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 </style>
 <style id="kmm-bar">
@@ -423,13 +438,13 @@ window.KMM = (function () {
     stopSpeaking();
     if (again) return;                       // drugie naciśnięcie = zatrzymaj
     var u = new SpeechSynthesisUtterance(text);
-    u.lang = 'pl-PL'; u.rate = 0.9;
-    try { var v = window.speechSynthesis.getVoices().filter(function (x) { return /^pl/i.test(x.lang); })[0]; if (v) u.voice = v; } catch (e) {}
+    u.lang = lang === 'en' ? 'en-GB' : 'pl-PL'; u.rate = 0.9;
+    try { var vre = lang === 'en' ? /^en/i : /^pl/i; var v = window.speechSynthesis.getVoices().filter(function (x) { return vre.test(x.lang); })[0]; if (v) u.voice = v; } catch (e) {}
     u.onend = u.onerror = function () { if (speakingBtn === btn) { label(btn, false); speakingBtn = null; } };
     speakingBtn = btn; if (btn) label(btn, true);
     window.speechSynthesis.speak(u);
   }
-  function cleanText(el) { return (el.textContent || '').replace(/\s+/g, ' ').replace(/^[„"]|[”"]$/g, '').trim(); }
+  function cleanText(el) { return (el.textContent || '').replace(/\s+/g, ' ').replace(/^[„“"]|[”"]$/g, '').trim(); }
   /** Dodaje przycisk „Posłuchaj” za każdym elementem pasującym do selektora (także dodanym później). */
   function readAloud(selector, textFn) {
     var getText = function (el) { return textFn ? String(textFn(el) || '').replace(/\s+/g, ' ').trim() : cleanText(el); };
@@ -448,12 +463,13 @@ window.KMM = (function () {
         }
         var t = getText(el);
         btn.hidden = !t;
-        btn.setAttribute('aria-label', 'Posłuchaj: ' + t.slice(0, 80));
+        btn.setAttribute('aria-label', (lang === 'en' ? 'Listen: ' : 'Posłuchaj: ') + t.slice(0, 80));
       });
     }
     var pending = false;
     new MutationObserver(function () { if (pending) return; pending = true; requestAnimationFrame(function () { pending = false; scan(); }); })
       .observe(document.body, { childList: true, subtree: true, characterData: true });
+    langListeners.push(scan);
     scan();
   }
   // Każde inne działanie (przycisk, link, zamknięcie okna) przerywa czytanie
@@ -462,10 +478,497 @@ window.KMM = (function () {
     if (t && !t.classList.contains('kmm-speak')) stopSpeaking();
   }, true);
   document.addEventListener('close', stopSpeaking, true);
-  return { KEY: KEY, read: read, write: write, onChange: onChange, stopMedia: stopMedia, CAST: CAST, portrait: portrait, readAloud: readAloud, speak: speak, stopSpeaking: stopSpeaking };
+  /* =====================================================================
+     JĘZYK: POLSKI / ANGIELSKI
+     Teksty gier zostają w kodzie po polsku. W trybie angielskim moduł
+     podmienia napisy na stronie według słownika i wzorców (KMM.addTranslations)
+     — mechanika, dane i zabezpieczenia gier się nie zmieniają.
+     ✏️ Tłumaczenia każdej strony: blok „TŁUMACZENIE EN” w <head> tej strony.
+     ✏️ Link w wybranym języku: dopisz ?lang=en albo ?lang=pl do adresu.
+     ===================================================================== */
+  var LANG_KEY = 'kazdyMaMiejsce.jezyk';
+  var I18N = { exact: Object.create(null), patterns: [], missing: Object.create(null) };
+  var lang = 'pl';
+  (function initLang() {
+    var q = null;
+    try { q = new URLSearchParams(location.search).get('lang'); } catch (e) {}
+    if (q === 'en' || q === 'pl') { lang = q; try { localStorage.setItem(LANG_KEY, q); } catch (e) {} return; }
+    try { var s = localStorage.getItem(LANG_KEY); if (s === 'en' || s === 'pl') lang = s; } catch (e) {}
+  })();
+  document.documentElement.lang = lang;
+  if (lang === 'en') document.documentElement.classList.add('kmm-tr-pending');
+
+  function tnorm(s) { return String(s).replace(/­/g, '').replace(/\s+/g, ' ').trim(); }
+  function ucFirst(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  function lcFirst(s) { return s.charAt(0).toLowerCase() + s.slice(1); }
+  function addTranslations(pack) {
+    if (pack && pack.exact) for (var k in pack.exact) I18N.exact[tnorm(k)] = pack.exact[k];
+    if (pack && pack.patterns) pack.patterns.forEach(function (p) { I18N.patterns.push(p); });
+  }
+  /** Tłumaczy tekst na angielski. Zwraca null, gdy brak tłumaczenia. */
+  function exactVariants(key) {
+    var e = I18N.exact[key];
+    if (e != null) return e;
+    var up = ucFirst(key), lo = lcFirst(key);
+    if (up !== key && I18N.exact[up] != null) return lcFirst(I18N.exact[up]);
+    if (lo !== key && I18N.exact[lo] != null) return ucFirst(I18N.exact[lo]);
+    if (/\.$/.test(key)) { e = exactVariants2(key.slice(0, -1)); if (e != null) return e.replace(/[.!?]?$/, '.'); }
+    else { e = exactVariants2(key + '.'); if (e != null) return e.replace(/\.$/, ''); }
+    return null;
+  }
+  function exactVariants2(key) {
+    var e = I18N.exact[key]; if (e != null) return e;
+    var up = ucFirst(key), lo = lcFirst(key);
+    if (up !== key && I18N.exact[up] != null) return lcFirst(I18N.exact[up]);
+    if (lo !== key && I18N.exact[lo] != null) return ucFirst(I18N.exact[lo]);
+    return null;
+  }
+  function tr(s, depth, noSplit) {
+    var key = tnorm(s);
+    if (!key) return null;
+    depth = depth || 0;
+    if (depth > 8) return null;
+    var r = exactVariants(key), m, i;
+    if (r != null) return r;
+    var failed = false;
+    var sub = function (x) {
+      if (x == null || x === '') return x;
+      var t = tr(x, depth + 1);
+      if (t == null) { if (POLISH.test(x) && !PERSON_NAMES.test(tnorm(x))) failed = true; return x; }
+      return t;
+    };
+    m = key.match(/^„([\s\S]+?)”([.,!?:;]*)$/);                    // polskie cudzysłowy
+    if (m) {
+      r = tr(m[1], depth + 1);
+      if (r == null && !/[.!?…]$/.test(m[1])) { r = tr(m[1] + '.', depth + 1); if (r != null) r = r.replace(/\.$/, ''); }
+      if (r != null) return '“' + r + '”' + m[2];
+    }
+    m = key.match(/^(.+?)\s*:$/);                                  // dwukropek na końcu
+    if (m) { r = tr(m[1], depth + 1); if (r != null) return r + ':'; }
+    for (i = 0; i < I18N.patterns.length; i++) {                   // wzorce
+      var p = I18N.patterns[i], mm = key.match(p[0]);
+      if (!mm) continue;
+      failed = false;
+      r = typeof p[1] === 'function' ? p[1](mm, sub)
+        : p[1].replace(/\{(\d)\}/g, function (_, n) { return sub(mm[n]); }).replace(/\$(\d)/g, function (_, n) { return mm[n]; });
+      if (!failed && r != null && r !== key) return r;
+    }
+    if (noSplit) return null;
+    // zdanie po zdaniu — najpierw najdłuższe dopasowanie kilku zdań
+    var parts = [], last = 0, re = /([.!?…])\s+(?=[A-ZĄĆĘŁŃÓŚŹŻ„(0-9✓])/g, mt;
+    while ((mt = re.exec(key))) { parts.push(key.slice(last, mt.index + 1)); last = re.lastIndex; }
+    if (!parts.length) return null;
+    parts.push(key.slice(last));
+    var out = [], a = 0;
+    while (a < parts.length) {
+      var found = null, b;
+      for (b = parts.length - 1; b >= a; b--) {
+        if (a === 0 && b === parts.length - 1) continue;
+        found = tr(parts.slice(a, b + 1).join(' '), depth + 1, true);
+        if (found != null) break;
+      }
+      if (found == null) return null;
+      out.push(found); a = b + 1;
+    }
+    return out.join(' ');
+  }
+  var POLISH = /[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]|\b(jest|się|nie|na|dla|lub|albo|oraz|wybierz|sprawdź|osoba|miejsce|gra|pole|teraz|razem|że|aby|już|też)\b/i;
+  var PERSON_NAMES = /^(Ada|Olek|Lena|Tomek|Kuba|Iga|Alex|Sara|Leon|Nina|Ola|Bartek|Michał Siwkowski)$/;
+  function noteMissing(v) { var k = tnorm(v); if (k && POLISH.test(k) && !PERSON_NAMES.test(k)) I18N.missing[k] = (I18N.missing[k] || 0) + 1; }
+
+  var SKIP = { SCRIPT: 1, STYLE: 1, NOSCRIPT: 1, TEXTAREA: 1, TEMPLATE: 1 };
+  var TATTRS = ['aria-label', 'title', 'alt', 'placeholder', 'aria-roledescription', 'aria-description', 'aria-valuetext'];
+  function skipped(el) { return !el || SKIP[el.tagName] || (el.closest && el.closest('[translate="no"]')); }
+  function trTextNode(n) {
+    if (skipped(n.parentElement)) return;
+    var v = n.nodeValue;
+    if (n.__kmmShown === v) return;                         // nasz własny wpis
+    if (!/[A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż]/.test(v)) return;
+    var t = tr(v);
+    if (t == null) { n.__kmmOrig = null; noteMissing(v); return; }
+    n.__kmmOrig = v;
+    var nv = v.match(/^\s*/)[0] + t + v.match(/\s*$/)[0];
+    n.__kmmShown = nv;
+    n.nodeValue = nv;
+  }
+  function trAttr(el, a) {
+    if (skipped(el)) return;
+    if (a === 'aria-label' && el.classList && el.classList.contains('kmm-speak')) return; // etykietę „Posłuchaj” buduje readAloud w bieżącym języku
+    var v = el.getAttribute(a);
+    if (v == null) return;
+    var st = el.__kmmA || (el.__kmmA = {});
+    if (st[a] && st[a].shown === v) return;
+    var t = tr(v);
+    if (t == null) { delete st[a]; noteMissing(v); return; }
+    st[a] = { orig: v, shown: t };
+    el.setAttribute(a, t);
+  }
+  function trTree(root) {
+    if (!root) return;
+    if (root.nodeType === 3) { trTextNode(root); return; }
+    if (root.nodeType !== 1 && root.nodeType !== 9) return;
+    if (root.nodeType === 1) { if (SKIP[root.tagName]) return; TATTRS.forEach(function (a) { if (root.hasAttribute(a)) trAttr(root, a); }); }
+    var w = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, null), n;
+    while ((n = w.nextNode())) {
+      if (n.nodeType === 3) trTextNode(n);
+      else if (!SKIP[n.tagName]) for (var i = 0; i < TATTRS.length; i++) if (n.hasAttribute(TATTRS[i])) trAttr(n, TATTRS[i]);
+    }
+  }
+  function restoreTree() {
+    var w = document.createTreeWalker(document, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, null), n;
+    while ((n = w.nextNode())) {
+      if (n.nodeType === 3) { if (n.__kmmOrig != null && n.__kmmShown === n.nodeValue) n.nodeValue = n.__kmmOrig; n.__kmmOrig = null; n.__kmmShown = null; }
+      else if (n.__kmmA) { for (var a in n.__kmmA) if (n.getAttribute(a) === n.__kmmA[a].shown) n.setAttribute(a, n.__kmmA[a].orig); n.__kmmA = null; }
+    }
+  }
+  new MutationObserver(function (ms) {
+    if (lang !== 'en') return;
+    for (var i = 0; i < ms.length; i++) {
+      var m = ms[i];
+      if (m.type === 'characterData') trTextNode(m.target);
+      else if (m.type === 'attributes') trAttr(m.target, m.attributeName);
+      else for (var j = 0; j < m.addedNodes.length; j++) trTree(m.addedNodes[j]);
+    }
+  }).observe(document, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: TATTRS });
+
+  /* Przełącznik języka: pojawia się obok każdego „Wszystkie gry” i w miejscu [data-kmm-lang-slot] */
+  var GLOBE = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg>';
+  function paintToggle(b) {
+    var toEn = lang !== 'en';
+    b.innerHTML = GLOBE + '<span class="kmm-lang-long">' + (toEn ? 'English' : 'Polski') + '</span><span class="kmm-lang-short" aria-hidden="true">' + (toEn ? 'EN' : 'PL') + '</span>';
+    b.setAttribute('lang', toEn ? 'en' : 'pl');
+    b.setAttribute('aria-label', toEn ? 'English — switch the games to English' : 'Polski — zmień język gier na polski');
+  }
+  function mountToggles() {
+    var spots = Array.prototype.slice.call(document.querySelectorAll('.kmm-home, [data-kmm-lang-slot]'));
+    spots.forEach(function (s) {
+      var isSlot = s.hasAttribute('data-kmm-lang-slot');
+      if (isSlot ? s.querySelector('.kmm-lang') : (s.nextElementSibling && s.nextElementSibling.classList.contains('kmm-lang'))) return;
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'kmm-lang'; b.setAttribute('translate', 'no');
+      paintToggle(b);
+      b.addEventListener('click', function () { setLang(lang === 'en' ? 'pl' : 'en'); b.focus(); });
+      if (isSlot) s.appendChild(b); else s.insertAdjacentElement('afterend', b);
+    });
+  }
+  var langListeners = [];
+  function setLang(l) {
+    if (l !== 'en' && l !== 'pl' || l === lang) return;
+    lang = l;
+    try { localStorage.setItem(LANG_KEY, l); } catch (e) {}
+    try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) {}
+    document.documentElement.lang = l;
+    if (l === 'en') trTree(document); else restoreTree();
+    Array.prototype.forEach.call(document.querySelectorAll('.kmm-lang'), paintToggle);
+    try { var u = new URL(location.href); if (u.searchParams.has('lang')) { u.searchParams.set('lang', l); history.replaceState(history.state, '', u); } } catch (e) {}
+    langListeners.forEach(function (fn) { try { fn(l); } catch (e) {} });
+  }
+  // Linki między stronami zestawu niosą wybrany język (działa też bez pamięci przeglądarki)
+  document.addEventListener('click', function (e) {
+    var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+    if (!a || lang !== 'en') return;
+    var h = a.getAttribute('href');
+    if (!/^\.\/[\w.-]+\.html/.test(h) || /[?&]lang=/.test(h)) return;
+    a.setAttribute('href', h.replace(/^([^#]*)(#.*)?$/, function (_, p, hash) { return p + (p.indexOf('?') < 0 ? '?' : '&') + 'lang=en' + (hash || ''); }));
+  }, true);
+  function startI18n() {
+    mountToggles();
+    if (lang === 'en') trTree(document);
+    requestAnimationFrame(function () { document.documentElement.classList.remove('kmm-tr-pending'); });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startI18n); else startI18n();
+  setTimeout(function () { document.documentElement.classList.remove('kmm-tr-pending'); }, 1500);
+  window.addEventListener('pageshow', function () {
+    var s = null; try { s = localStorage.getItem(LANG_KEY); } catch (e) {}
+    if ((s === 'en' || s === 'pl') && s !== lang) setLang(s);
+  });
+  function tx(s) { if (lang !== 'en') return s; var t = tr(s); return t == null ? s : t; }
+  function getLang() { return lang; }
+  return { KEY: KEY, read: read, write: write, onChange: onChange, stopMedia: stopMedia, CAST: CAST, portrait: portrait, readAloud: readAloud, speak: speak, stopSpeaking: stopSpeaking,
+           addTranslations: addTranslations, tr: tr, tx: tx, setLang: setLang, getLang: getLang, onLang: function (fn) { langListeners.push(fn); }, i18n: I18N };
 })();
 </script>
 <!-- ===== koniec wspólnego fragmentu ===== -->
+<!-- ===== TŁUMACZENIE EN — słownik i wzorce tej strony (zestaw „Każdy ma miejsce”)
+     ✏️ Poprawiaj tłumaczenia tutaj: "tekst polski": "English text". Wzorce dotyczą tekstów z liczbami i nazwami. -->
+<script>
+(function () {
+  KMM.addTranslations({
+  exact: {
+"Każdy ma miejsce": "Everyone Belongs",
+"Wszystkie gry": "All games",
+"Jak grać?": "How to play",
+"Ustawienia": "Settings",
+"Przerwa": "Break",
+"Większy tekst": "Larger text",
+"Wysoki kontrast": "High contrast",
+"Ograniczone animacje": "Reduced motion",
+"Posłuchaj": "Listen",
+"Zatrzymaj": "Stop",
+"Zamknij": "Close",
+"Klawiatura": "Keyboard",
+"Spacja": "Space",
+"lub": "or",
+"Wróć do początku": "Back to the start",
+"Zagraj ponownie": "Play again",
+"Wracamy do gry": "Back to the game",
+"Michał Siwkowski": "Michał Siwkowski",
+"Zestaw gier Każdy ma miejsce": "Everyone Belongs game set",
+"Klasa dla każdego": "A Classroom for Everyone",
+"Zmiany działają od razu i zostają zapamiętane w tej przeglądarce.": "Changes work straight away and are saved in this browser.",
+"Pomoc, ustawienia i przerwa": "Help, settings and break",
+"Każdy ma miejsce — sześć gier o współpracy. Portrety sześciu postaci zestawu.": "Everyone Belongs — six games about working together. Portraits of the six characters.",
+"droga bez stopni — porusza się na wózku": "a route without steps — uses a wheelchair",
+"czytelne informacje: obrazki, oznaczenia, kolejne kroki": "clear information: pictures, signs, next steps",
+"spokojniejsze miejsce i mniej hałasu": "a quieter place and less noise",
+"wskazywanie obrazków i różne sposoby udziału": "pointing to pictures and different ways to take part",
+"czas na zastanowienie się i odpowiedź": "time to think and answer",
+"wygodne miejsce pracy i swobodne dojście": "a comfortable workspace and easy access",
+"Gra": "Game",
+"Powrót do menu": "Back to the menu",
+"Poznajcie cztery osoby i ich potrzeby. Rozmieśćcie wyposażenie tak, aby każdy mógł wygodnie uczyć się i współpracować.": "Meet four people and learn about their needs. Place the equipment so that everyone can learn and work together comfortably.",
+"Różne potrzeby. Wspólna przestrzeń.": "Different needs. A shared space.",
+"Zagraj": "Play",
+"współpraca": "teamwork",
+"Czas": "Time",
+"Czytanie na głos": "Reading aloud",
+"Która zmiana może pomóc także innym osobom w klasie?": "Which change could help other people in the class too?",
+"Postacie": "Characters",
+"Sześć gier": "Six games",
+"jasna kolejność": "clear order",
+"wolne przejście": "a clear walkway",
+"Dalej": "Next",
+"Kolor": "Colour",
+"Kolory": "Colours",
+"Miejsce": "Place",
+"Spokojnie": "Calmly",
+"Wracamy": "We're back",
+"czas na zastanowienie": "time to think",
+"razem": "together",
+"teraz": "now",
+"Czas na zastanowienie": "Time to think",
+"Wskazywanie": "Pointing",
+"Anulowano wybór. Układ sali się nie zmienił.": "Selection cancelled. The room layout hasn't changed.",
+"Anuluj wybór": "Cancel selection",
+"Całe wyposażenie jest dostępne dla wszystkich w klasie.": "All the equipment is available to everyone in the class.",
+"Co pomoże przekazywać pomysły podczas wspólnej pracy?": "What will help people share ideas while working together?",
+"Co pomoże stworzyć spokojniejsze miejsce?": "What will help make a quieter place?",
+"Co sprawiło, że w tej klasie łatwiej uczestniczyć?": "What made it easier to take part in this classroom?",
+"Czasem potrzebuję mniej hałasu i spokojnego miejsca. Chcę móc odpocząć, a potem wrócić do wspólnych zajęć.": "Sometimes I need less noise and a quiet place. I want to be able to rest and then go back to the class activities.",
+"Czasem wolę wskazać obrazek niż mówić. Podczas wspólnej pracy pomaga mi jasna kolejność zabierania głosu.": "Sometimes I prefer to point to a picture rather than speak. When we work together, clear turn-taking helps me.",
+"Czy informacje są tam, gdzie łatwo je znaleźć?": "Is the information where it is easy to find?",
+"Czy miejsce pracy jest przygotowane, a przejście wolne?": "Is the workspace ready and the walkway clear?",
+"Drzwi": "Door",
+"Gra czeka. Rozmieszczenie i wybrany element zostały zachowane.": "The game is waiting. The layout and the selected item have been kept.",
+"Gracie samodzielnie albo wspólnie: jedna osoba obsługuje ekran, a pozostałe podpowiadają. Nie ma limitu czasu, kar ani rankingu.": "Play on your own or together: one person uses the screen and the others give ideas. There is no time limit, no penalties and no ranking.",
+"Jeszcze zmieniamy": "We're still changing it",
+"Klasa dla każdego — poznaj potrzeby czterech osób i rozmieść wyposażenie sali tak, aby każdy mógł się uczyć i współpracować. Część zestawu „Każdy ma miejsce”.": "A Classroom for Everyone — learn about the needs of four people and place the classroom equipment so that everyone can learn and work together. Part of the “Everyone Belongs” set.",
+"Klasa jest gotowa. Aby coś zmienić, wybierz „Jeszcze zmieniamy”.": "The classroom is ready. To change something, choose “We’re still changing it”.",
+"Kliknięcie zajętego pola wybiera stojący tam element, który możesz przenieść, odłożyć na półkę albo zostawić („Anuluj wybór”). Jeśli wskażesz zajęte pole, element, który tam stał, wraca na półkę.": "Clicking a filled place selects the item there. You can move it, put it back on the shelf or leave it (“Cancel selection”). If you choose a filled place, the item that was there goes back to the shelf.",
+"Kończymy": "We're finished",
+"Kącik": "Corner",
+"Możecie dalej zmieniać układ sali.": "You can keep changing the room layout.",
+"Możecie grać samodzielnie albo wspólnie — wystarczy, że jedna osoba naraz obsługuje ekran lub klawiaturę. Nie ma limitu czasu ani punktów.": "You can play on your own or together — one person at a time uses the screen or keyboard. There is no time limit and no points.",
+"Możecie odpowiedzieć słowem, gestem lub wskazaniem.": "You can answer with words, a gesture or by pointing.",
+"Można z nich skorzystać, gdy potrzeba mniej dźwięków.": "You can use them when you need less sound.",
+"Na przejściu stoi przedmiot.": "Something is in the walkway.",
+"Na przejściu stoi przedmiot. Czy można ustawić go inaczej?": "Something is in the walkway. Could it go somewhere else?",
+"Na półce": "On the shelf",
+"Naciśnij portret lub imię, aby przeczytać, czego potrzebuje dana osoba.": "Press a portrait or a name to read what that person needs.",
+"Najpierw ustaw wybrany element albo anuluj wybór.": "First place the selected item or cancel the selection.",
+"Nowa gra.": "New game.",
+"Obrazkowy plan dnia": "Visual timetable",
+"Odłóż na półkę": "Put back on the shelf",
+"Okno": "Window",
+"Organizer na materiały": "Materials organiser",
+"Osoby w klasie": "People in the class",
+"Osłona akustyczna": "Sound screen",
+"Osłona i dostępne słuchawki pomagają przygotować spokojniejszy kącik.": "The sound screen and the ear defenders help make a quieter corner.",
+"Plan dnia i oznaczenia ułatwiają orientację w aktywnościach i wyposażeniu sali.": "The timetable and the labels make it easier to understand the activities and find things in the room.",
+"Plan sali": "Room plan",
+"Plan sali.": "Room plan.",
+"Pokazuje kolejność aktywności.": "Shows the order of activities.",
+"Pola w sali": "Places in the room",
+"Pole": "Place",
+"Pomaga uporządkować rzeczy przy miejscu pracy.": "Helps keep things tidy at the workspace.",
+"Pomaga wydzielić spokojniejsze miejsce.": "Helps make a quieter area.",
+"Pomagają ustalić kolejność podczas rozmowy i wspólnego działania.": "Help agree whose turn it is when talking and working together.",
+"Pomagają znaleźć materiały i zrozumieć organizację sali.": "Help find materials and understand how the room is organised.",
+"Potrzebuję wygodnego stołu i uporządkowanego otoczenia. Chcę móc swobodnie podejść do swojego miejsca.": "I need a comfortable table and tidy surroundings. I want to be able to get to my place easily.",
+"Poznaj potrzeby osób.": "Learn about people’s needs.",
+"Pozwala dostosować miejsce pracy.": "Lets you adjust the workspace.",
+"Pozwala przekazywać pomysły i potrzeby przez wskazywanie symboli.": "Lets you share ideas and needs by pointing to symbols.",
+"Przejdź do planu sali": "Go to the room plan",
+"Przejście": "Walkway",
+"Przejście jest wolne": "The walkway is clear",
+"Przejście jest wolne.": "The walkway is clear.",
+"Przejście — zostaw wolne": "Walkway — keep it clear",
+"Przygotowaliście spokojny kącik, czytelne informacje, wygodne miejsce pracy i różne sposoby komunikowania się.": "You have made a quiet corner, clear information, a comfortable workspace and different ways to communicate.",
+"Przygotowano regulowany stół, uporządkowano materiały i pozostawiono wolne przejście.": "There is an adjustable table, the materials are tidy and the walkway is clear.",
+"Półka z wyposażeniem": "Equipment shelf",
+"Spokojny kącik": "Quiet corner",
+"Sprawdzanie klasy": "Checking the classroom",
+"Sprawdź klasę": "Check the classroom",
+"Sprawdź klasę i wprowadź poprawki.": "Check the classroom and make changes.",
+"Strefa współpracy": "Teamwork zone",
+"Strefa informacji": "Information zone",
+"Strefa pracy": "Work zone",
+"Strzałki — ruch między polami na planie sali.": "Arrow keys — move between places on the room plan.",
+"Stół z regulacją wysokości": "Height-adjustable table",
+"Słuchawki wyciszające": "Ear defenders",
+"Ta klasa daje miejsce każdemu.": "This classroom has a place for everyone.",
+"Ta klasa daje miejsce każdemu. Przygotowaliście spokojny kącik, czytelne informacje, wygodne miejsce pracy i różne sposoby komunikowania się.": "This classroom has a place for everyone. You have made a quiet corner, clear information, a comfortable workspace and different ways to communicate.",
+"Ta klasa daje miejsce każdemu. Wybierz „Jeszcze zmieniamy” albo „Kończymy”.": "This classroom has a place for everyone. Choose “We’re still changing it” or “We’re finished”.",
+"Tablica": "Board",
+"TABLICA": "BOARD",
+"Tablica do wskazywania": "Communication board",
+"Tablica do wskazywania i znaczniki kolejności wspierają różne sposoby udziału we wspólnej pracy.": "The communication board and the turn-taking markers support different ways of taking part in group work.",
+"Teraz: na półce.": "Now: on the shelf.",
+"To uproszczona, edukacyjna układanka. W prawdziwej klasie najlepsze rozwiązania ustalamy wspólnie z osobami, które z niej korzystają.": "This is a simplified learning puzzle. In a real classroom, we find the best solutions together with the people who use it.",
+"Układ sali został zmieniony. Możesz sprawdzić go ponownie.": "The room layout has changed. You can check it again.",
+"Urządzamy klasę": "Let's set up the classroom",
+"W sali:": "In the room:",
+"Widok z góry. Tablica jest u góry, drzwi na dole, okno przy spokojnym kąciku. Środkiem prowadzi przejście. Między polami można poruszać się strzałkami.": "View from above. The board is at the top, the door at the bottom and the window next to the quiet corner. A walkway runs through the middle. You can move between places with the arrow keys.",
+"Wskaż pole, aby zobaczyć tu jego pełną nazwę.": "Choose a place to see its full name here.",
+"Współpraca": "Teamwork",
+"Informacje": "Info",
+"Praca": "Work",
+"Wybierz element i kliknij miejsce w sali.": "Choose an item and click a place in the room.",
+"Wybierz element z półki wyposażenia.": "Choose an item from the equipment shelf.",
+"Wynik sprawdzania": "Check results",
+"Wyposażenie jest dla wszystkich w klasie. Przycisk „i” pokazuje opis.": "The equipment is for everyone in the class. The “i” button shows a description.",
+"Zaznaczcie dowolne karty — jedną, kilka albo wszystkie. Każda odpowiedź jest dobra i może być początkiem rozmowy.": "Tick any cards — one, a few or all of them. Every answer is good and can start a conversation.",
+"Znaczniki kolejności": "Turn-taking markers",
+"możliwość wskazywania": "being able to point",
+"różne sposoby komunikacji": "different ways to communicate",
+"spokojniejsze miejsce": "a quieter place",
+"swobodne przejście": "a clear walkway",
+"wspólne ustalanie zasad": "agreeing rules together",
+"wygodne miejsce pracy i dojście": "a comfortable workspace and easy access",
+"wygodne wyposażenie": "comfortable equipment",
+"czytelne informacje": "clear information",
+"Łatwiej mi zacząć, gdy wiem, co będziemy robić i gdzie znajdują się potrzebne rzeczy. Pomagają mi obrazki i oznaczenia.": "It is easier for me to start when I know what we will do and where things are. Pictures and labels help me.",
+"— anulowanie wyboru albo zamknięcie okna.": "— cancel the selection or close a window.",
+"— przejście do kolejnego przycisku.": "— go to the next button.",
+"— wybór elementu lub pola.": "— choose an item or a place.",
+"↕ Środkowa kolumna: Przejście — zostaw wolne": "↕ Middle column: Walkway — keep it clear",
+"Oznaczenia obrazkowe": "Picture labels",
+"Potrzeba uwzględniona": "Need met",
+"Przyjrzyjmy się jeszcze": "Let's look again",
+"Wybrano": "Selected",
+"Wybrany": "Selected",
+"Zaznaczone": "Ticked",
+"Niezaznaczone": "Not ticked",
+"✓ Zaznaczone": "✓ Ticked",
+"Ilustracja: klasa widziana z góry. Po lewej spokojny kącik i strefa informacji, środkiem przejście od drzwi do tablicy, po prawej stół do pracy i okrągły stół do współpracy.": "Illustration: a classroom seen from above. On the left, a quiet corner and an information zone; in the middle, a walkway from the door to the board; on the right, a work table and a round table for teamwork.",
+"Sprawdzono klasę. Uwzględnione potrzeby:": "Classroom checked. Needs met:",
+"Przeczytajcie karty poniżej i wprowadźcie poprawki.": "Read the cards below and make changes.",
+"Ty": "You",
+"Osoby": "People",
+"Plansza": "Board",
+"Rząd": "Row",
+"Start:": "Start:",
+"Droga bez stopni": "Route without steps",
+"Dostępne": "Available",
+"Przeczytaj wypowiedź": "Read what they say",
+"Swobodne dojście": "Easy access",
+"Spokojniejsze miejsce": "A quieter place",
+"Różne sposoby udziału": "Different ways to take part",
+"Wyposażenie": "Equipment",
+"Aktywności": "Activities",
+"Różne sposoby komunikacji": "Different ways to communicate",
+"Cisza": "Quiet",
+"Wolne przejście": "A clear way",
+"Pomysł": "Idea",
+"Różne sposoby": "Different ways",
+"w następnej": "in the next",
+"Możesz": "You can",
+"Nie ma limitu czasu ani punktów.": "There is no time limit and no points.",
+"do sprawdzenia": "to check",
+"zmienione": "changed",
+"Czytelne informacje": "Clear information",
+"włączone": "on",
+"wyłączone": "off",
+"wolne": "empty",
+"puste": "empty",
+"aktualne miejsce": "current place",
+"ukończony": "finished",
+"poznana": "explored",
+"Etap 1: kolor.": "Stage 1: colour.",
+"kolor": "colour",
+"kształt": "shape",
+"wspólna decyzja": "joint decision",
+"Postacie czekają na lewym brzegu.": "The characters are waiting on the left bank.",
+"Sprawdzić można po ułożeniu wszystkich.": "You can check when all places are filled.",
+"Najpierw wybierz element z półki wyposażenia.": "First choose an item from the equipment shelf.",
+"Wskaż miejsce w sali.": "Choose a place in the room.",
+"Wskaż nowe miejsce w sali, odłóż element na półkę albo anuluj wybór.": "Choose a new place in the room, put the item back on the shelf or cancel the selection.",
+"Sprawdzono klasę.": "Classroom checked.",
+"przeczytaj wypowiedź": "read what they say",
+"Brakuje podjazdu.": "A ramp is missing.",
+"Brakuje oznaczenia.": "A sign is missing.",
+"Brakuje wyciszenia.": "A sound screen is missing.",
+"Otoczenie zostało zmienione.": "The surroundings have changed.",
+"Możesz sprawdzić drogi ponownie.": "You can check the routes again.",
+"Nic się nie zmieniło.": "Nothing has changed.",
+"Sprawdzono drogi.": "Routes checked.",
+"Na razie nikt nie ma dostępnej drogi.": "Nobody has an accessible route yet.",
+"przy stopniu": "at a step",
+"w miejscu z nieczytelnym kierunkiem": "where the direction is unclear",
+"w głośnym miejscu": "in a noisy place",
+"Spokojniejsze miejsca": "Quieter places",
+"Pytanie o potrzeby": "Asking about needs",
+"Zmienianie otoczenia": "Changing the surroundings",
+"spotkanie": "meeting",
+"Nie trzeba zapełniać całego koszyka.": "You don't have to fill the whole basket.",
+"Plan został zmieniony.": "The plan has changed.",
+"Możesz sprawdzić go ponownie.": "You can check it again.",
+"Wybierz jeszcze": "Choose",
+"na ilustracji, do sprawdzenia": "in the picture, to check",
+"na ilustracji, zmienione": "in the picture, changed",
+"na ilustracji": "in the picture",
+"Ada mówi": "Ada says"
+},
+  patterns: [
+  [/^Pole ([A-Z]\d) jest wolne\.$/, 'Place $1 is empty.'],
+  [/^Pole ([A-Z]\d): (.+) — (.+?)(\.?)$/, 'Place $1: {2} — {3}$4'],
+  [/^(.+), pole ([A-Z]\d): (.+)$/, '{1}, place $2: {3}'],
+  [/^(.+), pole ([A-Z]\d)$/, '{1}, place $2'],
+  [/^(.+), wybrany do przeniesienia$/, '{1}, selected to move'],
+  [/^Wybrano: (.+) \(teraz: (.+)\)\.$/, 'Selected: {1} (now: {2}).'],
+  [/^Wybrano: (.+?)(\.?)$/, 'Selected: {1}$2'],
+  [/^Umieszczono: (.+) — (.+)\.$/, 'Placed: {1} — {2}.'],
+  [/^(.+) wraca na półkę\.$/, '{1} goes back to the shelf.'],
+  [/^(.+) zostaje w tym samym miejscu \((.+)\)\.$/, '{1} stays in the same place ({2}).'],
+  [/^W sali: (\d+) z (\d+) elementów\.$/, 'In the room: $1 of $2 items.'],
+  [/^Na półce: (\d+)\.$/, 'On the shelf: $1.'],
+  [/^W sali: (.+) \(([A-Z]\d)\)$/, 'In the room: {1} ($2)'],
+  [/^W sali: (.+?)(\.?)$/, 'In the room: {1}$2'],
+  [/^Uwzględnione potrzeby: (\d+) z (\d+)\.$/, 'Needs met: $1 of $2.'],
+  [/^Potrzeba: (.+)$/, 'Needs: {1}'],
+
+  [/^Posłuchaj: (.+)$/, 'Listen: {1}'],
+  [/^(Większy tekst|Wysoki kontrast|Ograniczone animacje): (włączone|wyłączone)\.$/, '{1}: {2}.'],
+  [/^(.+) mówi: (.+)$/, '$1 says: {2}'],
+  [/^(.+) mówi:$/, '$1 says:'],
+  [/^Gra (\d+) z (\d+) · (.+)$/, 'Game $1 of $2 · {3}'],
+  [/^Gra (\d+) z (\d+)$/, 'Game $1 of $2'],
+  [/^Ilustracja: (.+)$/, 'Illustration: {1}'],
+  [/^Nagranie: (.+)$/, 'Recording: {1}'],
+  [/^Informacja: (.+)$/, 'Information: {1}'],
+  [/^✓ (.+)$/, '✓ {1}'],
+  [/^: (.+)$/, ': {1}'],
+  [/^(\d+)\. (.+)$/, '$1. {2}'],
+  [/^— (.+)$/, '— {1}'],
+  [/^(.+?) — (.+)$/, '{1} — {2}'],
+  [/^(.+?) – (.+)$/, '{1} – {2}'],
+  [/^(.+?) · (.+)$/, '{1} · {2}'],
+  [/^(.+?) \((.+)\)$/, '{1} ({2})'],
+  ]
+  });
+})();
+</script>
+<!-- ===== koniec tłumaczenia ===== -->
 </head>
 <body>
 <!-- ✏️ Zestaw „Każdy ma miejsce”: powrót do menu (ścieżka względna — działa lokalnie i na GitHub Pages) -->

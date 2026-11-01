@@ -1,7 +1,7 @@
 /* Tryb offline zestawu „Każdy ma miejsce”.
    Najpierw sieć (zawsze najnowsza wersja z GitHub Pages), a bez internetu — kopia zapisana w przeglądarce.
    ✏️ Po dodaniu lub zmianie nazwy pliku dopisz go do listy FILES i zwiększ numer wersji w CACHE. */
-const CACHE = 'kazdy-ma-miejsce-v1';
+const CACHE = 'kazdy-ma-miejsce-v2';
 const FILES = [
   './', './index.html', './nauczyciel.html',
   './most-wspolpracy.html', './klasa-dla-kazdego.html', './co-powiesz.html',

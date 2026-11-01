@@ -165,6 +165,7 @@ html.hc .cell{border-color:#000;}
 .tool:hover{border-color:var(--accent);}
 .tool[aria-pressed="true"]{border:3px solid var(--accent);background:var(--accent-soft);box-shadow:inset 6px 0 0 var(--accent);}
 .tool[aria-pressed="true"] .tname::after{content:" — wybrane";}
+html[lang="en"] .tool[aria-pressed="true"] .tname::after{content:" — selected";}
 .tool:disabled{opacity:.6;cursor:not-allowed;}
 .message{min-height:3em;background:var(--surface);border:2px solid var(--line);border-radius:12px;padding:.6rem .8rem;}
 .message:empty{display:none;}
@@ -255,6 +256,21 @@ html.high-contrast .kmm-home:focus-visible,html.hc .kmm-home:focus-visible{outli
 html.high-contrast .kmm-speak,html.hc .kmm-speak{border:3px solid #000;color:#000}
 html.high-contrast .kmm-speak[aria-pressed="true"],html.hc .kmm-speak[aria-pressed="true"]{background:#000;color:#fff}
 @media print{.kmm-speak{display:none}}
+.kmm-lang{box-sizing:border-box;display:inline-flex;align-items:center;gap:8px;min-height:48px;min-width:48px;padding:.4rem .9rem;
+  border:2px solid #1f2a33;border-radius:12px;background:#fff;color:#1f2a33;font-family:inherit;font-weight:700;font-size:max(18px,1rem);line-height:1.2;cursor:pointer}
+.kmm-lang:hover{background:#eef3f8}
+.kmm-lang:focus{outline:none}
+.kmm-lang:focus-visible{outline:4px solid #b4400a;outline-offset:3px;box-shadow:0 0 0 7px #fff}
+.kmm-lang svg{width:22px;height:22px;flex:none;display:block}
+.kmm-lang-short{display:none}
+@media (max-width:600px){.kmm-lang .kmm-lang-long{display:none}.kmm-lang .kmm-lang-short{display:inline}}
+.kmm-inbar:has(+ .kmm-lang){margin-right:0 !important}
+.kmm-inbar + .kmm-lang{margin-right:auto}
+html.high-contrast .kmm-lang,html.hc .kmm-lang{border:3px solid #000;color:#000;background:#fff}
+html.kmm-tr-pending body{visibility:hidden}
+html[lang="en"] q{quotes:"\201C" "\201D" "\2018" "\2019"}
+@media print{.kmm-lang{display:none}}
+
 .kmm-sr{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 </style>
 <style id="kmm-bar">
@@ -377,13 +393,13 @@ window.KMM = (function () {
     stopSpeaking();
     if (again) return;                       // drugie naciśnięcie = zatrzymaj
     var u = new SpeechSynthesisUtterance(text);
-    u.lang = 'pl-PL'; u.rate = 0.9;
-    try { var v = window.speechSynthesis.getVoices().filter(function (x) { return /^pl/i.test(x.lang); })[0]; if (v) u.voice = v; } catch (e) {}
+    u.lang = lang === 'en' ? 'en-GB' : 'pl-PL'; u.rate = 0.9;
+    try { var vre = lang === 'en' ? /^en/i : /^pl/i; var v = window.speechSynthesis.getVoices().filter(function (x) { return vre.test(x.lang); })[0]; if (v) u.voice = v; } catch (e) {}
     u.onend = u.onerror = function () { if (speakingBtn === btn) { label(btn, false); speakingBtn = null; } };
     speakingBtn = btn; if (btn) label(btn, true);
     window.speechSynthesis.speak(u);
   }
-  function cleanText(el) { return (el.textContent || '').replace(/\s+/g, ' ').replace(/^[„"]|[”"]$/g, '').trim(); }
+  function cleanText(el) { return (el.textContent || '').replace(/\s+/g, ' ').replace(/^[„“"]|[”"]$/g, '').trim(); }
   /** Dodaje przycisk „Posłuchaj” za każdym elementem pasującym do selektora (także dodanym później). */
   function readAloud(selector, textFn) {
     var getText = function (el) { return textFn ? String(textFn(el) || '').replace(/\s+/g, ' ').trim() : cleanText(el); };
@@ -402,12 +418,13 @@ window.KMM = (function () {
         }
         var t = getText(el);
         btn.hidden = !t;
-        btn.setAttribute('aria-label', 'Posłuchaj: ' + t.slice(0, 80));
+        btn.setAttribute('aria-label', (lang === 'en' ? 'Listen: ' : 'Posłuchaj: ') + t.slice(0, 80));
       });
     }
     var pending = false;
     new MutationObserver(function () { if (pending) return; pending = true; requestAnimationFrame(function () { pending = false; scan(); }); })
       .observe(document.body, { childList: true, subtree: true, characterData: true });
+    langListeners.push(scan);
     scan();
   }
   // Każde inne działanie (przycisk, link, zamknięcie okna) przerywa czytanie
@@ -416,10 +433,511 @@ window.KMM = (function () {
     if (t && !t.classList.contains('kmm-speak')) stopSpeaking();
   }, true);
   document.addEventListener('close', stopSpeaking, true);
-  return { KEY: KEY, read: read, write: write, onChange: onChange, stopMedia: stopMedia, CAST: CAST, portrait: portrait, readAloud: readAloud, speak: speak, stopSpeaking: stopSpeaking };
+  /* =====================================================================
+     JĘZYK: POLSKI / ANGIELSKI
+     Teksty gier zostają w kodzie po polsku. W trybie angielskim moduł
+     podmienia napisy na stronie według słownika i wzorców (KMM.addTranslations)
+     — mechanika, dane i zabezpieczenia gier się nie zmieniają.
+     ✏️ Tłumaczenia każdej strony: blok „TŁUMACZENIE EN” w <head> tej strony.
+     ✏️ Link w wybranym języku: dopisz ?lang=en albo ?lang=pl do adresu.
+     ===================================================================== */
+  var LANG_KEY = 'kazdyMaMiejsce.jezyk';
+  var I18N = { exact: Object.create(null), patterns: [], missing: Object.create(null) };
+  var lang = 'pl';
+  (function initLang() {
+    var q = null;
+    try { q = new URLSearchParams(location.search).get('lang'); } catch (e) {}
+    if (q === 'en' || q === 'pl') { lang = q; try { localStorage.setItem(LANG_KEY, q); } catch (e) {} return; }
+    try { var s = localStorage.getItem(LANG_KEY); if (s === 'en' || s === 'pl') lang = s; } catch (e) {}
+  })();
+  document.documentElement.lang = lang;
+  if (lang === 'en') document.documentElement.classList.add('kmm-tr-pending');
+
+  function tnorm(s) { return String(s).replace(/­/g, '').replace(/\s+/g, ' ').trim(); }
+  function ucFirst(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  function lcFirst(s) { return s.charAt(0).toLowerCase() + s.slice(1); }
+  function addTranslations(pack) {
+    if (pack && pack.exact) for (var k in pack.exact) I18N.exact[tnorm(k)] = pack.exact[k];
+    if (pack && pack.patterns) pack.patterns.forEach(function (p) { I18N.patterns.push(p); });
+  }
+  /** Tłumaczy tekst na angielski. Zwraca null, gdy brak tłumaczenia. */
+  function exactVariants(key) {
+    var e = I18N.exact[key];
+    if (e != null) return e;
+    var up = ucFirst(key), lo = lcFirst(key);
+    if (up !== key && I18N.exact[up] != null) return lcFirst(I18N.exact[up]);
+    if (lo !== key && I18N.exact[lo] != null) return ucFirst(I18N.exact[lo]);
+    if (/\.$/.test(key)) { e = exactVariants2(key.slice(0, -1)); if (e != null) return e.replace(/[.!?]?$/, '.'); }
+    else { e = exactVariants2(key + '.'); if (e != null) return e.replace(/\.$/, ''); }
+    return null;
+  }
+  function exactVariants2(key) {
+    var e = I18N.exact[key]; if (e != null) return e;
+    var up = ucFirst(key), lo = lcFirst(key);
+    if (up !== key && I18N.exact[up] != null) return lcFirst(I18N.exact[up]);
+    if (lo !== key && I18N.exact[lo] != null) return ucFirst(I18N.exact[lo]);
+    return null;
+  }
+  function tr(s, depth, noSplit) {
+    var key = tnorm(s);
+    if (!key) return null;
+    depth = depth || 0;
+    if (depth > 8) return null;
+    var r = exactVariants(key), m, i;
+    if (r != null) return r;
+    var failed = false;
+    var sub = function (x) {
+      if (x == null || x === '') return x;
+      var t = tr(x, depth + 1);
+      if (t == null) { if (POLISH.test(x) && !PERSON_NAMES.test(tnorm(x))) failed = true; return x; }
+      return t;
+    };
+    m = key.match(/^„([\s\S]+?)”([.,!?:;]*)$/);                    // polskie cudzysłowy
+    if (m) {
+      r = tr(m[1], depth + 1);
+      if (r == null && !/[.!?…]$/.test(m[1])) { r = tr(m[1] + '.', depth + 1); if (r != null) r = r.replace(/\.$/, ''); }
+      if (r != null) return '“' + r + '”' + m[2];
+    }
+    m = key.match(/^(.+?)\s*:$/);                                  // dwukropek na końcu
+    if (m) { r = tr(m[1], depth + 1); if (r != null) return r + ':'; }
+    for (i = 0; i < I18N.patterns.length; i++) {                   // wzorce
+      var p = I18N.patterns[i], mm = key.match(p[0]);
+      if (!mm) continue;
+      failed = false;
+      r = typeof p[1] === 'function' ? p[1](mm, sub)
+        : p[1].replace(/\{(\d)\}/g, function (_, n) { return sub(mm[n]); }).replace(/\$(\d)/g, function (_, n) { return mm[n]; });
+      if (!failed && r != null && r !== key) return r;
+    }
+    if (noSplit) return null;
+    // zdanie po zdaniu — najpierw najdłuższe dopasowanie kilku zdań
+    var parts = [], last = 0, re = /([.!?…])\s+(?=[A-ZĄĆĘŁŃÓŚŹŻ„(0-9✓])/g, mt;
+    while ((mt = re.exec(key))) { parts.push(key.slice(last, mt.index + 1)); last = re.lastIndex; }
+    if (!parts.length) return null;
+    parts.push(key.slice(last));
+    var out = [], a = 0;
+    while (a < parts.length) {
+      var found = null, b;
+      for (b = parts.length - 1; b >= a; b--) {
+        if (a === 0 && b === parts.length - 1) continue;
+        found = tr(parts.slice(a, b + 1).join(' '), depth + 1, true);
+        if (found != null) break;
+      }
+      if (found == null) return null;
+      out.push(found); a = b + 1;
+    }
+    return out.join(' ');
+  }
+  var POLISH = /[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]|\b(jest|się|nie|na|dla|lub|albo|oraz|wybierz|sprawdź|osoba|miejsce|gra|pole|teraz|razem|że|aby|już|też)\b/i;
+  var PERSON_NAMES = /^(Ada|Olek|Lena|Tomek|Kuba|Iga|Alex|Sara|Leon|Nina|Ola|Bartek|Michał Siwkowski)$/;
+  function noteMissing(v) { var k = tnorm(v); if (k && POLISH.test(k) && !PERSON_NAMES.test(k)) I18N.missing[k] = (I18N.missing[k] || 0) + 1; }
+
+  var SKIP = { SCRIPT: 1, STYLE: 1, NOSCRIPT: 1, TEXTAREA: 1, TEMPLATE: 1 };
+  var TATTRS = ['aria-label', 'title', 'alt', 'placeholder', 'aria-roledescription', 'aria-description', 'aria-valuetext'];
+  function skipped(el) { return !el || SKIP[el.tagName] || (el.closest && el.closest('[translate="no"]')); }
+  function trTextNode(n) {
+    if (skipped(n.parentElement)) return;
+    var v = n.nodeValue;
+    if (n.__kmmShown === v) return;                         // nasz własny wpis
+    if (!/[A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż]/.test(v)) return;
+    var t = tr(v);
+    if (t == null) { n.__kmmOrig = null; noteMissing(v); return; }
+    n.__kmmOrig = v;
+    var nv = v.match(/^\s*/)[0] + t + v.match(/\s*$/)[0];
+    n.__kmmShown = nv;
+    n.nodeValue = nv;
+  }
+  function trAttr(el, a) {
+    if (skipped(el)) return;
+    if (a === 'aria-label' && el.classList && el.classList.contains('kmm-speak')) return; // etykietę „Posłuchaj” buduje readAloud w bieżącym języku
+    var v = el.getAttribute(a);
+    if (v == null) return;
+    var st = el.__kmmA || (el.__kmmA = {});
+    if (st[a] && st[a].shown === v) return;
+    var t = tr(v);
+    if (t == null) { delete st[a]; noteMissing(v); return; }
+    st[a] = { orig: v, shown: t };
+    el.setAttribute(a, t);
+  }
+  function trTree(root) {
+    if (!root) return;
+    if (root.nodeType === 3) { trTextNode(root); return; }
+    if (root.nodeType !== 1 && root.nodeType !== 9) return;
+    if (root.nodeType === 1) { if (SKIP[root.tagName]) return; TATTRS.forEach(function (a) { if (root.hasAttribute(a)) trAttr(root, a); }); }
+    var w = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, null), n;
+    while ((n = w.nextNode())) {
+      if (n.nodeType === 3) trTextNode(n);
+      else if (!SKIP[n.tagName]) for (var i = 0; i < TATTRS.length; i++) if (n.hasAttribute(TATTRS[i])) trAttr(n, TATTRS[i]);
+    }
+  }
+  function restoreTree() {
+    var w = document.createTreeWalker(document, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, null), n;
+    while ((n = w.nextNode())) {
+      if (n.nodeType === 3) { if (n.__kmmOrig != null && n.__kmmShown === n.nodeValue) n.nodeValue = n.__kmmOrig; n.__kmmOrig = null; n.__kmmShown = null; }
+      else if (n.__kmmA) { for (var a in n.__kmmA) if (n.getAttribute(a) === n.__kmmA[a].shown) n.setAttribute(a, n.__kmmA[a].orig); n.__kmmA = null; }
+    }
+  }
+  new MutationObserver(function (ms) {
+    if (lang !== 'en') return;
+    for (var i = 0; i < ms.length; i++) {
+      var m = ms[i];
+      if (m.type === 'characterData') trTextNode(m.target);
+      else if (m.type === 'attributes') trAttr(m.target, m.attributeName);
+      else for (var j = 0; j < m.addedNodes.length; j++) trTree(m.addedNodes[j]);
+    }
+  }).observe(document, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: TATTRS });
+
+  /* Przełącznik języka: pojawia się obok każdego „Wszystkie gry” i w miejscu [data-kmm-lang-slot] */
+  var GLOBE = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg>';
+  function paintToggle(b) {
+    var toEn = lang !== 'en';
+    b.innerHTML = GLOBE + '<span class="kmm-lang-long">' + (toEn ? 'English' : 'Polski') + '</span><span class="kmm-lang-short" aria-hidden="true">' + (toEn ? 'EN' : 'PL') + '</span>';
+    b.setAttribute('lang', toEn ? 'en' : 'pl');
+    b.setAttribute('aria-label', toEn ? 'English — switch the games to English' : 'Polski — zmień język gier na polski');
+  }
+  function mountToggles() {
+    var spots = Array.prototype.slice.call(document.querySelectorAll('.kmm-home, [data-kmm-lang-slot]'));
+    spots.forEach(function (s) {
+      var isSlot = s.hasAttribute('data-kmm-lang-slot');
+      if (isSlot ? s.querySelector('.kmm-lang') : (s.nextElementSibling && s.nextElementSibling.classList.contains('kmm-lang'))) return;
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'kmm-lang'; b.setAttribute('translate', 'no');
+      paintToggle(b);
+      b.addEventListener('click', function () { setLang(lang === 'en' ? 'pl' : 'en'); b.focus(); });
+      if (isSlot) s.appendChild(b); else s.insertAdjacentElement('afterend', b);
+    });
+  }
+  var langListeners = [];
+  function setLang(l) {
+    if (l !== 'en' && l !== 'pl' || l === lang) return;
+    lang = l;
+    try { localStorage.setItem(LANG_KEY, l); } catch (e) {}
+    try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) {}
+    document.documentElement.lang = l;
+    if (l === 'en') trTree(document); else restoreTree();
+    Array.prototype.forEach.call(document.querySelectorAll('.kmm-lang'), paintToggle);
+    try { var u = new URL(location.href); if (u.searchParams.has('lang')) { u.searchParams.set('lang', l); history.replaceState(history.state, '', u); } } catch (e) {}
+    langListeners.forEach(function (fn) { try { fn(l); } catch (e) {} });
+  }
+  // Linki między stronami zestawu niosą wybrany język (działa też bez pamięci przeglądarki)
+  document.addEventListener('click', function (e) {
+    var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+    if (!a || lang !== 'en') return;
+    var h = a.getAttribute('href');
+    if (!/^\.\/[\w.-]+\.html/.test(h) || /[?&]lang=/.test(h)) return;
+    a.setAttribute('href', h.replace(/^([^#]*)(#.*)?$/, function (_, p, hash) { return p + (p.indexOf('?') < 0 ? '?' : '&') + 'lang=en' + (hash || ''); }));
+  }, true);
+  function startI18n() {
+    mountToggles();
+    if (lang === 'en') trTree(document);
+    requestAnimationFrame(function () { document.documentElement.classList.remove('kmm-tr-pending'); });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startI18n); else startI18n();
+  setTimeout(function () { document.documentElement.classList.remove('kmm-tr-pending'); }, 1500);
+  window.addEventListener('pageshow', function () {
+    var s = null; try { s = localStorage.getItem(LANG_KEY); } catch (e) {}
+    if ((s === 'en' || s === 'pl') && s !== lang) setLang(s);
+  });
+  function tx(s) { if (lang !== 'en') return s; var t = tr(s); return t == null ? s : t; }
+  function getLang() { return lang; }
+  return { KEY: KEY, read: read, write: write, onChange: onChange, stopMedia: stopMedia, CAST: CAST, portrait: portrait, readAloud: readAloud, speak: speak, stopSpeaking: stopSpeaking,
+           addTranslations: addTranslations, tr: tr, tx: tx, setLang: setLang, getLang: getLang, onLang: function (fn) { langListeners.push(fn); }, i18n: I18N };
 })();
 </script>
 <!-- ===== koniec wspólnego fragmentu ===== -->
+<!-- ===== TŁUMACZENIE EN — słownik i wzorce tej strony (zestaw „Każdy ma miejsce”)
+     ✏️ Poprawiaj tłumaczenia tutaj: "tekst polski": "English text". Wzorce dotyczą tekstów z liczbami i nazwami. -->
+<script>
+(function () {
+
+  var GEN = { 'Ady': 'Ada', 'Olka': 'Olek', 'Leny': 'Lena' };
+  function gen(x) { return GEN[x] || x; }
+  var TOOLS = { 'podjazd': 'ramp', 'oznaczenie': 'sign', 'wyciszenie': 'sound screen' };
+  function tool(x) { return TOOLS[String(x).toLowerCase()] || x; }
+  function ucf(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  KMM.addTranslations({
+  exact: {
+"Każdy ma miejsce": "Everyone Belongs",
+"Wszystkie gry": "All games",
+"Jak grać?": "How to play",
+"Ustawienia": "Settings",
+"Przerwa": "Break",
+"Większy tekst": "Larger text",
+"Wysoki kontrast": "High contrast",
+"Ograniczone animacje": "Reduced motion",
+"Posłuchaj": "Listen",
+"Zatrzymaj": "Stop",
+"Zamknij": "Close",
+"Spacja": "Space",
+"lub": "or",
+"Zaczynamy": "Let's start",
+"Wróć do początku": "Back to the start",
+"Zagraj ponownie": "Play again",
+"Michał Siwkowski": "Michał Siwkowski",
+"Każdy ma swoją drogę": "Everyone Has Their Way",
+"Nie można uruchomić gry": "The game can't start",
+"Każdy ma miejsce — sześć gier o współpracy. Portrety sześciu postaci zestawu.": "Everyone Belongs — six games about working together. Portraits of the six characters.",
+"droga bez stopni — porusza się na wózku": "a route without steps — uses a wheelchair",
+"czytelne informacje: obrazki, oznaczenia, kolejne kroki": "clear information: pictures, signs, next steps",
+"spokojniejsze miejsce i mniej hałasu": "a quieter place and less noise",
+"wskazywanie obrazków i różne sposoby udziału": "pointing to pictures and different ways to take part",
+"czas na zastanowienie się i odpowiedź": "time to think and answer",
+"wygodne miejsce pracy i swobodne dojście": "a comfortable workspace and easy access",
+"Gra": "Game",
+"Pomóż trzem osobom dotrzeć na wspólne spotkanie. Poznaj ich potrzeby, dostosuj otoczenie i sprawdź drogi.": "Help three people get to a meeting. Learn about their needs, adapt the surroundings and check the routes.",
+"Powrót do menu": "Back to the menu",
+"Ustawienia dostępności": "Accessibility settings",
+"Wspólny cel. Różne potrzeby.": "A shared goal. Different needs.",
+"Zagraj": "Play",
+"Otwórz grę": "Open the game",
+"Czas": "Time",
+"Dostosowania": "Adaptations",
+"Dostosowanie": "Adaptation",
+"Podsumowanie": "Summary",
+"Sześć gier": "Six games",
+"czytelne oznaczenia": "clear signs",
+"Dalej": "Next",
+"Gotowe": "Done",
+"Kolor": "Colour",
+"Kształt": "Shape",
+"Kolory": "Colours",
+"Miejsce": "Place",
+"Spokojnie": "Calmly",
+"Wskazówki": "Clues",
+"Wspólny cel": "Shared goal",
+"Zmiany działają od razu.": "Changes work straight away.",
+"czas na zastanowienie": "time to think",
+"razem": "together",
+"teraz": "now",
+"Czas na zastanowienie": "Time to think",
+"Wskazywanie": "Pointing",
+"Anuluj wybór": "Cancel selection",
+"Jeszcze zmieniamy": "We're still changing it",
+"Osłona akustyczna": "Sound screen",
+"Pole": "Place",
+"Poznaj potrzeby osób.": "Learn about people’s needs.",
+"Przejście": "Walkway",
+"Tablica": "Board",
+"Informacje": "Info",
+"spokojniejsze miejsce": "a quieter place",
+"czytelne informacje": "clear information",
+"Wybrano": "Selected",
+"Wybrany": "Selected",
+"Zaznaczone": "Ticked",
+"Shift": "Shift",
+"Ty": "You",
+"Każdy ma swoją drogę — pomóż trzem osobom dotrzeć na wspólne spotkanie: dostosuj otoczenie i sprawdź drogi. Część zestawu „Każdy ma miejsce”.": "Everyone Has Their Way — help three people get to a meeting: adapt the surroundings and check the routes. Part of the “Everyone Belongs” set.",
+"Przejdź do treści": "Skip to content",
+"Pomoc i ustawienia": "Help and settings",
+"Anulowano wybór. Plansza się nie zmieniła.": "Selection cancelled. The board hasn't changed.",
+"Co mówi": "What does",
+"Co pomaga uczestniczyć?": "What helps people take part?",
+"Czy można ominąć stopień albo dodać podjazd?": "Can we go around the step or add a ramp?",
+"Czy można wybrać spokojniejszą trasę albo wyciszyć miejsce?": "Can we choose a quieter route or make the place quieter?",
+"Czy na dostępnej drodze są czytelne oznaczenia?": "Are there clear signs on the accessible route?",
+"Dostosowywaliście otoczenie do różnych potrzeb. Każda osoba mogła znaleźć drogę do wspólnego celu.": "You adapted the surroundings to different needs. Everyone could find a way to the meeting place.",
+"Droga dostępna": "Route available",
+"Drogi mogą się różnić. Ważne, że każdy może uczestniczyć.": "The routes can be different. What matters is that everyone can take part.",
+"Gotowe do ustawienia": "Ready to place",
+"Gra czeka. Nic się nie zmieni.": "The game is waiting. Nothing will change.",
+"Głośne miejsce": "Noisy place",
+"Jeszcze nie sprawdzono": "Not checked yet",
+"Każda osoba może dotrzeć na spotkanie!": "Everyone can get to the meeting!",
+"Każda osoba może iść inną drogą. Nie ma limitu czasu ani punktów.": "Each person can take a different route. There is no time limit and no points.",
+"Kliknięcie dostosowanego pola (bez wybranego narzędzia) usuwa dostosowanie. Możesz je ustawić gdzie indziej.": "Clicking an adapted square (with no tool selected) removes the adaptation. You can place it somewhere else.",
+"Legenda": "Key",
+"Mapa": "Map",
+"Możesz dalej zmieniać otoczenie. Dostosowania zostały na miejscach.": "You can keep changing the surroundings. The adaptations have stayed in place.",
+"Możesz obejrzeć drogi na kartach osób.": "You can look at the routes on each person's card.",
+"Możesz spokojnie oddychać. Wróć, kiedy chcesz.": "You can breathe calmly. Come back whenever you like.",
+"Możesz zmieniać rozwiązanie i próbować ponownie.": "You can change your solution and try again.",
+"Można inaczej": "Another way",
+"Na planszy: rząd": "On the board: row",
+"Na tej samej drodze różne osoby mogą potrzebować różnych zmian.": "On the same route, different people may need different changes.",
+"Naciśnij, aby ustawić": "Press to place",
+"Naciśnij, aby usunąć": "Press to remove",
+"Najpierw ustaw dostosowanie albo anuluj wybór.": "First place the adaptation or cancel the selection.",
+"Następna plansza": "Next board",
+"Nie można uruchomić gry:": "The game can't start:",
+"Nie wszyscy muszą iść tą samą drogą. Poszukaj rozwiązania dla każdej osoby.": "Not everyone has to take the same route. Look for a solution for each person.",
+"Nieoczekiwany błąd podczas sprawdzania map.": "An unexpected error happened while checking the maps.",
+"Osoby": "People",
+"Otoczenie zostało zmienione. Możesz sprawdzić drogi ponownie.": "The surroundings have changed. You can check the routes again.",
+"Oznaczenie": "Sign",
+"Oznaczenie ustawiamy w miejscu z nieczytelnym kierunkiem.": "We put a sign where the direction is unclear.",
+"Plansza": "Board",
+"Plansza 5 na 5 pól": "Board of 5 by 5 squares",
+"Plansza jest ukończona. Wybierz „Jeszcze zmieniamy”, aby zmieniać otoczenie.": "The board is finished. Choose “We’re still changing it” to change the surroundings.",
+"Podjazd": "Ramp",
+"Pokazujemy drogę": "Showing the route",
+"Pokaż drogę": "Show the route",
+"Pole na pokazanej drodze (numer kroku)": "Square on the route shown (step number)",
+"Poszukajmy rozwiązania": "Let's look for a solution",
+"Potrzebuje czytelnych wskazówek.": "Needs clear directions.",
+"Potrzebuje drogi bez stopni.": "Needs a route without steps.",
+"Potrzebuje spokojniejszej drogi.": "Needs a quieter route.",
+"Potrzebuję czytelnych wskazówek. W niejasnym miejscu pomoże mi oznaczenie.": "I need clear directions. Where the way is unclear, a sign will help me.",
+"Potrzebuję drogi bez stopni. Przy stopniu pomoże mi podjazd.": "I need a route without steps. At a step, a ramp will help me.",
+"Potrzebuję spokojniejszej drogi. Głośne miejsce można wyciszyć albo ominąć.": "I need a quieter route. A noisy place can be made quieter or avoided.",
+"Poznajemy potrzeby": "Getting to know the needs",
+"Różne drogi. Wspólne spotkanie.": "Different routes. One meeting.",
+"Rząd": "Row",
+"Schowaj drogę": "Hide the route",
+"Sprawdzono drogi. Każda osoba może dotrzeć na spotkanie!": "Routes checked. Everyone can get to the meeting!",
+"Sprawdzono drogi. Na razie nikt nie ma dostępnej drogi. Poszukajmy rozwiązania dla:": "Routes checked. Nobody has an accessible route yet. Let's look for a solution for:",
+"Sprawdź drogi": "Check the routes",
+"Sprawdź, co utrudnia drogę każdej osobie.": "Check what makes the route difficult for each person.",
+"Sprawdź, czy wszyscy mogą dotrzeć do celu.": "Check whether everyone can reach the goal.",
+"Start:": "Start:",
+"Stopień": "Step",
+"Stopień z podjazdem": "Step with a ramp",
+"Strzałki przesuwają po polach. Enter lub Spacja wykonuje działanie.": "The arrow keys move between squares. Enter or Space does the action.",
+"To uproszczona gra. W prawdziwym miejscu pytamy jego użytkowników, jakie rozwiązania im pomagają.": "This is a simplified game. In a real place, we ask the people who use it which solutions help them.",
+"To uproszczona gra. W prawdziwym miejscu pytamy jego użytkowników, jakie rozwiązania im pomagają. Reguły gry nie opisują w pełni możliwości ani potrzeb prawdziwych osób.": "This is a simplified game. In a real place, we ask the people who use it which solutions help them. The game rules do not fully describe the abilities or needs of real people.",
+"W danych map są problemy. Popraw je w pliku (sekcja „2. DANE MAP”) i otwórz grę ponownie.": "There are problems in the map data. Fix them in the file (section “2. DANE MAP”) and open the game again.",
+"Wracam do gry": "I'm back to the game",
+"Wskazówka:": "Tip:",
+"Wspólna droga": "Shared route",
+"Wspólny cel — spotkanie": "Shared goal — the meeting",
+"Wszystkie drogi są już sprawdzone. Każda osoba może dotrzeć na spotkanie.": "All routes have been checked. Everyone can get to the meeting.",
+"Wybierz dostosowanie i wskaż miejsce.": "Choose an adaptation and choose a place.",
+"Wybierz dostosowanie, a potem wskaż pole na planszy. Każde masz jedno.": "Choose an adaptation, then choose a square on the board. You have one of each.",
+"Wybrano oznaczenie. Wskaż miejsce z nieczytelnym kierunkiem.": "Sign selected. Choose a place where the direction is unclear.",
+"Wybrano podjazd. Wskaż pole ze stopniem.": "Ramp selected. Choose a square with a step.",
+"Wybrano wyciszenie. Wskaż głośne miejsce.": "Sound screen selected. Choose a noisy place.",
+"Wyciszenie": "Sound screen",
+"Wyciszenie (osłona akustyczna)": "Sound screen (quietens noise)",
+"Wyciszenie ustawiamy w głośnym miejscu.": "We put a sound screen in a noisy place.",
+"Zaznacz dowolne karty. Każdy wybór jest w porządku.": "Tick any cards. Every choice is fine.",
+"Zmiany działają od razu. Ponowna gra ich nie usuwa.": "Changes work straight away. Playing again does not reset them.",
+"Zwykła droga": "Ordinary path",
+"Ściana, teren niedostępny": "Wall, no access",
+"ściana, teren niedostępny": "wall, no access",
+"Nieczytelny kierunek": "Unclear direction",
+"Czytelne oznaczenie": "Clear sign",
+"Czytelne oznaczenia": "Clear signs",
+"Droga bez stopni": "Route without steps",
+"Możliwość wyboru trasy": "Being able to choose a route",
+"możliwość wyboru trasy": "being able to choose a route",
+"głośne miejsce": "noisy place",
+"głośne miejsce z wyciszeniem": "noisy place with a sound screen",
+"miejsce z nieczytelnym kierunkiem": "place with an unclear direction",
+"miejsce z nieczytelnym kierunkiem, z czytelnym oznaczeniem": "place with an unclear direction, with a clear sign",
+"wspólny cel, miejsce spotkania": "shared goal, meeting place",
+"zwykła droga": "ordinary path",
+"stopień": "step",
+"stopień z podjazdem": "step with a ramp",
+"na drodze": "on the route",
+"mówi:": "says:",
+"Trzy osoby: Ada, Olek i Lena. Każda idzie inną drogą do wspólnego miejsca spotkania.": "Three people: Ada, Olek and Lena. Each takes a different route to the same meeting place.",
+"ustawione": "placed",
+"Dostępne": "Available",
+"Plansza 1 z 3": "Board 1 of 3",
+"Swobodne dojście": "Easy access",
+"Spokojniejsze miejsce": "A quieter place",
+"Różne sposoby udziału": "Different ways to take part",
+"Zmienione": "Changed",
+"Instrukcja": "Instructions",
+"Różne sposoby": "Different ways",
+"Możesz": "You can",
+"Nie ma limitu czasu ani punktów.": "There is no time limit and no points.",
+"do sprawdzenia": "to check",
+"zmienione": "changed",
+"Czytelne informacje": "Clear information",
+"— ustawiasz na stopniu. Pomaga Adzie.": "— you place it on a step. It helps Ada.",
+"— ustawiasz w miejscu z nieczytelnym kierunkiem. Pomaga Olkowi.": "— you place it where the direction is unclear. It helps Olek.",
+"— ustawiasz w głośnym miejscu. Pomaga Lenie.": "— you place it in a noisy place. It helps Lena.",
+"Wybrano oznaczenie.": "Sign selected.",
+"Wybrano podjazd.": "Ramp selected.",
+"Wybrano wyciszenie.": "Sound screen selected.",
+"Wskaż miejsce z nieczytelnym kierunkiem.": "Choose a place where the direction is unclear.",
+"Wskaż pole ze stopniem.": "Choose a square with a step.",
+"Wskaż głośne miejsce.": "Choose a noisy place.",
+"Podjazd ustawiamy przy stopniu.": "We put the ramp at a step.",
+"włączone": "on",
+"wyłączone": "off",
+"wolne": "empty",
+"puste": "empty",
+"aktualne miejsce": "current place",
+"ukończony": "finished",
+"poznana": "explored",
+"Etap 1: kolor.": "Stage 1: colour.",
+"kolor": "colour",
+"kształt": "shape",
+"wspólna decyzja": "joint decision",
+"Postacie czekają na lewym brzegu.": "The characters are waiting on the left bank.",
+"Sprawdzić można po ułożeniu wszystkich.": "You can check when all places are filled.",
+"Najpierw wybierz element z półki wyposażenia.": "First choose an item from the equipment shelf.",
+"Wskaż miejsce w sali.": "Choose a place in the room.",
+"Wskaż nowe miejsce w sali, odłóż element na półkę albo anuluj wybór.": "Choose a new place in the room, put the item back on the shelf or cancel the selection.",
+"Sprawdzono klasę.": "Classroom checked.",
+"przeczytaj wypowiedź": "read what they say",
+"Brakuje podjazdu.": "A ramp is missing.",
+"Brakuje oznaczenia.": "A sign is missing.",
+"Brakuje wyciszenia.": "A sound screen is missing.",
+"Otoczenie zostało zmienione.": "The surroundings have changed.",
+"Możesz sprawdzić drogi ponownie.": "You can check the routes again.",
+"Nic się nie zmieniło.": "Nothing has changed.",
+"Sprawdzono drogi.": "Routes checked.",
+"Na razie nikt nie ma dostępnej drogi.": "Nobody has an accessible route yet.",
+"przy stopniu": "at a step",
+"w miejscu z nieczytelnym kierunkiem": "where the direction is unclear",
+"w głośnym miejscu": "in a noisy place",
+"Spokojniejsze miejsca": "Quieter places",
+"Pytanie o potrzeby": "Asking about needs",
+"Zmienianie otoczenia": "Changing the surroundings",
+"spotkanie": "meeting",
+"Nie trzeba zapełniać całego koszyka.": "You don't have to fill the whole basket.",
+"Plan został zmieniony.": "The plan has changed.",
+"Możesz sprawdzić go ponownie.": "You can check it again.",
+"Wybierz jeszcze": "Choose",
+"na ilustracji, do sprawdzenia": "in the picture, to check",
+"na ilustracji, zmienione": "in the picture, changed",
+"na ilustracji": "in the picture",
+"Ada mówi": "Ada says"
+},
+  patterns: [
+  [/^Co mówi (.+)\?$/, 'What does $1 say?'],
+  [/^Pokaż drogę (\S+)$/, function (m) { return 'Show ' + gen(m[1]) + '’s route'; }],
+  [/^Pokazujemy drogę (\S+)\.$/, function (m) { return 'Showing ' + gen(m[1]) + '’s route.'; }],
+  [/^Krok (\d+) na drodze (\S+)\.$/, function (m) { return 'Step ' + m[1] + ' on ' + gen(m[2]) + '’s route.'; }],
+  [/^Numery 1–(\d+) to kolejne pola od startu do celu\.$/, 'Numbers 1–$1 are the squares in order, from the start to the goal.'],
+  [/^start (\S+)$/, function (m) { return gen(m[1]) + '’s start'; }],
+  [/^Start: (.+)$/, 'Start: $1'],
+  [/^Rząd (\d+), kolumna (\d+): (.+?)(\.?)$/, 'Row $1, column $2: {3}$4'],
+  [/^Rząd (\d+), kolumna (\d+):$/, 'Row $1, column $2:'],
+  [/^Na planszy: rząd (\d+), kolumna (\d+)$/, 'On the board: row $1, column $2'],
+  [/^Plansza (\d+) z (\d+)$/, 'Board $1 of $2'],
+  [/^Naciśnij, aby (ustawić|usunąć) (.+)\.$/, function (m) { return 'Press to ' + (m[1] === 'ustawić' ? 'place' : 'remove') + ' the ' + tool(m[2]) + '.'; }],
+  [/^(Podjazd|Oznaczenie|Wyciszenie) (?:ustawiony|ustawione): rząd (\d+), kolumna (\d+)\.$/, function (m) { return ucf(tool(m[1])) + ' placed: row ' + m[2] + ', column ' + m[3] + '.'; }],
+  [/^(Podjazd|Oznaczenie|Wyciszenie) (?:usunięty|usunięte) i (?:wrócił|wróciło) do zasobów\.$/, function (m) { return ucf(tool(m[1])) + ' removed and returned to your tools.'; }],
+  [/^(Podjazd|Oznaczenie|Wyciszenie) już jest w tym miejscu\.$/, function (m) { return ucf(tool(m[1])) + ' is already in this place.'; }],
+  [/^(Podjazd|Oznaczenie|Wyciszenie) zostanie (?:przeniesiony|przeniesione) na nowe miejsce\.$/, function (m) { return ucf(tool(m[1])) + ' will be moved to the new place.'; }],
+  [/^(Podjazd|Oznaczenie|Wyciszenie) ustawiamy (.+)\.$/, function (m, t) { return 'We put the ' + tool(m[1]) + ' ' + t(m[2]) + '.'; }],
+  [/^Drogę do celu (?:ma|mają): ([^.]+)\.$/, 'These people can reach the goal: $1.'],
+  [/^Poszukajmy rozwiązania dla: (.+)\.$/, 'Let’s look for a solution for: $1.'],
+
+  [/^Posłuchaj: (.+)$/, 'Listen: {1}'],
+  [/^(Większy tekst|Wysoki kontrast|Ograniczone animacje): (włączone|wyłączone)\.$/, '{1}: {2}.'],
+  [/^(.+) mówi: (.+)$/, '$1 says: {2}'],
+  [/^(.+) mówi:$/, '$1 says:'],
+  [/^Gra (\d+) z (\d+) · (.+)$/, 'Game $1 of $2 · {3}'],
+  [/^Gra (\d+) z (\d+)$/, 'Game $1 of $2'],
+  [/^Ilustracja: (.+)$/, 'Illustration: {1}'],
+  [/^Nagranie: (.+)$/, 'Recording: {1}'],
+  [/^Informacja: (.+)$/, 'Information: {1}'],
+  [/^✓ (.+)$/, '✓ {1}'],
+  [/^: (.+)$/, ': {1}'],
+  [/^(\d+)\. (.+)$/, '$1. {2}'],
+  [/^— (.+)$/, '— {1}'],
+  [/^(.+?) — (.+)$/, '{1} — {2}'],
+  [/^(.+?) – (.+)$/, '{1} – {2}'],
+  [/^(.+?) · (.+)$/, '{1} · {2}'],
+  [/^(.+?) \((.+)\)$/, '{1} ({2})'],
+  ]
+  });
+})();
+</script>
+<!-- ===== koniec tłumaczenia ===== -->
 </head>
 <body>
 <a class="skip" href="#main">Przejdź do treści</a>
@@ -1393,8 +1911,9 @@ function bindEvents(){
     $('btnSpeak').addEventListener('click', () => {
       const ch = charById($('btnSpeak').dataset.char);
       speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(`${ch.name} mówi: ${ch.quote}`);
-      u.lang = 'pl-PL'; u.rate = .9;
+      const said = `${ch.name} mówi: ${ch.quote}`;
+      const u = new SpeechSynthesisUtterance(window.KMM && KMM.tx ? KMM.tx(said) : said);
+      u.lang = window.KMM && KMM.getLang && KMM.getLang() === 'en' ? 'en-GB' : 'pl-PL'; u.rate = .9;
       speechSynthesis.speak(u);
     });
   }
